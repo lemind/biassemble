@@ -1,6 +1,6 @@
 # Implementation Plan: Reflection Flow
 
-**Branch**: `001-reflection-flow` | **Date**: 2026-05-17 | **Spec**: [spec.md](spec.md)
+**Branch**: `001-reflection-flow` | **Date**: 2026-05-17 (Updated 2026-05-18) | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `/specs/001-reflection-flow/spec.md`
 
@@ -8,19 +8,23 @@
 
 Build the core conversational reflection flow: users write a story, receive AI-generated follow-up questions, answer them, and get a cognitive bias assessment with alternative perspectives. The flow must work anonymously, handle AI request failures gracefully, and deliver responses within 5 seconds. MVP uses Gemini Flash 2.0 (free tier) as the single AI provider — no multi-provider complexity until needed later.
 
+**Delivery strategy**: Phase 0 ships a deployable **Vite + React** landing page in `frontend/` (form + validation + stub submit). Phase 2+ adds **`backend/`** (Next.js API routes, Drizzle, Inngest, Gemini server-side only). Full reflection flow wires the SPA to the API.
+
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x (strict mode)
+**Language/Version**: TypeScript 5.x+ (strict mode)
 
-**Primary Dependencies**: Next.js 15 App Router, Inngest (durable workflows), Supabase + Drizzle ORM, Zod validation, Google Generative AI SDK (Gemini Flash 2.0)
+**Frontend**: Vite + React 19, DaisyUI + Tailwind CSS v4, Zod (client validation), axios → `VITE_API_URL`
+
+**Backend**: Next.js 15 App Router (API routes only for MVP), Inngest (durable workflows), Supabase + Drizzle ORM, Zod, Google Generative AI SDK (Gemini Flash 2.0) — **API keys never exposed to the browser**
 
 **Storage**: Supabase PostgreSQL (sessions, stories, questions, answers, assessments)
 
 **Testing**: Vitest (unit), Playwright (e2e), Inngest test utilities (workflow)
 
-**Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge), Vercel deployment (later phase)
+**Target Platform**: Modern browsers; Vercel (frontend SPA + backend separately or monorepo deploy later)
 
-**Project Type**: Full-stack web application (Next.js with API routes)
+**Project Type**: Split full-stack — `frontend/` SPA + `backend/` API server
 
 **Performance Goals**: First AI question delivered within 5 seconds, p95 < 7s
 
@@ -38,109 +42,130 @@ Build the core conversational reflection flow: users write a story, receive AI-g
 
 ```text
 specs/001-reflection-flow/
-├── spec.md              # Feature specification
-├── plan.md              # This file — implementation plan
+├── spec.md
+├── plan.md
+├── tasks.md
 └── checklists/
-    └── requirements.md  # Quality checklist
+    └── requirements.md
 ```
 
 ### Source Code (repository root)
 
 ```text
-src/
-├── app/
-│   ├── (marketing)/
-│   │   └── page.tsx              # Landing page with story input
-│   ├── (session)/
-│   │   └── session/[id]/
-│   │       ├── page.tsx           # Conversational flow UI
-│   │       └── loading.tsx
-│   └── api/
-│       ├── story/route.ts         # POST: create story, start session
-│       ├── answers/route.ts       # POST: save answer, generate next
-│       └── result/[id]/route.ts  # GET: fetch assessment
-├── components/
-│   ├── StoryForm.tsx
-│   ├── QuestionBubble.tsx
-│   ├── AnswerInput.tsx
-│   └── AssessmentCard.tsx
-├── services/
-│   ├── session.service.ts        # Session orchestration
-│   ├── question.service.ts       # Question generation orchestration
-│   └── assessment.service.ts     # Bias assessment orchestration
-├── lib/
-│   ├── db/
-│   │   ├── schema.ts             # Drizzle schema
-│   │   └── queries.ts            # Typed DB queries
-│   ├── ai/
-│   │   ├── gemini.ts             # Gemini Flash 2.0 provider
-│   │   ├── prompts/
-│   │   │   ├── questions.ts      # Question generation prompts
-│   │   │   └── assessment.ts     # Bias analysis prompts
-│   │   └── parsers.ts            # Structured JSON parsing + Zod validation
-│   ├── validation/
-│   │   ├── story.ts              # Story validation schemas
-│   │   ├── answer.ts             # Answer validation schemas
-│   │   └── assessment.ts         # Assessment output schemas
-│   └── errors.ts                  # Typed error handling
-├── inngest/
-│   ├── client.ts                 # Inngest client
-│   └── functions/
-│       ├── generate-questions.ts  # Durable question generation workflow
-│       └── generate-assessment.ts # Durable assessment workflow
-├── drizzle/
-│   ├── schema.ts                 # DB schema definitions
-│   ├── migrations/
-│   └── config.ts
-└── tests/
-    ├── unit/
-    ├── integration/
-    └── e2e/
+frontend/                          # Vite + React SPA (deployed Phase 0)
+├── src/
+│   ├── App.tsx                    # Landing + routing
+│   ├── main.tsx
+│   ├── index.css
+│   ├── api/                       # axios client → backend
+│   │   └── client.ts
+│   ├── pages/
+│   │   ├── LandingPage.tsx
+│   │   ├── SessionPage.tsx        # /session/:id — Q&A flow
+│   │   └── ResultsPage.tsx        # /session/:id/results
+│   └── components/
+│       ├── common/
+│       │   ├── ErrorBoundary.tsx
+│       │   └── LoadingFallback.tsx
+│       ├── StoryForm.tsx
+│       ├── QuestionBubble.tsx
+│       ├── AnswerInput.tsx
+│       └── AssessmentCard.tsx
+└── .env.example                   # VITE_API_URL only (no secrets)
+
+backend/                           # Next.js 15 API server (Phase 2+)
+├── src/
+│   ├── app/
+│   │   └── api/
+│   │       ├── story/route.ts     # POST: create story, start session
+│   │       ├── answers/route.ts   # POST: save answer, next question / assessment
+│   │       ├── result/[id]/route.ts
+│   │       └── session/[id]/route.ts
+│   ├── services/
+│   │   ├── session.service.ts
+│   │   ├── question.service.ts
+│   │   └── assessment.service.ts
+│   ├── lib/
+│   │   ├── db/
+│   │   │   ├── schema.ts
+│   │   │   └── queries.ts
+│   │   ├── ai/
+│   │   │   ├── gemini.ts
+│   │   │   ├── parsers.ts
+│   │   │   └── prompts/
+│   │   │       ├── questions.ts
+│   │   │       └── assessment.ts
+│   │   ├── validation/
+│   │   │   ├── story.ts
+│   │   │   ├── answer.ts
+│   │   │   └── assessment.ts
+│   │   └── errors.ts
+│   ├── inngest/
+│   │   ├── client.ts
+│   │   └── functions/
+│   │       ├── generate-questions.ts
+│   │       └── generate-assessment.ts
+│   └── drizzle/
+│       ├── schema.ts
+│       ├── config.ts
+│       └── migrations/
+└── .env.example                   # GOOGLE_GENERATIVE_AI_API_KEY, DATABASE_URL, etc.
+
 ```
 
 ## Implementation Phases
 
-### Phase 1: Foundation (core infrastructure)
-- Set up Next.js 15 App Router with TypeScript strict
-- Configure Drizzle ORM with Supabase PostgreSQL
+### Phase 0: Deploy MVP landing page ✅
+
+**Goal**: Live `.vercel.app` URL — story form, Zod validation, stub submit (no DB, no AI).
+
+**Done in `frontend/`**:
+- Vite + React 19 + TypeScript + DaisyUI + Tailwind v4
+- `StoryForm` (50–3000 chars), `console.log` + Thank You state
+- ErrorBoundary, Suspense, lazy `StoryForm`
+- Deployed: https://frontend-topaz-eight-10.vercel.app
+
+**Excludes**: Database, AI, API routes, session persistence.
+
+---
+
+### Phase 1: Backend scaffold + foundation
+
+- Initialize Next.js 15 App Router in `backend/` (TypeScript strict, API routes)
+- Configure Drizzle ORM + Supabase PostgreSQL
 - Set up Inngest client and workflow infrastructure
-- Create Zod validation schemas for all entities
-- Implement Google Generative AI SDK setup (Gemini Flash 2.0)
+- Shared Zod schemas in `backend/src/lib/validation/`
+- Google Generative AI SDK in `backend/src/lib/ai/gemini.ts` (server-only)
 
-### Phase 2: Database Layer
-- Create drizzle schema: sessions, stories, questions, answers, assessments tables
-- Write migration
-- Implement typed query functions
+### Phase 2: Database layer
 
-### Phase 3: AI Layer
-- Create centralized prompt registry (question generation + bias assessment)
-- Implement Gemini Flash 2.0 provider (free tier, 1500 req/day)
-- Build structured JSON parser with Zod validation
-- Implement retry logic with exponential backoff (3 retries)
+- Drizzle schema: sessions, stories, questions, answers, assessments
+- Migration + typed query functions
 
-### Phase 4: API Routes
-- POST /api/story — validate, create session, trigger question generation
-- POST /api/answers — validate, save answer, check completion, trigger assessment
-- GET /api/result/:id — fetch completed assessment
+### Phase 3: AI layer
 
-### Phase 5: Frontend UI
-- Landing page with StoryForm component
-- Session page with QuestionBubble + AnswerInput
-- Results page with AssessmentCard
-- Loading/error/empty states for all components
-- Accessible, mobile-first responsive design
+- Prompt registry (questions + assessment)
+- Structured JSON parser + Zod validation
+- Retry with exponential backoff (3 attempts)
 
-### Phase 6: Workflow Integration
-- Wire Inngest durable workflows to AI generation
-- Implement retry logic with exponential backoff
-- Add error handling and graceful degradation
+### Phase 4: API routes
+
+- `POST /api/story`, `POST /api/answers`, `GET /api/result/[id]`, `GET /api/session/[id]`
+
+### Phase 5: Frontend flow (wire SPA to API)
+
+- axios client, replace stub submit with `POST /api/story`
+- Session + results pages, QuestionBubble, AnswerInput, AssessmentCard
+- Loading/error/empty states; mobile-first a11y
+
+### Phase 6: Workflow integration
+
+- Inngest durable workflows for question + assessment generation
 
 ### Phase 7: Testing
-- Unit tests for services, parsers, validators
-- Integration tests for API routes and DB
-- E2E test for complete reflection flow
-- AI output validation tests
+
+- Unit (validators, parsers, services), integration (API + DB), e2e (full reflection journey)
 
 ## Complexity Tracking
 
-No constitution violations — architecture follows AGENTS.md principles (thin API routes, services layer, typed contracts, AI abstraction).
+No constitution violations — thin API routes, services layer, typed contracts, AI and secrets on server only.

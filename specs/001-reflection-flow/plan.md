@@ -1,12 +1,14 @@
 # Implementation Plan: Reflection Flow
 
-**Branch**: `001-reflection-flow` | **Date**: 2026-05-17 | **Spec**: [spec.md](spec.md)
+**Branch**: `001-reflection-flow` | **Date**: 2026-05-17 (Updated 2026-05-18) | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `/specs/001-reflection-flow/spec.md`
 
 ## Summary
 
 Build the core conversational reflection flow: users write a story, receive AI-generated follow-up questions, answer them, and get a cognitive bias assessment with alternative perspectives. The flow must work anonymously, handle AI request failures gracefully, and deliver responses within 5 seconds. MVP uses Gemini Flash 2.0 (free tier) as the single AI provider — no multi-provider complexity until needed later.
+
+**Delivery strategy**: Phase 0 ships a deployable landing page first (Next.js on Vercel, form with console.log) to establish a real production URL. Full AI/DB flows come in later phases.
 
 ## Technical Context
 
@@ -18,7 +20,7 @@ Build the core conversational reflection flow: users write a story, receive AI-g
 
 **Testing**: Vitest (unit), Playwright (e2e), Inngest test utilities (workflow)
 
-**Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge), Vercel deployment (later phase)
+**Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge), Vercel deployment
 
 **Project Type**: Full-stack web application (Next.js with API routes)
 
@@ -49,8 +51,9 @@ specs/001-reflection-flow/
 ```text
 src/
 ├── app/
-│   ├── (marketing)/
-│   │   └── page.tsx              # Landing page with story input
+│   ├── globals.css               # Tailwind base
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Landing page with story input (Phase 0)
 │   ├── (session)/
 │   │   └── session/[id]/
 │   │       ├── page.tsx           # Conversational flow UI
@@ -60,7 +63,7 @@ src/
 │       ├── answers/route.ts       # POST: save answer, generate next
 │       └── result/[id]/route.ts  # GET: fetch assessment
 ├── components/
-│   ├── StoryForm.tsx
+│   ├── StoryForm.tsx              # Story input form (Phase 0 compatible)
 │   ├── QuestionBubble.tsx
 │   ├── AnswerInput.tsx
 │   └── AssessmentCard.tsx
@@ -100,6 +103,24 @@ src/
 
 ## Implementation Phases
 
+### Phase 0: 🚀 Deploy MVP Landing Page (this sprint)
+
+**Goal**: A live `.vercel.app` URL with a single-page landing — story form, submit button, console.log. No DB, no AI, no backend.
+
+**Tasks**:
+- Initialize Next.js 15 App Router project with TypeScript strict + Tailwind
+- Create root layout with minimal boilerplate (`layout.tsx`, `globals.css`)
+- Build landing page (`page.tsx`): headline, tagline, story textarea, submit button
+- Implement `StoryForm` component with Zod validation (non-empty, 50–3000 chars)
+- On submit: validate input, `console.log({ storyText })`, show "Thank you" state
+- Deploy to Vercel (free tier, auto `.vercel.app` URL)
+
+**Excludes**: Database, AI integration, API routes, session management, any server-side persistence.
+
+**Deliverable**: `https://biassemble.vercel.app` (or similar) — accessible, real URL.
+
+---
+
 ### Phase 1: Foundation (core infrastructure)
 - Set up Next.js 15 App Router with TypeScript strict
 - Configure Drizzle ORM with Supabase PostgreSQL
@@ -124,7 +145,6 @@ src/
 - GET /api/result/:id — fetch completed assessment
 
 ### Phase 5: Frontend UI
-- Landing page with StoryForm component
 - Session page with QuestionBubble + AnswerInput
 - Results page with AssessmentCard
 - Loading/error/empty states for all components

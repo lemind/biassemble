@@ -16,18 +16,18 @@
 
 ---
 
-## Phase 1: Setup — Project Init → Vercel Deploy
+## Phase 1: Setup — Frontend Init → Vercel Deploy
 
-**Purpose**: Initialize Next.js, configure tooling, and deploy a live Vercel page. After this phase, README shows a real `.vercel.app` URL.
+**Purpose**: Initialize Vite + React + TypeScript frontend in `frontend/`, configure tooling, deploy a live Vercel page. After this phase, README shows a real `.vercel.app` URL.
 
-- [ ] T001 Initialize Next.js 15 App Router project with TypeScript strict + Tailwind CSS inside `biassemble/` directory (`npx create-next-app@latest`)
-- [ ] T002 [P] Configure ESLint + Prettier with project-standard settings
-- [ ] T003 [P] Create root layout (`src/app/layout.tsx`), global styles (`src/app/globals.css`), and a minimal landing page (`src/app/page.tsx`) with headline + tagline
-- [ ] T004 [P] Set up environment file structure (`.env.local.example`) with placeholders for: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] T005 Deploy to Vercel (free tier, auto `.vercel.app` URL) — verify live page accessible
-- [ ] T006 Update `README.md` with live Vercel URL after deployment
+- [x] T001 Initialize Vite + React 19 + TypeScript 6 project in `frontend/` with pnpm (`pnpm create vite . --template react-ts`)
+- [x] T002 [P] Install and configure DaisyUI + Tailwind CSS v4, Zod v4, axios, ESLint + Prettier
+- [x] T003 [P] Create landing page (`src/App.tsx`) with DaisyUI hero + card layout, headline, tagline
+- [x] T004 [P] Set up environment file (`.env.example`) with placeholders for `VITE_API_URL`, `VITE_GEMINI_API_KEY`
+- [x] T005 Deploy to Vercel (free tier) — live at https://frontend-topaz-eight-10.vercel.app
+- [x] T006 Update root `README.md` and `frontend/README.md` with live URL, stack, how to run
 
-**Deliverable**: `https://biassemble.vercel.app` — live, accessible, and listed in README.
+**Deliverable**: https://frontend-topaz-eight-10.vercel.app — live, accessible, in READMEs.
 
 ---
 
@@ -65,9 +65,9 @@
 
 ### Implementation for User Story 1 — Phase 0 Landing Page (deployable immediately)
 
-- [ ] T019 [P] [US1] Build `StoryForm` component with Zod validation (50–3000 chars) in `src/components/StoryForm.tsx`
-- [ ] T020 [US1] Wire landing page: `StoryForm` → submit → `console.log({ storyText })` → show "Thank you" state (no DB, no AI)
-- [ ] T021 [US1] Deploy Phase 0 to Vercel — landing page goes live with interactive form
+- [x] T019 [P] [US1] Build `StoryForm` component with Zod validation (STORY_MIN_LENGTH=50, STORY_MAX_LENGTH=3000) in `src/components/StoryForm.tsx`
+- [x] T020 [US1] Wire landing page: `StoryForm` → submit → `console.log({ storyText })` → show "Thank you" state (no DB, no AI)
+- [x] T021 [US1] Deploy Phase 0 to Vercel — landing page goes live with interactive form
 
 ### Implementation for User Story 1 — Database Layer
 
@@ -93,20 +93,26 @@
 - [ ] T032 [US1] Implement `POST /api/answers` — validate answer, save, check completion, trigger assessment
 - [ ] T033 [US1] Implement `GET /api/result/[id]` — fetch completed assessment
 
-### Implementation for User Story 1 — Frontend UI
+### Implementation for User Story 1 — Common Infrastructure
 
-- [ ] T034 [P] [US1] Build `QuestionBubble` component — `src/components/QuestionBubble.tsx`
-- [ ] T035 [P] [US1] Build `AnswerInput` component — `src/components/AnswerInput.tsx`
-- [ ] T036 [P] [US1] Build `AssessmentCard` component — `src/components/AssessmentCard.tsx`
-- [ ] T037 [US1] Implement session conversation page — `src/app/(session)/session/[id]/page.tsx` + `loading.tsx`
-- [ ] T038 [US1] Add loading, error, and empty states for all components
-- [ ] T039 [US1] Ensure mobile-first responsive design and accessibility
+- [x] T034a [P] [US1] Build `ErrorBoundary` component with DaisyUI error display + retry in `src/components/common/ErrorBoundary.tsx`
+- [x] T034b [P] [US1] Build `LoadingFallback` component with DaisyUI spinner in `src/components/common/LoadingFallback.tsx`
+- [x] T034c [US1] Wire ErrorBoundary at App root, lazy-load StoryForm with Suspense fallback
+
+### Implementation for User Story 1 — Frontend UI (future phases)
+
+- [ ] T035 [P] [US1] Build `QuestionBubble` component — `src/components/QuestionBubble.tsx`
+- [ ] T036 [P] [US1] Build `AnswerInput` component — `src/components/AnswerInput.tsx`
+- [ ] T037 [P] [US1] Build `AssessmentCard` component — `src/components/AssessmentCard.tsx`
+- [ ] T038 [US1] Implement session conversation page — `src/(session)/session/[id]/page.tsx` + loading state
+- [ ] T039 [US1] Add loading, error, and empty states for remaining components
+- [ ] T040 [US1] Ensure mobile-first responsive design and accessibility
 
 ### Implementation for User Story 1 — Workflow Integration
 
-- [ ] T040 [US1] Wire Inngest durable workflow for question generation — `src/inngest/functions/generate-questions.ts`
-- [ ] T041 [US1] Wire Inngest durable workflow for assessment generation — `src/inngest/functions/generate-assessment.ts`
-- [ ] T042 [US1] Add retry logic with exponential backoff to workflows
+- [ ] T041 [US1] Wire Inngest durable workflow for question generation — `src/inngest/functions/generate-questions.ts`
+- [ ] T042 [US1] Wire Inngest durable workflow for assessment generation — `src/inngest/functions/generate-assessment.ts`
+- [ ] T043 [US1] Add retry logic with exponential backoff to workflows
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
@@ -120,16 +126,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T043 [P] [US2] Integration test for assessment retrieval endpoint
-- [ ] T044 [P] [US2] Unit test for assessment display components
+- [ ] T044 [P] [US2] Integration test for assessment retrieval endpoint
+- [ ] T045 [P] [US2] Unit test for assessment display components
 
 ### Implementation for User Story 2
 
-- [ ] T045 [P] [US2] Enhance `AssessmentCard` with expandable bias detail sections
-- [ ] T046 [US2] Add "story connections" section showing which parts triggered each bias
-- [ ] T047 [US2] Add "alternative perspective" section with reframing
-- [ ] T048 [US2] Add reflection prompt at end of assessment
-- [ ] T049 [US2] Add "Start new reflection" CTA from results page
+- [ ] T046 [P] [US2] Enhance `AssessmentCard` with expandable bias detail sections
+- [ ] T047 [US2] Add "story connections" section showing which parts triggered each bias
+- [ ] T048 [US2] Add "alternative perspective" section with reframing
+- [ ] T049 [US2] Add reflection prompt at end of assessment
+- [ ] T050 [US2] Add "Start new reflection" CTA from results page
 
 **Checkpoint**: User Stories 1 AND 2 both work independently.
 
@@ -143,15 +149,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T050 [P] [US3] Integration test for session resume endpoint
-- [ ] T051 [P] [US3] Unit test for session state restoration logic
+- [ ] T051 [P] [US3] Integration test for session resume endpoint
+- [ ] T052 [P] [US3] Unit test for session state restoration logic
 
 ### Implementation for User Story 3
 
-- [ ] T052 [P] [US3] Implement session state persistence/restoration in `src/services/session.service.ts`
-- [ ] T053 [US3] Implement `GET /api/session/[id]` — restore session state
-- [ ] T054 [US3] Add session ID display on landing page after story submission
-- [ ] T055 [US3] Add "Resume session" flow — accept session ID, restore UI
+- [ ] T053 [P] [US3] Implement session state persistence/restoration in `src/services/session.service.ts`
+- [ ] T054 [US3] Implement `GET /api/session/[id]` — restore session state
+- [ ] T055 [US3] Add session ID display on landing page after story submission
+- [ ] T056 [US3] Add "Resume session" flow — accept session ID, restore UI
 
 **Checkpoint**: All user stories independently functional.
 
@@ -159,14 +165,14 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T056 [P] Add content filtering for offensive/inappropriate content before AI processing
-- [ ] T057 Implement blank-answer retry capping and "skip" functionality
-- [ ] T058 Add graceful error handling for AI failures (friendly messages, no data loss)
-- [ ] T059 [P] Add logging for all session, question, and assessment operations
-- [ ] T060 Security hardening: input sanitization, rate limiting
-- [ ] T061 Run full test suite — fix failures
-- [ ] T062 Performance: ensure p95 first-question delivery < 7s
-- [ ] T063 Documentation updates
+- [ ] T057 [P] Add content filtering for offensive/inappropriate content before AI processing
+- [ ] T058 Implement blank-answer retry capping and "skip" functionality
+- [ ] T059 Add graceful error handling for AI failures (friendly messages, no data loss)
+- [ ] T060 [P] Add logging for all session, question, and assessment operations
+- [ ] T061 Security hardening: input sanitization, rate limiting
+- [ ] T062 Run full test suite — fix failures
+- [ ] T063 Performance: ensure p95 first-question delivery < 7s
+- [ ] T064 Documentation updates
 
 ---
 
@@ -179,12 +185,13 @@
 
 ### Delivery Order
 
-1. **Phase 1** → Setup → Deploy → **live Vercel URL in README** ✓
-2. **Phase 0 sub-goal** (T019–T021) → interactive landing page on same URL, no backend
-3. **Phase 2** → Foundation ready
-4. **Phase 3 remaining** → Full US1 with AI + DB
-5. **Phase 4** → US2
-6. **Phase 5** → US3
-7. **Phase 6** → Polish
+1. **Phase 1** → Setup → Deploy → **live Vercel URL in README** ✅
+2. **Phase 0 sub-goal** (T019–T021) → interactive landing page on same URL, no backend ✅
+3. **Common infrastructure** (T034a–T034c) → ErrorBoundary + Suspense ✅
+4. **Phase 2** → Foundation ready
+5. **Phase 3 remaining** → Full US1 with AI + DB
+6. **Phase 4** → US2
+7. **Phase 5** → US3
+8. **Phase 6** → Polish
 
-**Phase 0** (T019–T021) can be done immediately after Phase 1 since it's purely frontend with no backend deps. This gives you an interactive deployable page while foundation work continues.
+**Phase 0** (T019–T021) + **Common infra** (T034a–T034c) done. What's left for Phase 3: full AI/DB flow, remaining UI components (QuestionBubble, AnswerInput, AssessmentCard), session page, and workflow integration.

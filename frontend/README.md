@@ -36,11 +36,14 @@ pnpm preview
 
 ```
 src/
-├── App.tsx                 # Landing page with hero + story form
+├── App.tsx                 # Landing page with ErrorBoundary + Suspense
 ├── main.tsx                # Entry point
 ├── index.css               # Tailwind + DaisyUI styles
 └── components/
-    └── StoryForm.tsx       # Story input with Zod validation
+    ├── common/
+    │   ├── ErrorBoundary.tsx   # Global error boundary with retry
+    │   └── LoadingFallback.tsx # Suspense fallback spinner
+    └── StoryForm.tsx       # Story input with Zod validation (lazy-loaded)
 ```
 
 ## Features (Phase 0)

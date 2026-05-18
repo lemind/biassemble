@@ -63,6 +63,9 @@ src/
 │       ├── answers/route.ts       # POST: save answer, generate next
 │       └── result/[id]/route.ts  # GET: fetch assessment
 ├── components/
+│   ├── common/
+│   │   ├── ErrorBoundary.tsx      # Global error boundary with retry
+│   │   └── LoadingFallback.tsx    # Suspense fallback spinner
 │   ├── StoryForm.tsx              # Story input form (Phase 0 compatible)
 │   ├── QuestionBubble.tsx
 │   ├── AnswerInput.tsx

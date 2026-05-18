@@ -32,13 +32,14 @@ Biassemble guides users through a reflective process: write a personal situation
 
 ```
 biassemble/
-├── frontend/               # Vite + React SPA (this)
-├── backend/                # Next.js API server (separate setup)
+├── frontend/               # Vite + React SPA — deployed (Phase 0)
+├── backend/                # Next.js API server — scaffold docs only; init in Phase 2
 ├── specs/                  # Spec-kit feature specifications
 │   └── 001-reflection-flow/
-├── biassemble-core/        # Private AI core docs
-└── docs/                   # Project documentation
+└── AGENTS.md               # Engineering conventions
 ```
+
+Private AI-core docs live outside this repo (`biassemble-core/` at workspace root).
 
 ## Getting Started (Frontend)
 
@@ -51,7 +52,13 @@ pnpm build      # production build
 
 ## Status
 
-Phase 0 — MVP Landing Page (deployed). Full AI reflection flow coming next.
+| Area | Status |
+|------|--------|
+| Phase 0 landing (`frontend/`) | Deployed — story form + validation + stub submit |
+| Backend (`backend/`) | Not initialized — see `backend/README.md` and `tasks.md` Phase 2 |
+| P1 reflection flow (spec) | Not started — requires API + Gemini (server-side) |
+
+**Next (spec-kit)**: Phase 2 tasks T006a–T013a — scaffold `backend/`, then wire `POST /api/story`.
 
 ## License
 

@@ -61,12 +61,34 @@
 - Run relevant tests iteratively; run full suite before finalizing.
 - Mock external services; never skip tests due to flakiness without documenting why.
 
+## Spec-kit & `specs/` (keep in sync)
+
+After **any** change that affects behavior, scope, architecture, stack, file layout, env vars, or delivery status, update the matching artifacts under `specs/` for the active feature (see `.specify/feature.json` → `feature_directory`, e.g. `specs/001-reflection-flow/`).
+
+| Change type | Update |
+|-------------|--------|
+| Product scope, user flows, acceptance criteria | `spec.md` |
+| Tech stack, folder structure, phases, constraints | `plan.md` |
+| Task status, new work items, path corrections | `tasks.md` |
+| Spec quality / readiness gates | `checklists/*.md` |
+
+**Rules**
+
+- Do not leave code and specs diverged: if you change the implementation, update the spec docs in the same PR/commit series (or explicitly note why deferral is safe).
+- When `plan.md` structure or paths change, propagate to `tasks.md` (exact file paths, phase names, checkpoints).
+- When `spec.md` requirements change, check whether `plan.md` phases and `tasks.md` still cover them; add or adjust tasks if not.
+- Mark completed work in `tasks.md` (`[x]`) and reflect current status in root `README.md` when deployability or phase milestones shift.
+- `spec.md` stays technology-agnostic where possible; stack and paths belong in `plan.md` / `tasks.md`, not in functional requirements.
+
+**Trigger examples** (docs update required): new `frontend/` or `backend/` package, API route added/renamed, env var moved server-side, phase completed, MVP scope narrowed or expanded.
+
 ## Workflow
 
 - Implement incrementally.
 - Verify after every meaningful change (smoke test + relevant tests).
 - Do not rewrite unrelated files.
 - Preserve existing architecture unless explicitly requested.
+- Treat spec/plan/tasks updates as part of the change, not a follow-up chore.
 
 ## Autonomy
 

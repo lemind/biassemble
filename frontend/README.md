@@ -53,9 +53,18 @@ src/
 - Thank You confirmation state
 - DaisyUI styled responsive layout
 
+## Environment
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+VITE_API_URL=http://localhost:3000
+```
+
+Do **not** add Gemini or database keys here — those belong in `../backend/.env.local` only.
+
 ## What's Next
 
-- Full conversational reflection flow (questions + answers)
-- AI-powered bias assessment
-- Session persistence
-- Backend API (Next.js in `../backend/`)
+1. Backend scaffold (`../backend/`) — Next.js API routes
+2. Wire submit → `POST /api/story` via `src/api/client.ts`
+3. Session + results pages (`src/pages/`)

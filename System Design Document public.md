@@ -118,6 +118,8 @@ Biassemble aims to create:
 - confidence scoring
 - multi-provider orchestration
 - persuasion analysis
+
+**Repository split (engineering):** The public application repository (`biassemble`) contains frontend + session API only. Proprietary prompts, model routing, and provider credentials live in a **private AI Core** service (`biassemble-core`). The public backend calls Core over authenticated HTTP; see `specs/001-reflection-flow/architecture.md` in the app repo for the contract.
 - rewrite engine
 
 ---

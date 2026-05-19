@@ -68,7 +68,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 | Change type | Update |
 |-------------|--------|
 | Product scope, user flows, acceptance criteria | `spec.md` |
-| Tech stack, folder structure, phases, constraints | `plan.md` |
+| Tech stack, folder structure, phases, constraints | `plan.md`, `architecture.md` |
 | Task status, new work items, path corrections | `tasks.md` |
 | Spec quality / readiness gates | `checklists/*.md` |
 
@@ -79,6 +79,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - When `spec.md` requirements change, check whether `plan.md` phases and `tasks.md` still cover them; add or adjust tasks if not.
 - Mark completed work in `tasks.md` (`[x]`) and reflect current status in root `README.md` when deployability or phase milestones shift.
 - `spec.md` stays technology-agnostic where possible; stack and paths belong in `plan.md` / `tasks.md`, not in functional requirements.
+- **Never add prompts, model IDs, or LLM API keys to the public repo** — use `biassemble-core` (private) and `lib/ai/core-client.ts` only.
 
 **Trigger examples** (docs update required): new `frontend/` or `backend/` package, API route added/renamed, env var moved server-side, phase completed, MVP scope narrowed or expanded.
 

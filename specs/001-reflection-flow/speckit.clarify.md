@@ -27,7 +27,7 @@ Phase 1 gave us a **deployed frontend** — a Vite SPA with a story form that `c
 
 **But we're abstracting via an adapter** (see "Workflow Abstraction" section below).  
 → All services call `workflow.enqueue()`, not Inngest directly.  
-→ Swapping to BullMQ or RabbitMQ later = one new file + one line config change.
+→ Swapping to another queue later = new `WorkflowAdapter` + worker calling `runJob()` (no Rabbit code in repo until needed).
 
 **Free Tier**:
 | Limit | Value | Enough for MVP? |
@@ -256,7 +256,7 @@ After Phase 2:
 - Drizzle schema exists (even if empty tables aren't populated yet)
 - Zod schemas validate all inputs at the boundary
 - Gemini can be called from server code
-- Workflow adapter is ready (Inngest wired up, BullMQ/RabbitMQ swap possible with one file change)
+- Workflow adapter is ready (Inngest wired up; `lib/jobs/runJob()` ready for a future transport)
 - Errors have typed shapes with error codes
 - Frontend has an axios client pointed at `VITE_API_URL`
 - Prompt registry has function stubs (empty implementations ready for Phase 3)

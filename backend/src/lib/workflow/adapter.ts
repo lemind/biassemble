@@ -1,13 +1,16 @@
-// Workflow Adapter Interface
-// Abstracted so we can swap Inngest → BullMQ/RabbitMQ with zero service changes.
-// Services import { workflow } from "@/lib/workflow/adapter" — never import Inngest directly.
+// Workflow adapter — enqueue only. Job logic lives in lib/jobs/runJob().
+// Services import { workflow } from here — never import Inngest directly.
+//
+// To swap Inngest for another queue later: add a new *-adapter.ts implementing
+// WorkflowAdapter, change the export below, and point workers at runJob().
 
-export type JobType = "generate-questions" | "generate-assessment";
+import type { JobType } from "@/lib/jobs/types";
+import { workflow as inngestWorkflow } from "./inngest-adapter";
+
+export type { JobType };
 
 export interface WorkflowAdapter {
   enqueue(jobType: JobType, payload: unknown): Promise<{ jobId: string }>;
 }
 
-// Default export is the InngestAdapter (set up during T010)
-// When switching to BullMQ, update this one import:
-export { workflow } from "./inngest-adapter";
+export const workflow: WorkflowAdapter = inngestWorkflow;

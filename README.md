@@ -21,10 +21,10 @@ Biassemble guides users through a reflective process: write a personal situation
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Vite + React 19, TypeScript 6, DaisyUI + Tailwind CSS v4 |
-| **Backend** | Next.js 15 (in `backend/`) — API routes, Inngest workflows (abstracted for BullMQ/RabbitMQ swap) |
+| **Backend** | Next.js 15 — API routes, Inngest jobs via `lib/jobs/runJob()` (swap-friendly) |
 | **Validation** | Zod v3 (backend) / Zod v4 (frontend) |
 | **Database** | Supabase PostgreSQL + Drizzle ORM |
-| **AI** | Google Gemini Flash 2.0 (free via Google AI Studio) |
+| **AI** | Private **biassemble-core** service (HTTP); `dev-mock` for local public-repo dev |
 | **Deploy** | Vercel (frontend + backend) |
 | **Package manager** | pnpm |
 
@@ -34,12 +34,12 @@ Biassemble guides users through a reflective process: write a personal situation
 biassemble/
 ├── frontend/               # Vite + React SPA — deployed (Phase 0)
 ├── backend/                # Next.js API server — scaffolded (Phase 2)
-├── specs/                  # Spec-kit feature specifications
-│   └── 001-reflection-flow/
-└── AGENTS.md               # Engineering conventions
+├── specs/001-reflection-flow/
+│   └── architecture.md     # public backend vs private AI Core
+└── AGENTS.md
 ```
 
-Private AI-core docs live outside this repo (`biassemble-core/` at workspace root).
+**biassemble-core/** (private, workspace sibling) — prompts, models, `POST /v1/reflection/*` ([API.md](../biassemble-core/API.md)).
 
 ## Getting Started (Frontend)
 
@@ -55,10 +55,11 @@ pnpm build      # production build
 | Area | Status |
 |------|--------|
 | Phase 0 landing (`frontend/`) | Deployed — story form + validation + stub submit |
-| Phase 2 backend scaffold (`backend/`) | Done — Next.js 15, Drizzle, Gemini, Inngest, Zod, typed errors |
-| P1 reflection flow (spec) | Not started — requires API routes (Phase 3) + Gemini calls |
+| Phase 2 backend (`backend/`) | Done — jobs, workflow adapter, AI Core HTTP client (no prompts in public repo) |
+| Private AI Core | Implement `biassemble-core/API.md` |
+| P1 reflection flow | Phase 3 — DB, API routes, wire jobs + frontend |
 
-**Next**: Phase 3 — DB tables (T022–T024), AI prompts (T025–T027), API routes (T031–T033), frontend wire (T035–T040).
+**Next**: Phase 3 — `POST /api/story`, `runGenerateQuestions`, Core or `dev-mock`.
 
 ## License
 

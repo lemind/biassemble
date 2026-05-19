@@ -1,171 +1,104 @@
 # Implementation Plan: Reflection Flow
 
-**Branch**: `001-reflection-flow` | **Date**: 2026-05-17 (Updated 2026-05-18) | **Spec**: [spec.md](spec.md)
+**Branch**: `001-reflection-flow` | **Date**: 2026-05-18 | **Spec**: [spec.md](spec.md) | **Architecture**: [architecture.md](architecture.md)
 
 **Input**: Feature specification from `/specs/001-reflection-flow/spec.md`
 
 ## Summary
 
-Build the core conversational reflection flow: users write a story, receive AI-generated follow-up questions, answer them, and get a cognitive bias assessment with alternative perspectives. The flow must work anonymously, handle AI request failures gracefully, and deliver responses within 5 seconds. MVP uses Gemini Flash 2.0 (free tier) as the single AI provider — no multi-provider complexity until needed later.
+Build the core conversational reflection flow: users write a story, receive AI-generated follow-up questions, answer them, and get a cognitive bias assessment with alternative perspectives. Anonymous sessions, graceful AI failures, first question within 5 seconds.
 
-**Delivery strategy**: Phase 0 ships a deployable **Vite + React** landing page in `frontend/` (form + validation + stub submit). Phase 2+ adds **`backend/`** (Next.js API routes, Drizzle, Inngest, Gemini server-side only). Full reflection flow wires the SPA to the API.
+**AI**: Prompts and models live in **biassemble-core** (private). Public `backend/` calls AI Core over HTTP (`AI_CLIENT_MODE=core`) or uses `dev-mock` locally.
+
+**Queues**: Job logic in `lib/jobs/`; **Inngest** for transport today (swap-friendly via `WorkflowAdapter` + `runJob()`).
+
+**Delivery**: Phase 0 = Vite landing (done). Phase 2 = backend foundation (done). Phase 3+ = DB, API, wire frontend.
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x+ (strict mode)
+**Language/Version**: TypeScript 5.x+ (strict)
 
-**Frontend**: Vite + React 19, DaisyUI + Tailwind CSS v4, Zod (client validation), axios → `VITE_API_URL`
+**Frontend**: Vite + React 19, DaisyUI + Tailwind v4, Zod, axios → `VITE_API_URL`
 
-**Backend**: Next.js 15 App Router (API routes only for MVP), workflow adapter (Inngest now → BullMQ/RabbitMQ later via abstracted interface), Supabase + Drizzle ORM, Zod, Google Generative AI SDK (Gemini Flash 2.0) — **API keys never exposed to the browser**
+**Backend**: Next.js 15 API routes, Drizzle + Supabase, Inngest (abstracted enqueue), **AI Core HTTP client** (no prompts in public repo)
 
-**Storage**: Supabase PostgreSQL (sessions, stories, questions, answers, assessments)
+**Private AI Core**: biassemble-core — prompts, provider orchestration, API keys ([API.md](../../../biassemble-core/API.md) in workspace)
 
-**Testing**: Vitest (unit), Playwright (e2e), Inngest test utilities (workflow)
+**Testing**: Vitest, Playwright, Inngest test utils
 
-**Target Platform**: Modern browsers; Vercel (frontend SPA + backend separately or monorepo deploy later)
-
-**Project Type**: Split full-stack — `frontend/` SPA + `backend/` API server
-
-**Performance Goals**: First AI question delivered within 5 seconds, p95 < 7s
-
-**Constraints**: < 5s first response, > 99% JSON parse success, Gemini free tier limits (60 req/min, 1500 req/day)
-
-**Scale/Scope**: Anonymous sessions first; MVP targets within Gemini free tier limits
+**Performance**: First question < 5s (p95 < 7s); JSON parse success > 99%
 
 ## Constitution Check
 
-*GATE: Pass — project follows AGENTS.md principles (KISS, typed outputs, structured JSON, validation at boundaries, incremental implementation)*
+*GATE: Pass — KISS, typed outputs, validation at boundaries, secrets and prompts outside public repo.*
 
 ## Project Structure
 
-### Documentation (this feature)
+### Documentation
 
 ```text
 specs/001-reflection-flow/
-├── spec.md
-├── plan.md
+├── spec.md              # product (technology-agnostic)
+├── plan.md              # this file
 ├── tasks.md
+├── architecture.md      # public vs private AI Core, queue portability
 └── checklists/
-    └── requirements.md
 ```
 
-### Source Code (repository root)
+### Source Code
 
 ```text
-frontend/                          # Vite + React SPA (deployed Phase 0)
-├── src/
-│   ├── App.tsx                    # Landing + routing
-│   ├── main.tsx
-│   ├── index.css
-│   ├── api/                       # axios client → backend
-│   │   └── client.ts
-│   ├── pages/
-│   │   ├── LandingPage.tsx
-│   │   ├── SessionPage.tsx        # /session/:id — Q&A flow
-│   │   └── ResultsPage.tsx        # /session/:id/results
-│   └── components/
-│       ├── common/
-│       │   ├── ErrorBoundary.tsx
-│       │   └── LoadingFallback.tsx
-│       ├── StoryForm.tsx
-│       ├── QuestionBubble.tsx
-│       ├── AnswerInput.tsx
-│       └── AssessmentCard.tsx
-└── .env.example                   # VITE_API_URL only (no secrets)
+frontend/                    # Vite SPA
+└── src/api/client.ts        # → public backend API
 
-backend/                           # Next.js 15 API server (Phase 2+)
+backend/                     # Next.js API (public)
 ├── src/
-│   ├── app/
-│   │   └── api/
-│   │       ├── story/route.ts     # POST: create story, start session
-│   │       ├── answers/route.ts   # POST: save answer, next question / assessment
-│   │       ├── result/[id]/route.ts
-│   │       └── session/[id]/route.ts
-│   ├── services/
-│   │   ├── session.service.ts
-│   │   ├── question.service.ts
-│   │   └── assessment.service.ts
+│   ├── app/api/             # HTTP routes + inngest webhook (transport only)
+│   ├── services/            # Phase 3 — orchestration
 │   ├── lib/
-│   │   ├── db/
-│   │   │   ├── schema.ts
-│   │   │   └── queries.ts
-│   │   ├── ai/
-│   │   │   ├── gemini.ts
-│   │   │   ├── parsers.ts
-│   │   │   └── prompts/
-│   │   │       ├── questions.ts
-│   │   │       └── assessment.ts
-│   │   ├── validation/
-│   │   │   ├── story.ts
-│   │   │   ├── answer.ts
-│   │   │   └── assessment.ts
+│   │   ├── jobs/            # runJob() — transport-agnostic handlers
+│   │   ├── workflow/        # Inngest enqueue (WorkflowAdapter for future swap)
+│   │   ├── ai/              # core-client | dev-mock (NO prompts)
+│   │   ├── validation/      # API input schemas
 │   │   └── errors.ts
-│   ├── inngest/
-│   │   ├── client.ts
-│   │   └── functions/
-│   │       ├── generate-questions.ts
-│   │       └── generate-assessment.ts
 │   └── drizzle/
-│       ├── schema.ts
-│       ├── config.ts
-│       └── migrations/
-└── .env.example                   # GOOGLE_GENERATIVE_AI_API_KEY, DATABASE_URL, etc.
+└── .env.example
 
+biassemble-core/             # PRIVATE repo (workspace sibling)
+├── prompts/, providers/     # proprietary
+└── API.md                   # contract for public backend
 ```
 
 ## Implementation Phases
 
-### Phase 0: Deploy MVP landing page ✅
+### Phase 0: Landing page ✅
 
-**Goal**: Live `.vercel.app` URL — story form, Zod validation, stub submit (no DB, no AI).
+Deployed Vite app with `StoryForm` validation and stub submit.
 
-**Done in `frontend/`**:
-- Vite + React 19 + TypeScript + DaisyUI + Tailwind v4
-- `StoryForm` (50–3000 chars), `console.log` + Thank You state
-- ErrorBoundary, Suspense, lazy `StoryForm`
-- Deployed: https://frontend-topaz-eight-10.vercel.app
+### Phase 1: Backend foundation ✅
 
-**Excludes**: Database, AI, API routes, session persistence.
-
----
-
-### Phase 1: Backend scaffold + foundation
-
-- Initialize Next.js 15 App Router in `backend/` (TypeScript strict, API routes)
-- Configure Drizzle ORM + Supabase PostgreSQL
-- Set up **workflow adapter** (abstracted interface — Inngest now, BullMQ/RabbitMQ later with zero service changes)
-- Shared Zod schemas in `backend/src/lib/validation/`
-- Google Generative AI SDK in `backend/src/lib/ai/gemini.ts` (server-only)
+- Next.js 15, Drizzle stub, validation schemas, errors
+- `lib/jobs/*` + `lib/workflow/*` (Inngest; jobs callable from any future worker)
+- `lib/ai/*` — Core HTTP client + dev-mock (removed `gemini.ts` / `prompts/` from public)
+- Frontend axios client
 
 ### Phase 2: Database layer
 
-- Drizzle schema: sessions, stories, questions, answers, assessments
-- Migration + typed query functions
+- Full Drizzle schema, migrations, `lib/db/queries.ts`
 
-### Phase 3: AI layer
+### Phase 3: Product API + jobs
 
-- Prompt registry (questions + assessment)
-- Structured JSON parser + Zod validation
-- Retry with exponential backoff (3 attempts)
+- API routes; services enqueue jobs; jobs call `getAiClient()` + DB
+- Implement AI Core endpoints in private repo (or dev-mock until ready)
 
-### Phase 4: API routes
+### Phase 4: Frontend flow
 
-- `POST /api/story`, `POST /api/answers`, `GET /api/result/[id]`, `GET /api/session/[id]`
+- Wire landing → API; session/results pages
 
-### Phase 5: Frontend flow (wire SPA to API)
+### Phase 5: Testing & polish
 
-- axios client, replace stub submit with `POST /api/story`
-- Session + results pages, QuestionBubble, AnswerInput, AssessmentCard
-- Loading/error/empty states; mobile-first a11y
-
-### Phase 6: Workflow integration
-
-- Inngest durable workflows for question + assessment generation
-
-### Phase 7: Testing
-
-- Unit (validators, parsers, services), integration (API + DB), e2e (full reflection journey)
+- Unit/integration/e2e; retries (FR-007) in Core or public client as agreed
 
 ## Complexity Tracking
 
-No constitution violations — thin API routes, services layer, typed contracts, AI and secrets on server only.
+Workflow and AI boundaries allow swapping the queue transport later and keeping prompts in private Core without public repo leakage.

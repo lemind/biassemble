@@ -35,15 +35,15 @@
 
 **Purpose**: Backend scaffold + core infrastructure before ANY user story API work.
 
-- [ ] T006a Initialize Next.js 15 App Router in `backend/` — TypeScript strict, `src/app/api/` layout, `backend/.env.example`
-- [ ] T007 Configure Drizzle ORM with Supabase PostgreSQL — `backend/src/drizzle/config.ts`, `backend/src/drizzle/schema.ts`
-- [ ] T008 [P] Create Zod validation schemas for all entities — `backend/src/lib/validation/story.ts`, `answer.ts`, `assessment.ts`
-- [ ] T009 [P] Set up Google Generative AI SDK (Gemini Flash 2.0) — `backend/src/lib/ai/gemini.ts` (server-only)
-- [ ] T010 [P] Set up workflow adapter + Inngest client — `backend/src/lib/workflow/adapter.ts`, `backend/src/lib/workflow/inngest-adapter.ts`, `backend/src/inngest/client.ts`, `backend/src/app/api/inngest/route.ts` (abstracted via adapter — swap to BullMQ/RabbitMQ later with one file change)
-- [ ] T011 [P] Implement structured JSON parser with Zod validation — `backend/src/lib/ai/parsers.ts`
-- [ ] T012 [P] Create centralized prompt registry stubs — `backend/src/lib/ai/prompts/questions.ts`, `assessment.ts`
-- [ ] T013 Create typed error handling — `backend/src/lib/errors.ts`
-- [ ] T013a [P] Add axios API client in `frontend/src/api/client.ts` using `import.meta.env.VITE_API_URL`
+- [x] T006a Initialize Next.js 15 App Router in `backend/` — TypeScript strict, `src/app/api/` layout, `backend/.env.example`
+- [x] T007 Configure Drizzle ORM with Supabase PostgreSQL — `backend/src/drizzle/config.ts`, `backend/src/drizzle/schema.ts` (stub — full tables in T022)
+- [x] T008 [P] Create Zod validation schemas for all entities — `backend/src/lib/validation/story.ts`, `answer.ts`, `assessment.ts`
+- [x] T009 [P] Set up Google Generative AI SDK (Gemini Flash 2.0) — `backend/src/lib/ai/gemini.ts` (server-only, lazy init)
+- [x] T010 [P] Set up workflow adapter + Inngest client — `backend/src/lib/workflow/adapter.ts`, `backend/src/lib/workflow/inngest-adapter.ts`, `backend/src/app/api/inngest/route.ts` (abstracted via adapter — swap to BullMQ/RabbitMQ later with one file change)
+- [x] T011 [P] Implement structured JSON parser with Zod validation — `backend/src/lib/ai/parsers.ts`
+- [x] T012 [P] Create centralized prompt registry stubs — `backend/src/lib/ai/prompts/questions.ts`, `assessment.ts`
+- [x] T013 Create typed error handling — `backend/src/lib/errors.ts`
+- [x] T013a [P] Add axios API client in `frontend/src/api/client.ts` using `import.meta.env.VITE_API_URL`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 

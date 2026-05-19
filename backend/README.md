@@ -2,7 +2,7 @@
 
 Next.js 15 API server for the reflection flow: sessions, AI orchestration (Gemini), and persistence (Supabase + Drizzle).
 
-**Status**: Not initialized yet — scaffold in Phase 2 (`tasks.md` T006a–T013).
+**Status**: Scaffolded (Phase 2 complete) — Next.js 15, Drizzle, Gemini, Inngest, Zod, typed errors. Full API routes in Phase 3.
 
 ## Responsibilities
 

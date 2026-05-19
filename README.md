@@ -21,8 +21,8 @@ Biassemble guides users through a reflective process: write a personal situation
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Vite + React 19, TypeScript 6, DaisyUI + Tailwind CSS v4 |
-| **Backend** | Next.js 15 (in `backend/`) — API routes, Inngest workflows |
-| **Validation** | Zod v4 |
+| **Backend** | Next.js 15 (in `backend/`) — API routes, Inngest workflows (abstracted for BullMQ/RabbitMQ swap) |
+| **Validation** | Zod v3 (backend) / Zod v4 (frontend) |
 | **Database** | Supabase PostgreSQL + Drizzle ORM |
 | **AI** | Google Gemini Flash 2.0 (free via Google AI Studio) |
 | **Deploy** | Vercel (frontend + backend) |
@@ -33,7 +33,7 @@ Biassemble guides users through a reflective process: write a personal situation
 ```
 biassemble/
 ├── frontend/               # Vite + React SPA — deployed (Phase 0)
-├── backend/                # Next.js API server — scaffold docs only; init in Phase 2
+├── backend/                # Next.js API server — scaffolded (Phase 2)
 ├── specs/                  # Spec-kit feature specifications
 │   └── 001-reflection-flow/
 └── AGENTS.md               # Engineering conventions
@@ -55,10 +55,10 @@ pnpm build      # production build
 | Area | Status |
 |------|--------|
 | Phase 0 landing (`frontend/`) | Deployed — story form + validation + stub submit |
-| Backend (`backend/`) | Not initialized — see `backend/README.md` and `tasks.md` Phase 2 |
-| P1 reflection flow (spec) | Not started — requires API + Gemini (server-side) |
+| Phase 2 backend scaffold (`backend/`) | Done — Next.js 15, Drizzle, Gemini, Inngest, Zod, typed errors |
+| P1 reflection flow (spec) | Not started — requires API routes (Phase 3) + Gemini calls |
 
-**Next (spec-kit)**: Phase 2 tasks T006a–T013a — scaffold `backend/`, then wire `POST /api/story`.
+**Next**: Phase 3 — DB tables (T022–T024), AI prompts (T025–T027), API routes (T031–T033), frontend wire (T035–T040).
 
 ## License
 

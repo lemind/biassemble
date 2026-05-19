@@ -195,7 +195,7 @@ export async function requestQuestionGeneration(sessionId: string) {
 | **T007** | Configure Drizzle ORM + Supabase | `backend/src/drizzle/config.ts`, `backend/src/drizzle/schema.ts` (start), `backend/drizzle.config.ts` | T006a |
 | **T008** | Zod validation schemas | `backend/src/lib/validation/story.ts`, `answer.ts`, `assessment.ts` | T006a |
 | **T009** | Gemini SDK setup | `backend/src/lib/ai/gemini.ts` | T006a, T008 |
-| **T010** | Workflow adapter + Inngest client | `backend/src/lib/workflow/adapter.ts`, `backend/src/lib/workflow/inngest-adapter.ts`, `backend/src/inngest/client.ts`, `backend/src/app/api/inngest/route.ts` | T006a |
+| **T010** | Workflow adapter + Inngest client | `backend/src/lib/workflow/adapter.ts`, `backend/src/lib/workflow/inngest-adapter.ts`, `backend/src/app/api/inngest/route.ts` | T006a |
 | **T011** | JSON parser + Zod validation | `backend/src/lib/ai/parsers.ts` | T008, T009 |
 | **T012** | Prompt registry stubs | `backend/src/lib/ai/prompts/questions.ts`, `assessment.ts` | T006a |
 | **T013** | Typed error handling | `backend/src/lib/errors.ts` | T006a |

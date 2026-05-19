@@ -16,7 +16,7 @@ Build the core conversational reflection flow: users write a story, receive AI-g
 
 **Frontend**: Vite + React 19, DaisyUI + Tailwind CSS v4, Zod (client validation), axios → `VITE_API_URL`
 
-**Backend**: Next.js 15 App Router (API routes only for MVP), Inngest (durable workflows), Supabase + Drizzle ORM, Zod, Google Generative AI SDK (Gemini Flash 2.0) — **API keys never exposed to the browser**
+**Backend**: Next.js 15 App Router (API routes only for MVP), workflow adapter (Inngest now → BullMQ/RabbitMQ later via abstracted interface), Supabase + Drizzle ORM, Zod, Google Generative AI SDK (Gemini Flash 2.0) — **API keys never exposed to the browser**
 
 **Storage**: Supabase PostgreSQL (sessions, stories, questions, answers, assessments)
 
@@ -133,7 +133,7 @@ backend/                           # Next.js 15 API server (Phase 2+)
 
 - Initialize Next.js 15 App Router in `backend/` (TypeScript strict, API routes)
 - Configure Drizzle ORM + Supabase PostgreSQL
-- Set up Inngest client and workflow infrastructure
+- Set up **workflow adapter** (abstracted interface — Inngest now, BullMQ/RabbitMQ later with zero service changes)
 - Shared Zod schemas in `backend/src/lib/validation/`
 - Google Generative AI SDK in `backend/src/lib/ai/gemini.ts` (server-only)
 

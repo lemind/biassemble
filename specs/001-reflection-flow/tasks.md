@@ -42,15 +42,16 @@
 
 ### Database (public backend)
 
-- [ ] T022 [P] [US1] Full Drizzle schema — `backend/src/drizzle/schema.ts`
+- [x] T022 [P] [US1] Full Drizzle schema — `backend/src/drizzle/schema.ts`
   - Tables: `sessions`, `stories`, `questions`, `answers`, `assessments`
   - `questions` table stores batch of 2–5 per session, indexed by position
-- [ ] T023 [P] [US1] Migrations
-- [ ] T024 [US1] `backend/src/lib/db/queries.ts` — typed query functions
+- [x] T023 [P] [US1] Migrations — generated via `drizzle-kit generate`
+- [x] T024 [US1] `backend/src/lib/db/queries.ts` — typed query functions
   - `createSession()`, `getSession()`, `updateSessionStatus()`
-  - `createStory()`, `createQuestions()`, `getNextQuestion()`, `createAnswer()`
+  - `createStory()`, `createQuestions(batch[])`, `getNextQuestion()`, `createAnswer()`
   - `createAssessment()`, `getAssessment()`
   - `isLastAnswer()` — checks if all questions answered
+  - `getSessionAnswers()` — all Q&A for assessment generation
 
 ### Services + API (public backend)
 

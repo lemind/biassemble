@@ -55,32 +55,32 @@
 
 ### Services + API (public backend)
 
-- [ ] T028 [US1] `session.service.ts` — create session, call AI **synchronously** for batch of 2–5 questions via `getAiClient().generateQuestion()`, persist all, return first question
-- [ ] T029 [US1] `question.service.ts` — serve next queued question from DB (no AI call); detect last answer → enqueue assessment
-- [ ] T030 [US1] `assessment.service.ts` — enqueue assessment job when all questions answered
-- [ ] T031 [US1] `POST /api/story`
+- [x] T028 [US1] `session.service.ts` — create session, call AI **synchronously** for batch of 2–5 questions via `getAiClient().generateQuestion()`, persist all, return first question
+- [x] T029 [US1] `question.service.ts` — serve next queued question from DB (no AI call); detect last answer → enqueue assessment
+- [x] T030 [US1] `assessment.service.ts` — enqueue assessment job when all questions answered
+- [x] T031 [US1] `POST /api/story`
   - Validate story (Zod: 50–3000 chars)
   - Create session + story in DB
   - Call `getAiClient().generateQuestion()` **synchronously** (inline — no Inngest)
   - AI returns batch of 2–5 questions + `isComplete`
   - Persist all questions; return `{ sessionId, firstQuestion }` in <5s
   - On AI failure: return error, session status = "error"
-- [ ] T031a [US1] `GET /api/session/[id]`
+- [x] T031a [US1] `GET /api/session/[id]`
   - Returns session status, current question index, total questions
   - Used by frontend for polling during assessment generation
-- [ ] T032 [US1] `POST /api/answers`
+- [x] T032 [US1] `POST /api/answers`
   - Validate answer (Zod, non-empty)
   - Persist answer
   - Return next queued question from DB (no AI call — all pre-generated)
   - If last answer: `workflow.enqueue("generate-assessment")`, return `{ assessmentPending: true }`
-- [ ] T033 [US1] `GET /api/result/[id]`
+- [x] T033 [US1] `GET /api/result/[id]`
   - Returns completed assessment (biases — arbitrary count — + reflectionPrompt)
   - 404 if not ready
 
 ### Jobs (wire to AI + DB)
 
-- [ ] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
-- [ ] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment (any number of biases), update session status
+- [x] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
+- [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment (any number of biases), update session status
 
 ---
 

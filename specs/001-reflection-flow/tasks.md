@@ -32,51 +32,31 @@
 
 ---
 
-## Phase 3a: Database layer 🔵
+## Phase 3: Product API + jobs (P1) 🎯
 
-**Goal**: Full Drizzle schema, migrations, typed queries. Blocks API routes.
+### Private AI Core (biassemble-core repo)
+
+- [ ] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
+- [ ] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
+- [ ] T026-core Retry/backoff (3× exponential) + structured JSON in Core
+
+### Database (public backend)
 
 - [ ] T022 [P] [US1] Full Drizzle schema — `backend/src/drizzle/schema.ts`
   - Tables: `sessions`, `stories`, `questions`, `answers`, `assessments`
   - `questions` table stores batch of 2–5 per session, indexed by position
-  - `assessments.biases` — JSON column (any number), matches contracts.ts
-- [ ] T023 [P] [US1] Migrations — generate + apply via `drizzle-kit`
+- [ ] T023 [P] [US1] Migrations
 - [ ] T024 [US1] `backend/src/lib/db/queries.ts` — typed query functions
   - `createSession()`, `getSession()`, `updateSessionStatus()`
-  - `createStory()`, `createQuestions(batch[])`, `getNextQuestion()`, `createAnswer()`
+  - `createStory()`, `createQuestions()`, `getNextQuestion()`, `createAnswer()`
   - `createAssessment()`, `getAssessment()`
-  - `isLastAnswer()` — checks if all questions in batch answered
-  - `getSessionAnswers()` — all Q&A for assessment generation
+  - `isLastAnswer()` — checks if all questions answered
 
-**Checkpoint**: DB ready — API routes can read/write.
-
----
-
-## Phase 3b: Private AI Core 🔒
-
-**Goal**: AI endpoints deployed. Can run in parallel with 3a.
-
-- [ ] T024-core [P] Implement `POST /v1/reflection/question` — returns batch of 2–5 questions + `isComplete`
-- [ ] T025-core [P] Implement `POST /v1/reflection/assessment` — returns biases (≥1, any count) + `reflectionPrompt`
-- [ ] T026-core Prompt registry + Gemini (or provider) — **private repo only**
-- [ ] T027-core Retry/backoff (3× exponential) + structured JSON validation in Core
-
-**Checkpoint**: Core deployed — public backend can switch from `dev-mock` to `core`.
-
----
-
-## Phase 3c: API + services + jobs 🟢
-
-**Goal**: All public API routes wired. Depends on 3a (DB) — 3b not required if using `dev-mock`.
-
-### Services (public backend)
+### Services + API (public backend)
 
 - [ ] T028 [US1] `session.service.ts` — create session, call AI **synchronously** for batch of 2–5 questions via `getAiClient().generateQuestion()`, persist all, return first question
 - [ ] T029 [US1] `question.service.ts` — serve next queued question from DB (no AI call); detect last answer → enqueue assessment
 - [ ] T030 [US1] `assessment.service.ts` — enqueue assessment job when all questions answered
-
-### API Routes (public backend)
-
 - [ ] T031 [US1] `POST /api/story`
   - Validate story (Zod: 50–3000 chars)
   - Create session + story in DB
@@ -100,8 +80,6 @@
 
 - [ ] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
 - [ ] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment (any number of biases), update session status
-
-**Checkpoint**: Backend complete — POST /api/story returns first question inline, POST /api/answers serves next from DB, GET /api/result/[id] returns assessment.
 
 ---
 
@@ -139,19 +117,10 @@
 
 ## Dependencies
 
-```
-Phase 3a (DB) ───────┐
-                      ├── Phase 3c (API + jobs) ──┬── Phase 4 (Frontend)
-Phase 3b (Core) ──────┘                          │
-  (private, parallel)                             │
-                                                  │
-                                           Phase 5 (Tests)
-```
-
 1. Phase 2 ✅
-2. Phase 3a (T022–T024) parallel Phase 3b (T024-core–T027-core)
-3. Phase 3c starts when 3a is ready (dev-mock unblocks 3c without 3b)
-4. Phase 4 depends on Phase 3c
-5. Phase 5 depends on Phase 3c + Phase 4
+2. Phase 3: T022–T024 (DB) parallel T024-core (private Core)
+3. T031 (POST /api/story sync) + T039 (frontend wire) = first vertical slice for spec acceptance #1
+4. Phase 4 depends on Phase 3 API routes
+5. Phase 5 depends on Phase 3 + Phase 4 implementation
 
 **Note**: `AI_CLIENT_MODE=dev-mock` unblocks public-repo E2E until Core is deployed.

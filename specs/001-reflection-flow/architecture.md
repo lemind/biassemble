@@ -15,12 +15,12 @@ Flow (private SDD §7): `Public App → Public API → Private AI Core → LLM A
 
 | Layer | Path | Notes |
 |-------|------|--------|
-| HTTP API | `app/api/*` | Thin routes (Phase 3) |
+| HTTP API | `app/api/*` | Thin routes |
 | Services | `services/*` | Orchestration; call `workflow.enqueue` + DB |
 | Jobs | `lib/jobs/runJob()` | **All async business steps** — queue-agnostic |
 | Workflow | `lib/workflow/` | **Inngest only today** — thin enqueue + `inngest-functions` → `runJob` |
 | AI | `lib/ai/` | HTTP to Core or `dev-mock`; no prompts here |
-| DB | `drizzle/` | Sessions, stories, Q&A, assessments (Phase 3) |
+| DB | `drizzle/` | 2 tables: `sessions` + `session_data` |
 
 ## Queue portability (Inngest only for now)
 
@@ -40,20 +40,20 @@ Inngest → inngest-functions.ts → runJob(type, payload)
 - Private: prompts, models — see workspace `biassemble-core/API.md`
 - Never commit prompts or `GOOGLE_*` / provider keys in the public repo
 
-## Batch question flow (all questions at once)
+## Batch question flow — all questions returned at once
 
 ```text
 POST /api/story → sync AI call → AI returns 2–5 questions as array
        ↓
-  persist all questions, return { sessionId, firstQuestion }
+  persist all questions, return { sessionId, questions[] }
        ↓
-  (frontend shows questions one at a time)
+  frontend renders all questions at once
        ↓
-POST /api/answers → persist → return next question from DB (no AI call)
+POST /api/answers → persist answer → return { done, total }
        ↓
-  ...repeat until last answer...
+  ...repeat for each answer...
        ↓
-POST /api/answers (last) → workflow.enqueue("generate-assessment")
+POST /api/answers (last) → workflow.enqueue("generate-assessment") → return { assessmentPending: true }
        ↓
 GET /api/session/[id] (poll for assessment completion)
        ↓
@@ -64,8 +64,8 @@ Session states: `created` → `questioning` → `assessing` → `completed` | `e
 
 ### Key points
 
-- Questions are generated **synchronously** on story submit (satisfies FR-006 5s spec)
-- 2–5 questions, AI decides count (`QUESTIONS_MIN`/`QUESTIONS_MAX` in constants.ts)
+- `POST /api/story` returns all 2–5 questions in one response (satisfies FR-006 5s spec)
+- `POST /api/answers` only tracks progress — no question payload needed
 - `questionOutputSchema.questions` is array of 2–5 strings
 - Only `generate-assessment` runs asynchronously via Inngest
 
@@ -81,19 +81,10 @@ Session states: `created` → `questioning` → `assessing` → `completed` | `e
 |-------|------|-----------------|
 | AI response shape | `lib/ai/contracts.ts` | `biasItemSchema`, `questionOutputSchema` (batch array), `assessmentOutputSchema` |
 | DB + API record | `lib/validation/assessment.ts` | `assessmentRecordSchema` (adds `sessionId`, imports `biasItemSchema`) |
-| DB tables | `drizzle/schema.ts` | Columns match contracts |
+| DB tables | `drizzle/schema.ts` | `sessions` + `session_data` (matches contracts) |
 | API input | `lib/validation/story.ts`, `answer.ts` | Zod schemas for request bodies |
 
 Flow: Core output → validate with `contracts.ts` → map to DB record (add `sessionId`) → persist → serve via API
-
-## Phase mapping
-
-| Phase | Work |
-|-------|------|
-| 1 ✅ | Vite landing page |
-| 2 ✅ | Scaffold, `lib/jobs`, Inngest transport, AI client boundary, constants |
-| 3 | DB, API routes, jobs call `getAiClient()` + persist |
-| Core (private) | `POST /v1/reflection/question`, `POST /v1/reflection/assessment` |
 
 ## Retry & error handling
 

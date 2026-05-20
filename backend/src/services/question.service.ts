@@ -21,13 +21,10 @@ export async function handleAnswer(sessionId: string, answerText: string) {
     // Trigger async assessment
     await updateSessionStatus(sessionId, "assessing");
     await workflow.enqueue("generate-assessment", { sessionId });
-    return { assessmentPending: true };
+    return { done: true, total: data.questions.length, assessmentPending: true };
   }
 
-  // Return next unanswered question
-  const nextIndex = newAnswers.length;
   return {
-    nextQuestion: data.questions[nextIndex],
     done: newAnswers.length,
     total: data.questions.length,
   };

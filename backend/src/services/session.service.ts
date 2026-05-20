@@ -19,15 +19,15 @@ export async function handleCreateSession(storyText: string) {
     story: storyText,
   });
 
-  // Persist story + questions in session_data
+  // Persist story + all questions in session_data
   await createSessionData(session.id, storyText, aiResult.questions);
 
   // Mark session as questioning
   await updateSessionStatus(session.id, "questioning");
 
+  // Return all questions at once — frontend renders them all
   return {
     sessionId: session.id,
-    firstQuestion: aiResult.questions[0],
-    questionCount: aiResult.questions.length,
+    questions: aiResult.questions,
   };
 }

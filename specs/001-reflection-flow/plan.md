@@ -12,7 +12,7 @@ Build the core conversational reflection flow: users write a story, receive ALL 
 
 **Queues**: Job logic in `lib/jobs/`; **Inngest** for transport today (swap-friendly via `WorkflowAdapter` + `runJob()`).
 
-**Delivery**: Phase 1 = Vite landing (done). Phase 2 = backend foundation (done). Phase 3 = DB + API + jobs. Phase 4 = Frontend. Phase 5 = Testing & polish.
+**Delivery**: Phase 1 = Vite landing (done). Phase 2 = backend foundation (done). Phase 3 = DB + API + jobs (done). Phase 4 = Frontend. Phase 5 = Core + tests. Phase 6 = Polish.
 
 ## Technical Context
 
@@ -30,15 +30,15 @@ Build the core conversational reflection flow: users write a story, receive ALL 
 
 ## Design Decisions
 
-### Questions: batch generation (all at once, sync)
+### Questions: batch generation, all returned at once
 
 - `POST /api/story` calls `getAiClient().generateQuestion()` **synchronously** (inline, not via Inngest)
 - AI returns 2–5 questions as an array + `isComplete` flag
-- All questions are persisted at once. Frontend shows them one at a time.
-- `POST /api/answers` returns next question from DB (no AI call per answer)
-- After last answer is submitted: `workflow.enqueue("generate-assessment")`
+- All questions are persisted in `session_data.questions` AND returned in the API response
+- Frontend receives all questions immediately — no sequential fetching
+- `POST /api/answers` tracks progress only, returns `{ done, total }`
+- After last answer: `workflow.enqueue("generate-assessment")`
 - Bounds in `lib/constants.ts`: `QUESTIONS_MIN=2`, `QUESTIONS_MAX=5`
-- Contract in `lib/ai/contracts.ts`: `questionOutputSchema.questions` is array 2–5 items
 
 ### Biases: AI decides count (no fixed limit)
 
@@ -52,7 +52,7 @@ Build the core conversational reflection flow: users write a story, receive ALL 
 |-------|------|------|
 | AI Core contract | `lib/ai/contracts.ts` | Output shapes (biasItemSchema, questionOutputSchema, assessmentOutputSchema) |
 | DB/API validation | `lib/validation/assessment.ts` | Extends contracts with sessionId; imports biasItemSchema |
-| DB tables | `drizzle/schema.ts` | Columns matching contracts |
+| DB tables | `drizzle/schema.ts` | `sessions` + `session_data` (jsonb for questions/answers/biases) |
 
 ## Constitution Check
 
@@ -110,30 +110,29 @@ Deployed Vite app with `StoryForm` validation and stub submit.
 - Frontend axios client
 - `lib/constants.ts` (QUESTIONS_MIN=2, QUESTIONS_MAX=5, retry config)
 
-### Phase 3: Product API + jobs
+### Phase 3: Product API + jobs ✅
 
-- Full Drizzle schema, migrations, `lib/db/queries.ts`
-- `POST /api/story` — validates input, creates session, calls AI **synchronously** for batch of 2–5 questions, persists all, returns `{ sessionId, firstQuestion }` in <5s
-- `POST /api/answers` — validates and persists answer, returns next queued question from DB; after last answer enqueues assessment
-- `GET /api/session/[id]` — session state for polling during assessment
-- `GET /api/result/[id]` — completed assessment
-- Services + jobs call `getAiClient()` + DB; dev-mock unblocks E2E
-- Implement AI Core endpoints in private repo (or dev-mock until ready)
+- Full Drizzle schema (2 tables: `sessions` + `session_data`), migrations, `lib/db/queries.ts`
+- Services: `session.service.ts`, `question.service.ts`, `assessment.service.ts`
+- API routes: `POST /api/story`, `POST /api/answers`, `GET /api/session/[id]`, `GET /api/result/[id]`
+- Jobs: `runGenerateQuestions`, `runGenerateAssessment` wired to services
+- `AI_CLIENT_MODE=dev-mock` used throughout
 
 ### Phase 4: Frontend flow
 
-- Wire landing → API: receives batch, displays questions one at a time
-- Q&A page: submit answer → get next question (no AI wait)
-- After last answer → polling until assessment ready
+- Wire landing → API: receives all questions, renders them
+- Q&A page: submit answer → track progress; after last → poll until assessment ready
 - Results page: dynamic bias list (any count)
 - Session/results pages
+- Error states
 
-### Phase 5: Testing & polish
+### Phase 5: Private AI Core + Essential tests
 
-- Unit/integration/e2e; retries (FR-007: 3× exponential backoff)
-- Edge cases: content filter, blank-answer cap
+- Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` in biassemble-core
+- Unit tests (services, validators)
+- E2E test: landing → story → Q&A → results
 
-### Phase 6 (future): US2, US3, advanced
+### Phase 6 (future): Polish + deferred tests + US2, US3
 
 ## Phase mapping (plan.md ↔ tasks.md)
 
@@ -141,10 +140,10 @@ Deployed Vite app with `StoryForm` validation and stub submit.
 |-------|---------|----------|
 | Phase 1 ✅ | Landing page | Setup — Frontend ✅ |
 | Phase 2 ✅ | Backend foundation | Foundational (Blocking) ✅ |
-| Phase 3 | Product API + jobs | Product API + jobs (P1) |
+| Phase 3 ✅ | Product API + jobs | Product API + jobs ✅ |
 | Phase 4 | Frontend flow | Frontend flow |
-| Phase 5 | Testing & polish | Testing & polish |
-| Phase 6 (future) | US2, US3, advanced | US2, US3, Advanced (Future) |
+| Phase 5 | Core + tests | Private AI Core + Essential tests |
+| Phase 6 | Polish | Polish + Deferred tests + US2 + US3 |
 
 ## Complexity Tracking
 

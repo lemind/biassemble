@@ -1,11 +1,4 @@
-import {
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // ── Sessions ──
 export const sessions = pgTable("sessions", {
@@ -15,65 +8,40 @@ export const sessions = pgTable("sessions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ── Stories ──
-export const stories = pgTable("stories", {
-  id: uuid("id").defaultRandom().primaryKey(),
+// ── Session Data ──
+// One row per session. Story, Q&A batch, and assessment all live here.
+export const sessionData = pgTable("session_data", {
   sessionId: uuid("session_id")
     .notNull()
+    .primaryKey()
     .references(() => sessions.id, { onDelete: "cascade" }),
-  text: text("text").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
-// ── Questions ──
-// Stores batch of 2–5 questions per session, indexed by position.
-export const questions = pgTable("questions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sessionId: uuid("session_id")
-    .notNull()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-  questionText: text("question_text").notNull(),
-  position: integer("position").notNull().default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+  // User story text
+  story: text("story").notNull(),
 
-// ── Answers ──
-export const answers = pgTable("answers", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sessionId: uuid("session_id")
-    .notNull()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-  questionId: uuid("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  text: text("text").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+  // Batch of 2–5 AI-generated questions (array of strings)
+  questions: jsonb("questions").$type<string[]>().notNull(),
 
-// ── Assessments ──
-// biases is JSON array of biasItemSchema objects (any count, ≥1).
-export const assessments = pgTable("assessments", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sessionId: uuid("session_id")
-    .notNull()
-    .references(() => sessions.id, { onDelete: "cascade" }),
-  biases: jsonb("biases").notNull(),
-  reflectionPrompt: text("reflection_prompt").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  // User answers, same order as questions (appended one at a time)
+  answers: jsonb("answers").$type<string[]>().notNull().default([]),
+
+  // Assessment — populated asynchronously
+  biases: jsonb("biases")
+    .$type<
+      {
+        name: string;
+        explanation: string;
+        storyConnection: string;
+        alternativePerspective: string;
+      }[]
+    >(),
+
+  reflectionPrompt: text("reflection_prompt"),
 });
 
 // ── Type exports ──
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 
-export type Story = typeof stories.$inferSelect;
-export type NewStory = typeof stories.$inferInsert;
-
-export type Question = typeof questions.$inferSelect;
-export type NewQuestion = typeof questions.$inferInsert;
-
-export type Answer = typeof answers.$inferSelect;
-export type NewAnswer = typeof answers.$inferInsert;
-
-export type Assessment = typeof assessments.$inferSelect;
-export type NewAssessment = typeof assessments.$inferInsert;
+export type SessionData = typeof sessionData.$inferSelect;
+export type NewSessionData = typeof sessionData.$inferInsert;

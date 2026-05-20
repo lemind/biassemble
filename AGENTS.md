@@ -31,20 +31,20 @@
 - Commit atomically: one logical change per commit.
 - Write descriptive messages: `feat: add retry logic to syncQueue`
 - Never force-push or rewrite history without explicit approval.
+- **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 
 ## Architecture
 
 - API routes must stay thin.
 - Business logic belongs in `services/`.
-- Database access belongs in `repositories/`.
 - Never place prompts inside route handlers.
 - Avoid framework lock-in where practical.
+- Do not add product-specific architecture, paths, or constraints here — those belong in `specs/<feature>/plan.md` and `architecture.md`.
 
 ## AI Rules
 
 - Use structured JSON outputs only.
 - Validate all AI outputs through Zod.
-- Retry transient provider failures once.
 - Prefer cheaper models first.
 - Keep prompts centralized and versionable.
 
@@ -104,6 +104,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - Modifying configs, CI/CD, or deployment scripts
 - Adding/removing dependencies or changing versions
 - Altering public APIs, DB schemas, or auth flows
+- Committing code — show summary of changes first, ask user to review before running `git commit`
 
 ## Forbidden
 

@@ -1,4 +1,4 @@
-import { getAiClient } from "@/lib/ai";
+import { handleAssessmentGeneration } from "@/services/assessment.service";
 import type { GenerateAssessmentPayload } from "./types";
 
 /**
@@ -9,12 +9,5 @@ export async function runGenerateAssessment(
   payload: GenerateAssessmentPayload
 ): Promise<void> {
   const { sessionId } = payload;
-  const ai = getAiClient();
-
-  // Phase 3: load story + Q&A from DB, then call AI Core
-  // const result = await ai.generateAssessment({ sessionId, story, questions, answers });
-
-  console.log(
-    `[job:generate-assessment] session=${sessionId} aiClient=${ai.mode}`
-  );
+  await handleAssessmentGeneration(sessionId);
 }

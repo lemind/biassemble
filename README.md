@@ -32,7 +32,7 @@ Biassemble guides users through a reflective process: write a personal situation
 
 ```
 biassemble/
-├── frontend/               # Vite + React SPA — deployed (Phase 0)
+├── frontend/               # Vite + React SPA — deployed (Phase 1)
 ├── backend/                # Next.js API server — scaffolded (Phase 2)
 ├── specs/001-reflection-flow/
 │   └── architecture.md     # public backend vs private AI Core
@@ -54,7 +54,7 @@ pnpm build      # production build
 
 | Area | Status |
 |------|--------|
-| Phase 0 landing (`frontend/`) | Deployed — story form + validation + stub submit |
+| Phase 1 landing (`frontend/`) | Deployed — story form + validation + stub submit |
 | Phase 2 backend (`backend/`) | Done — jobs, workflow adapter, AI Core HTTP client (no prompts in public repo) |
 | Private AI Core | Implement `biassemble-core/API.md` |
 | P1 reflection flow | Phase 3 — DB, API routes, wire jobs + frontend |

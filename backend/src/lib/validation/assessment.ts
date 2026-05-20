@@ -1,16 +1,17 @@
 import { z } from "zod";
+import { biasItemSchema } from "@/lib/ai/contracts";
 
-export const assessmentSchema = z.object({
+/**
+ * DB/API shape for a persisted assessment.
+ * Bias fields validated via contracts.ts (single source of truth).
+ * At least 1 bias, no upper limit — AI decides.
+ */
+export const assessmentRecordSchema = z.object({
   sessionId: z.string().uuid(),
-  biases: z.array(
-    z.object({
-      name: z.string().min(1),
-      explanation: z.string().min(10),
-      storyConnection: z.string().min(10),
-      alternativePerspective: z.string().min(10),
-    })
-  ).length(2, "Assessment must contain exactly 2 biases"),
+  biases: z.array(biasItemSchema).min(1),
   reflectionPrompt: z.string().min(10),
 });
 
-export type AssessmentOutput = z.infer<typeof assessmentSchema>;
+export type AssessmentRecord = z.infer<typeof assessmentRecordSchema>;
+
+export { biasItemSchema };

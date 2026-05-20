@@ -101,6 +101,6 @@ A user is interrupted during reflection and wants to resume their session later.
 - Users have stable internet connectivity and a modern browser
 - Users write in a language supported by AI providers (English primary for MVP)
 - Anonymous sessions do not require long-term data retention compliance
-- Gemini Flash 2.0 free tier (60 req/min, 1500 req/day) is sufficient for MVP traffic
+- AI provider free tiers are sufficient for MVP traffic. Provider choice and rate limits are defined in biassemble-core (private repo).
 - The bias taxonomy will be iteratively refined based on output quality
 - Mobile responsiveness is in scope but native mobile apps are not

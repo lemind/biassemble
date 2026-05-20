@@ -28,30 +28,21 @@
 - [x] T010b [P] Refactor: `lib/jobs/runJob()` + thin Inngest transport (`WorkflowAdapter` for future swap)
 - [x] T013b [P] `lib/constants.ts` — QUESTIONS_MIN=2, QUESTIONS_MAX=5, MAX_BLANK_ANSWERS=2, AI_MAX_RETRIES=3
 
-**Checkpoint**: Foundation ready — Phase 3 can add DB tables, API routes, Core integration.
+**Checkpoint**: Foundation ready.
 
 ---
 
-## Phase 3: Product API + jobs (P1) 🎯
-
-### Private AI Core (biassemble-core repo)
-
-- [ ] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
-- [ ] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
-- [ ] T026-core Retry/backoff (3× exponential) + structured JSON in Core
+## Phase 3: Product API + jobs (P1) 🎯 ✅
 
 ### Database (public backend)
 
 - [x] T022 [P] [US1] Full Drizzle schema — `backend/src/drizzle/schema.ts`
-  - Tables: `sessions`, `stories`, `questions`, `answers`, `assessments`
-  - `questions` table stores batch of 2–5 per session, indexed by position
+  - Tables: `sessions`, `session_data`
+  - `session_data` stores story, questions (jsonb array), answers (jsonb array), biases (jsonb), reflectionPrompt
 - [x] T023 [P] [US1] Migrations — generated via `drizzle-kit generate`
 - [x] T024 [US1] `backend/src/lib/db/queries.ts` — typed query functions
   - `createSession()`, `getSession()`, `updateSessionStatus()`
-  - `createStory()`, `createQuestions(batch[])`, `getNextQuestion()`, `createAnswer()`
-  - `createAssessment()`, `getAssessment()`
-  - `isLastAnswer()` — checks if all questions answered
-  - `getSessionAnswers()` — all Q&A for assessment generation
+  - `createSessionData()`, `getSessionData()`, `submitAnswer()`, `saveAssessment()`
 
 ### Services + API (public backend)
 
@@ -59,28 +50,16 @@
 - [x] T029 [US1] `question.service.ts` — serve next queued question from DB (no AI call); detect last answer → enqueue assessment
 - [x] T030 [US1] `assessment.service.ts` — enqueue assessment job when all questions answered
 - [x] T031 [US1] `POST /api/story`
-  - Validate story (Zod: 50–3000 chars)
-  - Create session + story in DB
-  - Call `getAiClient().generateQuestion()` **synchronously** (inline — no Inngest)
-  - AI returns batch of 2–5 questions + `isComplete`
-  - Persist all questions; return `{ sessionId, firstQuestion }` in <5s
-  - On AI failure: return error, session status = "error"
 - [x] T031a [US1] `GET /api/session/[id]`
-  - Returns session status, current question index, total questions
-  - Used by frontend for polling during assessment generation
 - [x] T032 [US1] `POST /api/answers`
-  - Validate answer (Zod, non-empty)
-  - Persist answer
-  - Return next queued question from DB (no AI call — all pre-generated)
-  - If last answer: `workflow.enqueue("generate-assessment")`, return `{ assessmentPending: true }`
 - [x] T033 [US1] `GET /api/result/[id]`
-  - Returns completed assessment (biases — arbitrary count — + reflectionPrompt)
-  - 404 if not ready
 
 ### Jobs (wire to AI + DB)
 
 - [x] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
-- [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment (any number of biases), update session status
+- [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment, update session status
+
+**Checkpoint**: Backend complete — Phase 3 100% done. Dev-mock unblocks remaining phases.
 
 ---
 
@@ -89,25 +68,33 @@
 - [ ] T035 [US1] `StoryForm` — wire `submitStory()` → `POST /api/story` → receive `{ sessionId, firstQuestion }` → transition to Q&A
 - [ ] T036 [US1] Q&A page — display question, text input for answer, submit → `POST /api/answers` → receive next question; repeat until `assessmentPending`
 - [ ] T037 [US1] Polling hook — poll `GET /api/session/[id]` every 2s while assessment generates; show loading until ready
-- [ ] T038 [US1] Assessment results page — display biases (dynamic count, not fixed 2), explanations, story connections, alternative perspectives, reflection prompt
+- [ ] T038 [US1] Assessment results page — display biases (dynamic count), explanations, story connections, alternative perspectives, reflection prompt
 - [ ] T039 [US1] Router/navigation — landing → Q&A → results flow
 - [ ] T040 [US1] Error states — AI failure, network error, timeout; friendly messages per spec edge cases
 
 ---
 
-## Phase 5: Testing & polish 🧪
+## Phase 5: Private AI Core + Essential tests
+
+### Private AI Core (biassemble-core repo) — deferred from Phase 3
+
+- [ ] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
+- [ ] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
+- [ ] T026-core Retry/backoff (3× exponential) + structured JSON in Core
+
+### Essential tests
 
 - [ ] T014 [US1] Unit tests — services, validators, parsers
-- [ ] T015 [US1] Integration tests — API routes + DB (test DB)
 - [ ] T016 [US1] E2E tests — Playwright: landing → story → Q&A → results
-- [ ] T017 [US1] Job unit tests — `runGenerateAssessment` with dev-mock
-- [ ] T018 [US1] Retry tests — verify 3× backoff (FR-007)
-- [ ] T044 Edge cases — content filter stub, blank-answer cap (MAX_BLANK_ANSWERS=2)
 
 ---
 
-## Phase 6: US2, US3, Advanced (Future)
+## Phase 6: Polish + Deferred tests + US2 + US3 (Future)
 
+- [ ] T015 [US1] Integration tests — API routes + DB (test DB)
+- [ ] T017 [US1] Job unit tests — `runGenerateAssessment` with dev-mock
+- [ ] T018 [US1] Retry tests — verify 3× backoff (FR-007)
+- [ ] T044 Edge cases — content filter stub, blank-answer cap (MAX_BLANK_ANSWERS=2)
 - [ ] T050 [US2] Expandable bias detail UI (accordion, shareability)
 - [ ] T051 [US2] Session history listing
 - [ ] T060 [US3] Session continuity — persist mid-flow, restore from last unanswered question
@@ -119,9 +106,10 @@
 ## Dependencies
 
 1. Phase 2 ✅
-2. Phase 3: T022–T024 (DB) parallel T024-core (private Core)
-3. T031 (POST /api/story sync) + T039 (frontend wire) = first vertical slice for spec acceptance #1
-4. Phase 4 depends on Phase 3 API routes
-5. Phase 5 depends on Phase 3 + Phase 4 implementation
+2. Phase 3 ✅ — DB + API + jobs complete
+3. Phase 4 depends on Phase 3 API routes
+4. Phase 5 (Private AI Core) can run in parallel with Phase 4
+5. Phase 5 (tests) depends on Phase 3 + Phase 4
+6. Phase 6 — deferred polish
 
 **Note**: `AI_CLIENT_MODE=dev-mock` unblocks public-repo E2E until Core is deployed.

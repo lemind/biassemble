@@ -17,8 +17,8 @@ Phase 1 gave us a **deployed frontend** — a Vite SPA with a story form that `c
 ### 1. Inngest — Durable Async Workflow Engine (via Adapter)
 
 **Role**: Queues and orchestrates AI generation **after** the API responds.  
-- `POST /api/story` saves the story and **immediately** enqueues a job to generate questions. The API responds in <10ms (just DB write + enqueue), and the workflow engine processes the AI call asynchronously.
-- Retry logic (3×, exponential backoff) is built into the workflow engine — no manual retry code needed.
+- `POST /api/story` generates a batch of 2–5 questions **synchronously** (inline AI call), then returns the first question in <5s. Assessment generation is enqueued asynchronously after the last answer.
+- Retry logic (3×, exponential backoff) is configured in `lib/constants.ts`.
 
 **Why Inngest for MVP, why not BullMQ/RabbitMQ now?**  
 - Inngest is zero-infra — just npm + one API route. No Redis server to run, no Docker, no queue setup.
@@ -33,7 +33,7 @@ Phase 1 gave us a **deployed frontend** — a Vite SPA with a story form that `c
 | Limit | Value | Enough for MVP? |
 |-------|-------|-----------------|
 | Function runs | 5,000/month | ✅ Yes (MVP = ~3k sessions/month max) |
-| Duration per run | 30 min | ✅ Yes (Gemini calls < 10s) |
+| Duration per run | 30 min | ✅ Yes (AI calls < 10s) |
 | Concurrency | 10 concurrent | ✅ Yes |
 | Team members | Unlimited | ✅ Yes |
 | Support | Community | ⚠️ Fine for MVP |
@@ -118,10 +118,8 @@ export interface WorkflowAdapter {
 import { workflow } from "@/lib/workflow/adapter"
 
 export async function requestQuestionGeneration(sessionId: string) {
-  // ... business logic (call Gemini, parse JSON, store in DB) ...
-  
-  // Enqueue via the abstracted adapter
-  await workflow.enqueue("generate-questions", { sessionId })
+  // Questions are generated synchronously on POST /api/story (not enqueued).
+  // This function is preserved for future multi-round flows.
 }
 ```
 
@@ -143,14 +141,15 @@ export async function requestQuestionGeneration(sessionId: string) {
 ┌──────────────┐     POST /api/story     ┌──────────────────────────────────┐
 │              │ ───────────────────────→ │                                  │
 │   Browser    │                          │        Next.js API Route         │
-│  (Vite SPA)  │ ←──── JSON response ─── │  (backend/src/app/api/story/)    │
+│  (Vite SPA)  │ ←── {sessionId, firstQuestion} ─── │  (backend/src/app/api/story/)    │
 │              │                          │                                  │
 └──────────────┘                          └──────────┬───────────────────────┘
                                                       │
                                                       │ 1. Validate with Zod
                                                       │ 2. Insert into DB via Drizzle
-                                                      │ 3. workflow.enqueue() [via adapter]
-                                                      │ 4. Return sessionId + status
+                                                      │ 3. Call AI synchronously — batch 2–5 questions
+                                                      │ 4. Persist all questions
+                                                      │ 5. Return sessionId + firstQuestion
                                                       │
                                                       ▼
                               ┌──────────────────────────────────────────┐
@@ -162,28 +161,19 @@ export async function requestQuestionGeneration(sessionId: string) {
                                                       ▲
                                                       │
                               ┌───────────────────────┴───────────────────────┐
-                              │        Workflow Adapter (abstracted)         │
-                              │  backend/src/lib/workflow/adapter.ts         │
+                              │   Only generate-assessment runs async      │
+                              │   (questions are pre-generated on submit)  │
                               │                                               │
-                              │  ┌──────────────┐   ┌──────────────────┐    │
-                              │  │ InngestAdapter│   │ BullMQAdapter    │    │
-                              │  │ (NOW — MVP)   │   │ (FUTURE — Redis) │    │
-                              │  └──────┬───────┘   └──────────────────┘    │
-                              │         │                                    │
-                              │         ▼                                    │
                               │  ┌──────────────────────────────────┐       │
                               │  │  Workflow functions:             │       │
-                              │  │  1. generate-questions.ts        │       │
-                              │  │     └→ Gemini Flash 2.0          │       │
-                              │  │     └→ Zod parse → store in DB   │       │
-                              │  │  2. generate-assessment.ts       │       │
-                              │  │     └→ Gemini Flash 2.0          │       │
+                              │  │  1. generate-assessment.ts      │       │
+                              │  │     └→ AI Core or dev-mock      │       │
                               │  │     └→ Zod parse → store in DB   │       │
                               │  └──────────────────────────────────┘       │
                               └─────────────────────────────────────────────┘
 ```
 
-**Key insight**: The API responds fast (< 10ms for DB write) and returns immediately. The workflow engine processes AI calls asynchronously. The frontend polls or uses a loading state to show "Generating questions..." while the workflow runs. Whether it's Inngest or BullMQ under the hood, the API route never changes.
+**Key insight**: Questions are generated synchronously on POST /api/story (satisfies 5s spec). Subsequent answers simply read from DB — no AI call per answer. Only assessment generation is async via Inngest. Whether it's Inngest or BullMQ under the hood, the API route never changes.
 
 ---
 
@@ -194,12 +184,13 @@ export async function requestQuestionGeneration(sessionId: string) {
 | **T006a** | Init Next.js 15 App Router | `backend/` — `next.config.ts`, `tsconfig.json`, `package.json`, `src/app/layout.tsx`, `src/app/api/route.ts`, `.env.example` | — |
 | **T007** | Configure Drizzle ORM + Supabase | `backend/src/drizzle/config.ts`, `backend/src/drizzle/schema.ts` (start), `backend/drizzle.config.ts` | T006a |
 | **T008** | Zod validation schemas | `backend/src/lib/validation/story.ts`, `answer.ts`, `assessment.ts` | T006a |
-| **T009** | Gemini SDK setup | `backend/src/lib/ai/gemini.ts` | T006a, T008 |
-| **T010** | Workflow adapter + Inngest client | `backend/src/lib/workflow/adapter.ts`, `backend/src/lib/workflow/inngest-adapter.ts`, `backend/src/app/api/inngest/route.ts` | T006a |
+| **T009** | AI client boundary | `backend/src/lib/ai/core-client.ts`, `dev-mock-client.ts` | T006a, T008 |
+| **T010** | Workflow adapter + Inngest client | `backend/src/lib/workflow/adapter.ts`, `inngest-adapter.ts`, `app/api/inngest/route.ts` | T006a |
 | **T011** | JSON parser + Zod validation | `backend/src/lib/ai/parsers.ts` | T008, T009 |
-| **T012** | Prompt registry stubs | `backend/src/lib/ai/prompts/questions.ts`, `assessment.ts` | T006a |
+| **T012** | AI contracts | `backend/src/lib/ai/contracts.ts` (DTOs only; prompts in private Core) | T006a |
 | **T013** | Typed error handling | `backend/src/lib/errors.ts` | T006a |
 | **T013a** | Frontend axios client | `frontend/src/api/client.ts` | — (parallel) |
+| **T013b** | Constants | `backend/src/lib/constants.ts` — QUESTIONS_MIN/MAX, retry config | T006a |
 
 **[P]** = Can run in parallel with other [P] tasks (different files, no code dependencies).
 
@@ -212,15 +203,16 @@ T006a (Next.js init) ───────────────────�
    │                                                                     │
    ├── T007 (Drizzle config) ──────────────────────────────────────────┐ │
    ├── T008 (Zod schemas) ───────────────────────────────────────────┐ │ │
-   ├── T009 (Gemini SDK) ──── depends on T008 (schema types)       ─┐│ │ │
+   ├── T009 (AI client boundary) ──────────────────────────────────┐ │ │ │
    ├── T010 (Workflow adapter + Inngest) ──────────────────────────┐ ││ │ │
    ├── T011 (JSON parser) ──── depends on T008 + T009             ─┤ ││ │ │
-   ├── T012 (Prompt stubs) ───────────────────────────────────────┤ ││ │ │
+   ├── T012 (AI contracts) ───────────────────────────────────────┤ ││ │ │
    ├── T013 (Error handling) ─────────────────────────────────────┤ ││ │ │
-   └── T013a (Frontend axios) ── (parallel, no backend dep)       ┤ ││ │ │
+   ├── T013a (Frontend axios) ── (parallel, no backend dep)       ┤ ││ │ │
+   └── T013b (Constants) ─────────────────────────────────────────┤ ││ │ │
                                                                   │ ││ │ │
                                                                   ▼ ▼▼ ▼ ▼
-                                          Phase 3+ next (US1 DB tables, workflows, API)
+                                          Phase 3 (US1 DB, API, frontend, tests)
 ```
 
 **Actual recommended order**:
@@ -228,6 +220,7 @@ T006a (Next.js init) ───────────────────�
 2. T007 + T008 + T012 + T013a (can all be done in parallel)
 3. T009 + T010 + T013 (once T006a is ready)
 4. T011 (once T008 + T009 are ready)
+5. T013b (constants — needed by contracts, can go early)
 
 ---
 
@@ -255,10 +248,11 @@ After Phase 2:
 - `backend/` is a runnable Next.js 15 project
 - Drizzle schema exists (even if empty tables aren't populated yet)
 - Zod schemas validate all inputs at the boundary
-- Gemini can be called from server code
+- AI client is ready (core-client + dev-mock, no prompts in public repo)
 - Workflow adapter is ready (Inngest wired up; `lib/jobs/runJob()` ready for a future transport)
 - Errors have typed shapes with error codes
 - Frontend has an axios client pointed at `VITE_API_URL`
-- Prompt registry has function stubs (empty implementations ready for Phase 3)
+- AI contracts define batch question + bias shapes
+- Constants define QUESTIONS_MIN=2, QUESTIONS_MAX=5, retry config
 
-Phase 3 then: defines actual DB tables, writes prompts, wires API routes → calls workflow.enqueue() → gets AI results.
+Phase 3 then: defines actual DB tables, writes API routes, wires AI sync for batch questions + async assessment.

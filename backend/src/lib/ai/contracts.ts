@@ -1,13 +1,15 @@
 import { z } from "zod";
+import { QUESTIONS_MIN, QUESTIONS_MAX } from "@/lib/constants";
 
 /**
  * Public DTOs — shapes returned by Biassemble AI Core (private repo).
  * No prompts or model IDs in this repository.
  */
 
+/** AI returns 2–5 questions as a batch (all at once), plus isComplete flag. */
 export const questionOutputSchema = z.object({
-  question: z.string().min(1),
-  isComplete: z.boolean().optional(),
+  questions: z.array(z.string().min(1)).min(QUESTIONS_MIN).max(QUESTIONS_MAX),
+  isComplete: z.boolean(),
 });
 
 export type QuestionOutput = z.infer<typeof questionOutputSchema>;
@@ -19,8 +21,9 @@ export const biasItemSchema = z.object({
   alternativePerspective: z.string().min(10),
 });
 
+/** At least 1 bias, no upper limit — AI decides how many are found. */
 export const assessmentOutputSchema = z.object({
-  biases: z.array(biasItemSchema).length(2),
+  biases: z.array(biasItemSchema).min(1),
   reflectionPrompt: z.string().min(10),
 });
 
@@ -29,8 +32,6 @@ export type AssessmentOutput = z.infer<typeof assessmentOutputSchema>;
 export interface GenerateQuestionRequest {
   sessionId: string;
   story: string;
-  previousQuestions?: string[];
-  previousAnswers?: string[];
 }
 
 export interface GenerateAssessmentRequest {

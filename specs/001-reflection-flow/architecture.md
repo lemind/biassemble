@@ -40,10 +40,64 @@ Inngest → inngest-functions.ts → runJob(type, payload)
 - Private: prompts, models — see workspace `biassemble-core/API.md`
 - Never commit prompts or `GOOGLE_*` / provider keys in the public repo
 
+## Batch question flow (all questions at once)
+
+```text
+POST /api/story → sync AI call → AI returns 2–5 questions as array
+       ↓
+  persist all questions, return { sessionId, firstQuestion }
+       ↓
+  (frontend shows questions one at a time)
+       ↓
+POST /api/answers → persist → return next question from DB (no AI call)
+       ↓
+  ...repeat until last answer...
+       ↓
+POST /api/answers (last) → workflow.enqueue("generate-assessment")
+       ↓
+GET /api/session/[id] (poll for assessment completion)
+       ↓
+GET /api/result/[id] → completed assessment
+```
+
+Session states: `created` → `questioning` → `assessing` → `completed` | `error`
+
+### Key points
+
+- Questions are generated **synchronously** on story submit (satisfies FR-006 5s spec)
+- 2–5 questions, AI decides count (`QUESTIONS_MIN`/`QUESTIONS_MAX` in constants.ts)
+- `questionOutputSchema.questions` is array of 2–5 strings
+- Only `generate-assessment` runs asynchronously via Inngest
+
+## Biases: no fixed count
+
+- `assessmentOutputSchema.biases.min(1)` — at least 1 bias, AI decides how many
+- No `.length(2)` constraint; contracts, validation, and DB all use `.min(1)` only
+- Frontend renders dynamic bias list
+
+## Schema layers
+
+| Layer | File | Source of Truth |
+|-------|------|-----------------|
+| AI response shape | `lib/ai/contracts.ts` | `biasItemSchema`, `questionOutputSchema` (batch array), `assessmentOutputSchema` |
+| DB + API record | `lib/validation/assessment.ts` | `assessmentRecordSchema` (adds `sessionId`, imports `biasItemSchema`) |
+| DB tables | `drizzle/schema.ts` | Columns match contracts |
+| API input | `lib/validation/story.ts`, `answer.ts` | Zod schemas for request bodies |
+
+Flow: Core output → validate with `contracts.ts` → map to DB record (add `sessionId`) → persist → serve via API
+
 ## Phase mapping
 
 | Phase | Work |
 |-------|------|
-| 2 ✅ | Scaffold, `lib/jobs`, Inngest transport, AI client boundary |
+| 1 ✅ | Vite landing page |
+| 2 ✅ | Scaffold, `lib/jobs`, Inngest transport, AI client boundary, constants |
 | 3 | DB, API routes, jobs call `getAiClient()` + persist |
-| Core (private) | `/v1/reflection/question`, `/v1/reflection/assessment` |
+| Core (private) | `POST /v1/reflection/question`, `POST /v1/reflection/assessment` |
+
+## Retry & error handling
+
+- **FR-007**: 3 retries with exponential backoff (1s → 2s → 4s)
+- Config: `lib/constants.ts` (`AI_MAX_RETRIES=3`, `AI_RETRY_BASE_DELAY_MS=1000`)
+- AI failures on story submit: session status → `"error"`, user gets friendly error
+- Blank answers: cap at `MAX_BLANK_ANSWERS=2`, allow skip after cap

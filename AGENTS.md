@@ -31,6 +31,7 @@
 - Commit atomically: one logical change per commit.
 - Write descriptive messages: `feat: add retry logic to syncQueue`
 - Never force-push or rewrite history without explicit approval.
+- **Show changes before committing**: Always present a summary of modified files and what changed. Ask user to review before running `git commit`. Never commit silently.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 
 ## Architecture

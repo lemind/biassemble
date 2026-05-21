@@ -30,7 +30,6 @@ export default function App() {
             sessionId={sessionId}
             questions={questions}
             onComplete={completeQA}
-            onError={handleError}
           />
         </Suspense>
       </ErrorBoundary>

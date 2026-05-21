@@ -6,10 +6,9 @@ interface QAFlowProps {
   sessionId: string;
   questions: string[];
   onComplete: () => void;
-  onError: (message: string) => void;
 }
 
-export default function QAFlow({ sessionId, questions, onComplete, onError }: QAFlowProps) {
+export default function QAFlow({ sessionId, questions, onComplete }: QAFlowProps) {
   const [answers, setAnswers] = useState<string[]>(questions.map(() => ''));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

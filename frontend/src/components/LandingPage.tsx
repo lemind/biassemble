@@ -40,7 +40,7 @@ export default function LandingPage({
                 </button>
               </div>
             )}
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<LoadingFallback fullScreen={false} />}>
               <StoryForm onSuccess={onSessionCreated} onError={onError} />
             </Suspense>
           </div>

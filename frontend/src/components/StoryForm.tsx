@@ -48,7 +48,7 @@ export default function StoryForm({ onSuccess, onError }: StoryFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <textarea
-        className="textarea textarea-bordered h-40 w-full resize-y"
+        className="textarea textarea-bordered min-h-40 h-40 w-full resize-y"
         placeholder="Describe a personal situation you've been thinking about recently. What happened? How did you react? What concerns you about it?"
         value={text}
         onChange={(e) => {

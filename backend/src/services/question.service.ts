@@ -1,9 +1,5 @@
-import { workflow } from "@/lib/workflow/adapter";
-import {
-  getSessionData,
-  submitAnswer,
-  updateSessionStatus,
-} from "@/lib/db/queries";
+import { getSessionData, submitAnswer } from "@/lib/db/queries";
+import { handleAssessmentGeneration } from "./assessment.service";
 
 export async function handleAnswer(sessionId: string, answers: string[]) {
   const data = await getSessionData(sessionId);
@@ -12,9 +8,8 @@ export async function handleAnswer(sessionId: string, answers: string[]) {
   // Save all answers at once
   await submitAnswer(sessionId, answers);
 
-  // Enqueue async assessment
-  await updateSessionStatus(sessionId, "assessing");
-  await workflow.enqueue("generate-assessment", { sessionId });
+  // Run assessment synchronously — no Inngest dependency
+  setImmediate(() => handleAssessmentGeneration(sessionId));
 
   return { done: true as const, total: data.questions.length, assessmentPending: true as const };
 }

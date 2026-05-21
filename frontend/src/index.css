@@ -1,6 +1,15 @@
 @import "tailwindcss";
-@plugin "daisyui";
 
-@theme {
-  --color-primary: #0f766e;
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+/* Override DaisyUI "light" theme — @theme alone does not win over :root theme vars */
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-primary: #f97316;
+  --color-primary-content: #ffffff;
 }

@@ -5,10 +5,10 @@ export interface SubmitStoryResponse {
   questions: string[];
 }
 
-export interface SubmitAnswerResponse {
-  done: number | boolean;
+export interface SubmitAnswersResponse {
+  done: true;
   total: number;
-  assessmentPending?: true;
+  assessmentPending: true;
 }
 
 export interface SessionStatusResponse {

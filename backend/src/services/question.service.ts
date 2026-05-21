@@ -5,27 +5,16 @@ import {
   updateSessionStatus,
 } from "@/lib/db/queries";
 
-export async function handleAnswer(sessionId: string, answerText: string) {
-  // Get current session data
+export async function handleAnswer(sessionId: string, answers: string[]) {
   const data = await getSessionData(sessionId);
   if (!data) throw new Error("Session not found");
 
-  // Append answer
-  const newAnswers = [...data.answers, answerText];
-  await submitAnswer(sessionId, newAnswers);
+  // Save all answers at once
+  await submitAnswer(sessionId, answers);
 
-  // Check if all questions answered
-  const isDone = newAnswers.length >= data.questions.length;
+  // Enqueue async assessment
+  await updateSessionStatus(sessionId, "assessing");
+  await workflow.enqueue("generate-assessment", { sessionId });
 
-  if (isDone) {
-    // Trigger async assessment
-    await updateSessionStatus(sessionId, "assessing");
-    await workflow.enqueue("generate-assessment", { sessionId });
-    return { done: true, total: data.questions.length, assessmentPending: true };
-  }
-
-  return {
-    done: newAnswers.length,
-    total: data.questions.length,
-  };
+  return { done: true as const, total: data.questions.length, assessmentPending: true as const };
 }

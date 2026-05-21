@@ -13,13 +13,13 @@ export async function submitStory(text: string) {
   return response.data;
 }
 
-export async function submitAnswer(
+export async function submitAnswers(
   sessionId: string,
-  text: string
+  answers: string[]
 ) {
   const response = await apiClient.post("/api/answers", {
     sessionId,
-    text,
+    answers,
   });
   return response.data;
 }

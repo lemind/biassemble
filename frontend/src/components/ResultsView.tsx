@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getResult } from '../api/client';
 import type { ResultResponse } from '../types/api';
+import LoadingFallback from './common/LoadingFallback';
 
 interface ResultsViewProps {
   sessionId: string;
@@ -37,13 +38,7 @@ export default function ResultsView({ sessionId, onReset, onError }: ResultsView
   }, [sessionId, onError]);
 
   if (loading) {
-    return (
-      <div className="hero min-h-screen bg-base-200">
-        <div className="hero-content text-center">
-          <span className="loading loading-spinner loading-lg text-primary" />
-        </div>
-      </div>
-    );
+    return <LoadingFallback title="Loading your results" />;
   }
 
   if (!result) {
@@ -95,7 +90,7 @@ export default function ResultsView({ sessionId, onReset, onError }: ResultsView
                     </div>
                     <div className="bg-primary/5 p-4 rounded-box border border-primary/20">
                       <h4 className="font-semibold text-sm text-primary/70 mb-1">
-                        Alternative perspective
+                        Try seeing it this way instead
                       </h4>
                       <p>{bias.alternativePerspective}</p>
                     </div>
@@ -106,6 +101,9 @@ export default function ResultsView({ sessionId, onReset, onError }: ResultsView
 
             <div className="bg-base-200 p-6 rounded-box mt-6">
               <h3 className="text-lg font-semibold mb-2">Reflection Prompt</h3>
+              <p className="text-base-content/60 text-xs mb-3">
+                Copy this prompt and continue reflecting in your notes or an AI assistant.
+              </p>
               <p className="text-base-content/80 italic">
                 {result.reflectionPrompt}
               </p>

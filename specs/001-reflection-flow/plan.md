@@ -118,13 +118,18 @@ Deployed Vite app with `StoryForm` validation and stub submit.
 - Jobs: `runGenerateQuestions`, `runGenerateAssessment` wired to services
 - `AI_CLIENT_MODE=dev-mock` used throughout
 
-### Phase 4: Frontend flow
+### Phase 4: Frontend flow ✅
 
-- Wire landing → API: receives all questions, renders them
-- Q&A page: submit answer → track progress; after last → poll until assessment ready
-- Results page: dynamic bias list (any count)
-- Session/results pages
-- Error states
+All components implemented in `frontend/src/`:
+
+- **StoryForm** — wired to `POST /api/story`, receives `{ sessionId, questions[] }`, loading spinner, inline errors
+- **QAFlow** — displays ALL questions at once (batch-display), one active text input at a time, sequential submit via `POST /api/answers`, progress tracking
+- **AssessmentLoading** — polls `GET /api/session/[id]` every 2s, 30s timeout, retry on error
+- **ResultsView** — dynamic bias list (any count), accordion layout with explanation / story connection / alternative perspective per bias, reflection prompt, reset button
+- **App.tsx** state machine — `landing → qa → assessing → results`, App owns routing via phase state, not URL routes
+- **Error states** — inline alerts per-screen (not global reset), API body extraction for actionable messages, polling visible failures, `ErrorBoundary` for render crashes
+- **React Compiler** — `babel-plugin-react-compiler` via `@vitejs/plugin-react` `reactCompilerPreset` (no manual `useMemo`/`useCallback`/`memo`)
+- **`types/api.ts`** — typed response interfaces mirroring backend contracts
 
 ### Phase 5: Private AI Core + Essential tests
 
@@ -134,6 +139,8 @@ Deployed Vite app with `StoryForm` validation and stub submit.
 
 ### Phase 6 (future): Polish + deferred tests + US2, US3
 
+- **Consider types codegen**: Evaluate automating `frontend/src/types/api.ts` generation from `backend/src/lib/ai/contracts.ts` Zod schemas (e.g., `zod-to-ts` or a custom script) to eliminate manual sync drift between backend contracts and frontend types.
+
 ## Phase mapping (plan.md ↔ tasks.md)
 
 | Phase | plan.md | tasks.md |
@@ -141,7 +148,7 @@ Deployed Vite app with `StoryForm` validation and stub submit.
 | Phase 1 ✅ | Landing page | Setup — Frontend ✅ |
 | Phase 2 ✅ | Backend foundation | Foundational (Blocking) ✅ |
 | Phase 3 ✅ | Product API + jobs | Product API + jobs ✅ |
-| Phase 4 | Frontend flow | Frontend flow |
+| Phase 4 ✅ | Frontend flow | Frontend flow |
 | Phase 5 | Core + tests | Private AI Core + Essential tests |
 | Phase 6 | Polish | Polish + Deferred tests + US2 + US3 |
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { z } from 'zod';
+import { submitStory } from '../api/client';
+import type { SubmitStoryResponse } from '../types/api';
 
 const STORY_MIN_LENGTH = 50;
 const STORY_MAX_LENGTH = 3000;
@@ -12,24 +14,35 @@ const storySchema = z.object({
 });
 
 interface StoryFormProps {
-  onSubmit: (storyText: string) => void;
+  onSuccess: (sessionId: string, questions: string[]) => void;
+  onError: (message: string) => void;
 }
 
-export default function StoryForm({ onSubmit }: StoryFormProps) {
+export default function StoryForm({ onSuccess, onError }: StoryFormProps) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const result = storySchema.safeParse({ story: text });
-    if (!result.success) {
-      setError(result.error.issues[0].message);
+    const validation = storySchema.safeParse({ story: text });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
       return;
     }
 
-    onSubmit(text);
+    setSubmitting(true);
+    try {
+      const result: SubmitStoryResponse = await submitStory(text);
+      onSuccess(result.sessionId, result.questions);
+    } catch (err) {
+      const bodyMsg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      onError(bodyMsg ?? (err instanceof Error ? err.message : 'Failed to submit story'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -49,8 +62,19 @@ export default function StoryForm({ onSubmit }: StoryFormProps) {
       <div className="flex justify-between items-center text-sm text-base-content/60">
         <span>{text.length} / {STORY_MAX_LENGTH}</span>
       </div>
-      <button type="submit" className="btn btn-primary w-full">
-        Begin Reflection
+      <button
+        type="submit"
+        className="btn btn-primary w-full"
+        disabled={submitting}
+      >
+        {submitting ? (
+          <>
+            <span className="loading loading-spinner loading-sm" />
+            Submitting...
+          </>
+        ) : (
+          'Begin Reflection'
+        )}
       </button>
     </form>
   );

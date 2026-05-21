@@ -15,12 +15,10 @@ export async function submitStory(text: string) {
 
 export async function submitAnswer(
   sessionId: string,
-  questionId: string,
   text: string
 ) {
   const response = await apiClient.post("/api/answers", {
     sessionId,
-    questionId,
     text,
   });
   return response.data;

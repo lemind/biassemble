@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingFallback from './components/common/LoadingFallback';
+import BiassembleLayout from './components/common/BiassembleLayout';
 import useReflectionFlow from './hooks/useReflectionFlow';
 
 const LandingPage = lazy(() => import('./components/LandingPage'));
@@ -25,13 +26,15 @@ export default function App() {
   if (phase === 'qa' && sessionId) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <QAFlow
-            sessionId={sessionId}
-            questions={questions}
-            onComplete={completeQA}
-          />
-        </Suspense>
+        <BiassembleLayout>
+          <Suspense fallback={<LoadingFallback />}>
+            <QAFlow
+              sessionId={sessionId}
+              questions={questions}
+              onComplete={completeQA}
+            />
+          </Suspense>
+        </BiassembleLayout>
       </ErrorBoundary>
     );
   }
@@ -39,14 +42,16 @@ export default function App() {
   if (phase === 'assessing' && sessionId) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <AssessmentLoading
-            sessionId={sessionId}
-            onReady={showResults}
-            onError={handleError}
-            onRetry={reset}
-          />
-        </Suspense>
+        <BiassembleLayout>
+          <Suspense fallback={<LoadingFallback />}>
+            <AssessmentLoading
+              sessionId={sessionId}
+              onReady={showResults}
+              onError={handleError}
+              onRetry={reset}
+            />
+          </Suspense>
+        </BiassembleLayout>
       </ErrorBoundary>
     );
   }
@@ -54,25 +59,29 @@ export default function App() {
   if (phase === 'results' && sessionId) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <ResultsView
-            sessionId={sessionId}
-            onReset={reset}
-            onError={handleError}
-          />
-        </Suspense>
+        <BiassembleLayout>
+          <Suspense fallback={<LoadingFallback />}>
+            <ResultsView
+              sessionId={sessionId}
+              onReset={reset}
+              onError={handleError}
+            />
+          </Suspense>
+        </BiassembleLayout>
       </ErrorBoundary>
     );
   }
 
   return (
     <ErrorBoundary>
-      <LandingPage
-        error={error}
-        onSessionCreated={startSession}
-        onError={handleError}
-        onDismissError={clearError}
-      />
+      <BiassembleLayout>
+        <LandingPage
+          error={error}
+          onSessionCreated={startSession}
+          onError={handleError}
+          onDismissError={clearError}
+        />
+      </BiassembleLayout>
     </ErrorBoundary>
   );
 }

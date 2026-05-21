@@ -4,7 +4,7 @@ import { handleAnswer } from "@/services/question.service";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { sessionId, text } = body;
+    const { sessionId, answers } = body;
 
     if (!sessionId || typeof sessionId !== "string") {
       return NextResponse.json(
@@ -13,18 +13,18 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!text || typeof text !== "string") {
+    if (!Array.isArray(answers) || answers.length === 0) {
       return NextResponse.json(
-        { error: "Answer text is required" },
+        { error: "answers array is required" },
         { status: 400 }
       );
     }
 
-    const result = await handleAnswer(sessionId, text);
+    const result = await handleAnswer(sessionId, answers);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to submit answer";
+      error instanceof Error ? error.message : "Failed to submit answers";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

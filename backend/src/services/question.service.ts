@@ -1,31 +1,15 @@
-import { workflow } from "@/lib/workflow/adapter";
-import {
-  getSessionData,
-  submitAnswer,
-  updateSessionStatus,
-} from "@/lib/db/queries";
+import { getSessionData, submitAnswer } from "@/lib/db/queries";
+import { handleAssessmentGeneration } from "./assessment.service";
 
-export async function handleAnswer(sessionId: string, answerText: string) {
-  // Get current session data
+export async function handleAnswer(sessionId: string, answers: string[]) {
   const data = await getSessionData(sessionId);
   if (!data) throw new Error("Session not found");
 
-  // Append answer
-  const newAnswers = [...data.answers, answerText];
-  await submitAnswer(sessionId, newAnswers);
+  // Save all answers at once
+  await submitAnswer(sessionId, answers);
 
-  // Check if all questions answered
-  const isDone = newAnswers.length >= data.questions.length;
+  // Run assessment synchronously — no Inngest dependency
+  setImmediate(() => handleAssessmentGeneration(sessionId));
 
-  if (isDone) {
-    // Trigger async assessment
-    await updateSessionStatus(sessionId, "assessing");
-    await workflow.enqueue("generate-assessment", { sessionId });
-    return { done: true, total: data.questions.length, assessmentPending: true };
-  }
-
-  return {
-    done: newAnswers.length,
-    total: data.questions.length,
-  };
+  return { done: true as const, total: data.questions.length, assessmentPending: true as const };
 }

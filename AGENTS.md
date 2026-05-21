@@ -25,11 +25,12 @@
 - Follow project linter/formatter rules (ESLint, Prettier, etc.).
 - Do not disable linters or skip formatting to "fix" a bug.
 - Match existing naming conventions; do not rename variables without scope.
+- **Naming**: Use descriptive names that make purpose obvious (`loadAssessment`, `pollSessionStatus`, `stopPolling`). Avoid generic names like `fetch`, `data`, `result`, `check`, `cleanup`, `doStuff`. Don't over-verbose — `updateAnswer` is good, `updateCurrentAnswerTextInState` is not.
 
 ## Git & Version Control
 
 - Commit atomically: one logical change per commit.
-- Write descriptive messages: `feat: add retry logic to syncQueue`
+- Keep commit messages short and descriptive. Example: `feat: add retry logic` — not `feat: add retry logic to syncQueue with exponential backoff and timeout`. If you need details, put them in the body.
 - Never force-push or rewrite history without explicit approval.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 

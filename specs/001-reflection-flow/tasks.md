@@ -63,14 +63,16 @@
 
 ---
 
-## Phase 4: Frontend flow 🟡
+## Phase 4: Frontend flow ✅
 
-- [ ] T035 [US1] `StoryForm` — wire `submitStory()` → `POST /api/story` → receive `{ sessionId, firstQuestion }` → transition to Q&A
-- [ ] T036 [US1] Q&A page — display question, text input for answer, submit → `POST /api/answers` → receive next question; repeat until `assessmentPending`
-- [ ] T037 [US1] Polling hook — poll `GET /api/session/[id]` every 2s while assessment generates; show loading until ready
-- [ ] T038 [US1] Assessment results page — display biases (dynamic count), explanations, story connections, alternative perspectives, reflection prompt
-- [ ] T039 [US1] Router/navigation — landing → Q&A → results flow
-- [ ] T040 [US1] Error states — AI failure, network error, timeout; friendly messages per spec edge cases
+- [x] T035 [US1] `StoryForm` — wire `submitStory()` → `POST /api/story` → receive `{ sessionId, questions[] }` → transition to Q&A
+- [x] T036 [US1] Q&A page — display ALL questions at once, each with text input; submit answers sequentially via `POST /api/answers` until `assessmentPending`
+- [x] T037 [US1] Polling hook — poll `GET /api/session/[id]` every 2s while assessment generates; timeout after 30s
+- [x] T038 [US1] Assessment results page — dynamic bias list (any count), explanations, story connections, alternative perspectives, reflection prompt
+- [x] T039 [US1] Router/navigation — state machine in `App.tsx`: landing → qa → assessing → results
+- [x] T040 [US1] Error states — inline errors in StoryForm, QAFlow, polling timeout with retry; `ErrorBoundary` for render crashes
+- [x] T040a [US1] React Compiler (babel-plugin-react-compiler) configured via `@vitejs/plugin-react` `reactCompilerPreset` — eliminates need for manual `useMemo`/`useCallback`/`memo`
+- [x] T040b [US1] `frontend/src/types/api.ts` — typed API response interfaces mirroring `backend/src/lib/ai/contracts.ts`
 
 ---
 

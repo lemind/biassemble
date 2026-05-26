@@ -80,9 +80,9 @@
 
 ### Private AI Core (biassemble-core repo) — deferred from Phase 3
 
-- [ ] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
-- [ ] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
-- [ ] T026-core Retry/backoff (3× exponential) + structured JSON in Core
+- [x] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
+- [x] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
+- [x] T026-core Retry/backoff (3× exponential) + structured JSON in Core
 
 ### Essential tests
 

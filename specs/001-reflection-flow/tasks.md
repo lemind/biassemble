@@ -74,16 +74,6 @@
   - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
   - Ready to paste into ChatGPT or any AI assistant
 
-### Phase 3c: Error propagation — rate limit messages reach frontend ✅
-
-- [x] T048 [P] Parse Core error body in `backend/src/lib/ai/core-client.ts`
-  - Extract `.error` field from Core's JSON error response instead of generic "AI Core request failed: 502"
-  - Rate limit message like "Daily API quota exhausted" now propagates to backend callers
-- [x] T049 [P] Propagate `AppException` status codes in backend API routes
-  - `story/route.ts`, `answers/route.ts`, `session/[id]/route.ts`, `result/[id]/route.ts`
-  - Check `error instanceof AppException` and use `error.statusCode` (502 for AI errors, 400 for validation, etc.)
-  - Previously all errors returned 500 regardless of type
-
 **Checkpoint**: Backend complete — Phase 3 100% done. Dev-mock unblocks remaining phases.
 
 ---
@@ -98,6 +88,16 @@
 - [x] T040 [US1] Error states — inline errors in StoryForm, QAFlow, polling timeout with retry; `ErrorBoundary` for render crashes
 - [x] T040a [US1] React Compiler (babel-plugin-react-compiler) configured via `@vitejs/plugin-react` `reactCompilerPreset` — eliminates need for manual `useMemo`/`useCallback`/`memo`
 - [x] T040b [US1] `frontend/src/types/api.ts` — typed API response interfaces mirroring `backend/src/lib/ai/contracts.ts`
+
+### Phase 4b: Error propagation polish ✅
+
+- [x] T048 [P] Parse Core error body in `backend/src/lib/ai/core-client.ts`
+  - Extract `.error` field from Core's JSON error response instead of generic "AI Core request failed: 502"
+  - Rate limit message like "Daily API quota exhausted" now propagates to backend callers
+- [x] T049 [P] Propagate `AppException` status codes in backend API routes
+  - `story/route.ts`, `answers/route.ts`, `session/[id]/route.ts`, `result/[id]/route.ts`
+  - Check `error instanceof AppException` and use `error.statusCode` (502 for AI errors, 400 for validation, etc.)
+  - Previously all errors returned 500 regardless of type
 
 ---
 

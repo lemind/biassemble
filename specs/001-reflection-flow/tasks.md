@@ -59,7 +59,7 @@
 - [x] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
 - [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment, update session status
 
-### Phase 3b: Rate limit handling + prompt fixes + context package ✅
+### Phase 3b: Rate limit handling + prompt fixes ✅
 
 - [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
   - Catch 429 errors, parse for quota vs per-minute limit
@@ -68,11 +68,6 @@
   - Only retry transient errors (timeouts, 503s), not rate limits
 - [x] T045 [P] Fix assessment prompt — don't retell story — `biassemble-core/src/prompts/reflection/assessment/system.md`
   - Add instruction: "Do NOT retell or repeat the story in your analysis"
-- [x] T046 [P] Return full session data in result API — `backend/src/app/api/result/[id]/route.ts`
-  - Include `story`, `questions`, `answers` alongside `biases` + `reflectionPrompt`
-- [x] T047 [P] Copyable context package in ResultsView — `frontend/src/components/ResultsView.tsx`
-  - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
-  - Ready to paste into ChatGPT or any AI assistant
 
 **Checkpoint**: Backend complete — Phase 3 100% done. Dev-mock unblocks remaining phases.
 
@@ -88,6 +83,11 @@
 - [x] T040 [US1] Error states — inline errors in StoryForm, QAFlow, polling timeout with retry; `ErrorBoundary` for render crashes
 - [x] T040a [US1] React Compiler (babel-plugin-react-compiler) configured via `@vitejs/plugin-react` `reactCompilerPreset` — eliminates need for manual `useMemo`/`useCallback`/`memo`
 - [x] T040b [US1] `frontend/src/types/api.ts` — typed API response interfaces mirroring `backend/src/lib/ai/contracts.ts`
+- [x] T046 [P] Return full session data in result API — `backend/src/app/api/result/[id]/route.ts`
+  - Include `story`, `questions`, `answers` alongside `biases` + `reflectionPrompt`
+- [x] T047 [P] Copyable context package in ResultsView — `frontend/src/components/ResultsView.tsx`
+  - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
+  - Ready to paste into ChatGPT or any AI assistant
 
 ### Phase 4b: Error propagation polish ✅
 

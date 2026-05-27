@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, getSessionData } from "@/lib/db/queries";
+import { AppException } from "@/lib/errors";
 
 export async function GET(
   _request: Request,
@@ -25,6 +26,12 @@ export async function GET(
       assessmentReady,
     });
   } catch (error) {
+    if (error instanceof AppException) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to get session";
     return NextResponse.json({ error: message }, { status: 500 });

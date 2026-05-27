@@ -59,21 +59,7 @@
 - [x] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
 - [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment, update session status
 
-### Phase 3b: Rate limit handling + prompt fixes ✅
-
-- [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
-  - Catch 429 errors, parse for quota vs per-minute limit
-  - Throw `RateLimitError` (not retried)
-- [x] T044 [P] Skip retry on `RateLimitError` — `biassemble-core/src/orchestrators/retry.ts`
-  - Only retry transient errors (timeouts, 503s), not rate limits
-- [x] T045 [P] Fix assessment prompt — don't retell story — `biassemble-core/src/prompts/reflection/assessment/system.md`
-  - Add instruction: "Do NOT retell or repeat the story in your analysis"
-
-**Checkpoint**: Backend complete — Phase 3 100% done. Dev-mock unblocks remaining phases.
-
----
-
-## Phase 4: Frontend flow ✅
+## Phase 4: Frontend flow + polish ✅
 
 - [x] T035 [US1] `StoryForm` — wire `submitStory()` → `POST /api/story` → receive `{ sessionId, questions[] }` → transition to Q&A
 - [x] T036 [US1] Q&A page — display ALL questions at once, each with text input; submit answers sequentially via `POST /api/answers` until `assessmentPending`
@@ -89,7 +75,17 @@
   - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
   - Ready to paste into ChatGPT or any AI assistant
 
-### Phase 4b: Error propagation polish ✅
+### Phase 4b: Rate limit handling + prompt fixes ✅
+
+- [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
+  - Catch 429 errors, parse for quota vs per-minute limit
+  - Throw `RateLimitError` (not retried)
+- [x] T044 [P] Skip retry on `RateLimitError` — `biassemble-core/src/orchestrators/retry.ts`
+  - Only retry transient errors (timeouts, 503s), not rate limits
+- [x] T045 [P] Fix assessment prompt — don't retell story — `biassemble-core/src/prompts/reflection/assessment/system.md`
+  - Add instruction: "Do NOT retell or repeat the story in your analysis"
+
+### Phase 4c: Error propagation polish ✅
 
 - [x] T048 [P] Parse Core error body in `backend/src/lib/ai/core-client.ts`
   - Extract `.error` field from Core's JSON error response instead of generic "AI Core request failed: 502"

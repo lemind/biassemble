@@ -84,6 +84,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - Mark completed work in `tasks.md` (`[x]`) and reflect current status in root `README.md` when deployability or phase milestones shift.
 - `spec.md` stays technology-agnostic where possible; stack and paths belong in `plan.md` / `tasks.md`, not in functional requirements.
 - **Never add prompts, model IDs, or LLM API keys to the public repo** — use `biassemble-core` (private) and `lib/ai/core-client.ts` only.
+- **Phase immutability**: Once a phase is marked complete (`✅`), never add new items to it. New work that's out of scope for the current phase goes into the **current/last active phase** (or a new sub-phase under it). Completed phases are frozen — do not modify them.
 
 **Trigger examples** (docs update required): new `frontend/` or `backend/` package, API route added/renamed, env var moved server-side, phase completed, MVP scope narrowed or expanded.
 

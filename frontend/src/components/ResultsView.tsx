@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getResult } from '../api/client';
 import type { ResultResponse } from '../types/api';
 import LoadingFallback from './common/LoadingFallback';
@@ -12,6 +12,7 @@ interface ResultsViewProps {
 export default function ResultsView({ sessionId, onReset, onError }: ResultsViewProps) {
   const [result, setResult] = useState<ResultResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +37,54 @@ export default function ResultsView({ sessionId, onReset, onError }: ResultsView
       cancelled = true;
     };
   }, [sessionId, onError]);
+
+  const buildContextPackage = useCallback((): string => {
+    if (!result) return '';
+
+    const qaSection = result.questions
+      .map((q, i) => `Q: ${q}\nA: ${result.answers[i] ?? '(not answered)'}`)
+      .join('\n\n');
+
+    const biasesSection = result.biases
+      .map(
+        (b, i) =>
+          `${i + 1}. ${b.name}\n   What it means: ${b.explanation}\n   Connection to your story: ${b.storyConnection}\n   Alternative perspective: ${b.alternativePerspective}`
+      )
+      .join('\n\n');
+
+    return [
+      '=== MY STORY ===',
+      result.story,
+      '',
+      '=== FOLLOW-UP QUESTIONS & ANSWERS ===',
+      qaSection,
+      '',
+      '=== BIAS ASSESSMENT ===',
+      biasesSection,
+      '',
+      '=== REFLECTION PROMPT ===',
+      result.reflectionPrompt,
+    ].join('\n\n');
+  }, [result]);
+
+  const handleCopy = useCallback(async () => {
+    const text = buildContextPackage();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [buildContextPackage]);
 
   if (loading) {
     return <LoadingFallback title="Loading your results" />;
@@ -102,11 +151,26 @@ export default function ResultsView({ sessionId, onReset, onError }: ResultsView
             <div className="bg-base-200 p-6 rounded-box mt-6">
               <h3 className="text-lg font-semibold mb-2">Reflection Prompt</h3>
               <p className="text-base-content/60 text-xs mb-3">
-                Copy this prompt and continue reflecting in your notes or an AI assistant.
+                Use this prompt to continue reflecting on your own.
               </p>
               <p className="text-base-content/80 italic">
                 {result.reflectionPrompt}
               </p>
+            </div>
+
+            {/* ── Copyable context package ── */}
+            <div className="bg-primary/5 p-6 rounded-box mt-6 border border-primary/20">
+              <h3 className="text-lg font-semibold mb-2">📋 Copy Everything</h3>
+              <p className="text-base-content/60 text-xs mb-3">
+                Copy your story, Q&A, assessment, and reflection prompt as a single text block.
+                Paste it into ChatGPT or any AI assistant to continue working with it.
+              </p>
+              <button
+                className={`btn ${copied ? 'btn-success' : 'btn-primary'} btn-sm`}
+                onClick={handleCopy}
+              >
+                {copied ? '✓ Copied!' : 'Copy to Clipboard'}
+              </button>
             </div>
 
             <div className="mt-8 text-center">

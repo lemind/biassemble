@@ -27,6 +27,9 @@ export interface BiasItem {
 }
 
 export interface ResultResponse {
+  story: string;
+  questions: string[];
+  answers: string[];
   biases: BiasItem[];
   reflectionPrompt: string;
 }

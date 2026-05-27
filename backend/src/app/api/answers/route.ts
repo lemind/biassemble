@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleAnswer } from "@/services/question.service";
+import { AppException } from "@/lib/errors";
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,12 @@ export async function POST(request: Request) {
     const result = await handleAnswer(sessionId, answers);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof AppException) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to submit answers";
     return NextResponse.json({ error: message }, { status: 500 });

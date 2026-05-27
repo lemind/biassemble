@@ -39,7 +39,17 @@ async function postCore<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw aiError(`AI Core request failed: ${res.status}`, { path, body: text });
+    // Try to extract the actual error message from Core's JSON response
+    let message = `AI Core request failed: ${res.status}`;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed?.error) {
+        message = parsed.error;
+      }
+    } catch {
+      // text is not JSON — use the generic message
+    }
+    throw aiError(message, { path, body: text, status: res.status });
   }
 
   const raw = await res.text();

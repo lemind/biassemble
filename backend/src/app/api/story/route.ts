@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleCreateSession } from "@/services/session.service";
+import { AppException } from "@/lib/errors";
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
     const result = await handleCreateSession(text);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    if (error instanceof AppException) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode }
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to create session";
     return NextResponse.json({ error: message }, { status: 500 });

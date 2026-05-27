@@ -59,11 +59,7 @@
 - [x] T041 [US1] `runGenerateQuestions` — load session + history from DB, `getAiClient().generateQuestion()`, persist question batch
 - [x] T042 [US1] `runGenerateAssessment` — load all Q&A from DB, `getAiClient().generateAssessment()`, persist assessment, update session status
 
-**Checkpoint**: Backend complete — Phase 3 100% done. Dev-mock unblocks remaining phases.
-
----
-
-## Phase 4: Frontend flow ✅
+## Phase 4: Frontend flow + polish ✅
 
 - [x] T035 [US1] `StoryForm` — wire `submitStory()` → `POST /api/story` → receive `{ sessionId, questions[] }` → transition to Q&A
 - [x] T036 [US1] Q&A page — display ALL questions at once, each with text input; submit answers sequentially via `POST /api/answers` until `assessmentPending`
@@ -73,6 +69,31 @@
 - [x] T040 [US1] Error states — inline errors in StoryForm, QAFlow, polling timeout with retry; `ErrorBoundary` for render crashes
 - [x] T040a [US1] React Compiler (babel-plugin-react-compiler) configured via `@vitejs/plugin-react` `reactCompilerPreset` — eliminates need for manual `useMemo`/`useCallback`/`memo`
 - [x] T040b [US1] `frontend/src/types/api.ts` — typed API response interfaces mirroring `backend/src/lib/ai/contracts.ts`
+- [x] T046 [P] Return full session data in result API — `backend/src/app/api/result/[id]/route.ts`
+  - Include `story`, `questions`, `answers` alongside `biases` + `reflectionPrompt`
+- [x] T047 [P] Copyable context package in ResultsView — `frontend/src/components/ResultsView.tsx`
+  - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
+  - Ready to paste into ChatGPT or any AI assistant
+
+### Phase 4b: Rate limit handling + prompt fixes ✅
+
+- [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
+  - Catch 429 errors, parse for quota vs per-minute limit
+  - Throw `RateLimitError` (not retried)
+- [x] T044 [P] Skip retry on `RateLimitError` — `biassemble-core/src/orchestrators/retry.ts`
+  - Only retry transient errors (timeouts, 503s), not rate limits
+- [x] T045 [P] Fix assessment prompt — don't retell story — `biassemble-core/src/prompts/reflection/assessment/system.md`
+  - Add instruction: "Do NOT retell or repeat the story in your analysis"
+
+### Phase 4c: Error propagation polish ✅
+
+- [x] T048 [P] Parse Core error body in `backend/src/lib/ai/core-client.ts`
+  - Extract `.error` field from Core's JSON error response instead of generic "AI Core request failed: 502"
+  - Rate limit message like "Daily API quota exhausted" now propagates to backend callers
+- [x] T049 [P] Propagate `AppException` status codes in backend API routes
+  - `story/route.ts`, `answers/route.ts`, `session/[id]/route.ts`, `result/[id]/route.ts`
+  - Check `error instanceof AppException` and use `error.statusCode` (502 for AI errors, 400 for validation, etc.)
+  - Previously all errors returned 500 regardless of type
 
 ---
 
@@ -80,9 +101,9 @@
 
 ### Private AI Core (biassemble-core repo) — deferred from Phase 3
 
-- [ ] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
-- [ ] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
-- [ ] T026-core Retry/backoff (3× exponential) + structured JSON in Core
+- [x] T024-core [P] Implement `POST /v1/reflection/question` + `POST /v1/reflection/assessment` per `biassemble-core/API.md`
+- [x] T025-core [P] Prompt registry + Gemini (or provider) — **private repo only**
+- [x] T026-core Retry/backoff (3× exponential) + structured JSON in Core
 
 ### Essential tests
 

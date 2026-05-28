@@ -9,7 +9,11 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "deploy": "vercel deploy --prod",
+    "deploy:e2e": "pnpm deploy && pnpm smoke:trigger",
+    "smoke:trigger": "node -e \"fetch(process.env.INNGEST_EVENT_URL || 'https://api.inngest.com/v1/events', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.INNGEST_SIGNING_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'biassemble/smoke-e2e' }) }).then(r => r.ok ? console.log('Smoke E2E triggered') : console.error('Failed:', r.status)).catch(console.error)\"",
+    "smoke:local": "tsx scripts/smoke-local.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.0",

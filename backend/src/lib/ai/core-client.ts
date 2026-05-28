@@ -11,7 +11,7 @@ import {
 } from "./contracts";
 import { parseJsonFromAi } from "./parsers";
 
-function getCoreConfig() {
+export function getCoreConfig() {
   const baseUrl = process.env.AI_CORE_BASE_URL?.replace(/\/$/, "");
   const apiKey = process.env.AI_CORE_API_KEY;
   if (!baseUrl || !apiKey) {

@@ -4,7 +4,23 @@ import { QUESTIONS_MIN, QUESTIONS_MAX } from "@/lib/constants";
 /**
  * Public DTOs — shapes returned by Biassemble AI Core (private repo).
  * No prompts or model IDs in this repository.
+ *
+ * Zod schemas are the SSOT for runtime validation.
+ * `contracts.generated.ts` is auto-generated from Core's `GET /v1/contracts`
+ * via `pnpm generate:types` — use it as a reference when updating hand-written types.
  */
+
+export interface GenerateQuestionRequest {
+  sessionId: string;
+  story: string;
+}
+
+export interface GenerateAssessmentRequest {
+  sessionId: string;
+  story: string;
+  questions: string[];
+  answers: string[];
+}
 
 /** AI returns 2–5 questions as a batch (all at once), plus isComplete flag. */
 export const questionOutputSchema = z.object({
@@ -28,15 +44,3 @@ export const assessmentOutputSchema = z.object({
 });
 
 export type AssessmentOutput = z.infer<typeof assessmentOutputSchema>;
-
-export interface GenerateQuestionRequest {
-  sessionId: string;
-  story: string;
-}
-
-export interface GenerateAssessmentRequest {
-  sessionId: string;
-  story: string;
-  questions: string[];
-  answers: string[];
-}

@@ -30,7 +30,7 @@ vercel env add AI_CORE_API_KEY        # Generate a strong random key (e.g., open
 vercel env add PORT                   3001
 
 # Deploy
-vercel deploy --prod
+pnpm deploy
 ```
 
 After deploy, note the URL (e.g., `https://biassemble-core.vercel.app`).
@@ -59,14 +59,14 @@ vercel env add INNGEST_SIGNING_KEY     <from-inngest-dashboard>
 vercel env add CORS_ORIGIN             <your-frontend-url>
 
 # Deploy
-vercel deploy --prod
+pnpm deploy
 ```
 
 ```bash
 cd ../frontend
 
-# Deploy
-vercel deploy --prod
+# Deploy (or use Vercel's automatic Git integration)
+pnpm build && vercel deploy --prod
 ```
 
 ## Post-Deploy Verification

@@ -12,7 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "deploy": "vercel deploy --prod",
     "deploy:e2e": "pnpm deploy && pnpm test:integration:trigger",
-    "test:integration:trigger": "node -e \"fetch(process.env.INNGEST_EVENT_URL || 'https://api.inngest.com/v1/events', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.INNGEST_SIGNING_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'biassemble/integration-test' }) }).then(r => r.ok ? console.log('Integration test triggered') : console.error('Failed:', r.status)).catch(console.error)\"",
+    "test:integration:trigger": "tsx scripts/trigger-integration-test.ts",
     "test:integration": "vitest run tests/integration/reflection-flow.test.ts",
     "generate:types": "tsx scripts/generate-types.ts"
   },

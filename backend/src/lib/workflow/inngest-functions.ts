@@ -1,5 +1,5 @@
 import { runJob } from "@/lib/jobs";
-import { runSmokeE2e } from "@/lib/jobs/smoke-e2e";
+import { runIntegrationTest } from "@/lib/jobs/reflection-integration-test";
 import type { JobType } from "@/lib/jobs/types";
 import { inngest, jobEventName } from "./inngest-client";
 
@@ -18,13 +18,13 @@ export const inngestFunctions = [
   createJobFunction("generate-questions"),
   createJobFunction("generate-assessment"),
   inngest.createFunction(
-    { id: "smoke-e2e" },
-    { event: "biassemble/smoke-e2e" },
+    { id: "integration-test" },
+    { event: "biassemble/integration-test" },
     async ({ step }) => {
-      const result = await runSmokeE2e();
+      const result = await runIntegrationTest();
       if (!result.passed) {
         const failures = result.steps.filter((s) => !s.ok).map((s) => `  ✗ ${s.name}: ${s.detail}`).join("\n");
-        throw new Error(`Smoke E2E FAILED:\n${failures}`);
+        throw new Error(`Integration test FAILED:\n${failures}`);
       }
       return result;
     }

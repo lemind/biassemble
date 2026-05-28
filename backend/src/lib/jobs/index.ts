@@ -1,6 +1,6 @@
 export { runJob } from "./run-job";
 export { runGenerateAssessment } from "./generate-assessment";
-export { runSmokeE2e } from "./smoke-e2e";
+export { runIntegrationTest } from "./reflection-integration-test";
 export type {
   JobType,
   GenerateQuestionsPayload,

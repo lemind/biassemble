@@ -1,11 +1,11 @@
 /**
- * smoke-e2e job — runs the full reflection flow via the public API
+ * Integration test — runs the full reflection flow via the public API
  * and asserts all output shapes match the contracts.
  *
- * Triggered by sending event: `biassemble/smoke-e2e`
- * Designed to run after a production deploy.
+ * Triggered by sending event: `biassemble/integration-test`
+ * via Inngest after a production deploy.
  *
- * For local use (no Inngest): pnpm smoke:local
+ * For local use (no Inngest): pnpm test:integration
  */
 
 import { QUESTIONS_MIN, QUESTIONS_MAX } from "@/lib/constants";
@@ -14,7 +14,7 @@ import {
   biasItemSchema,
 } from "@/lib/ai/contracts";
 
-const BASE_URL = process.env.SELF_BASE_URL || "http://localhost:3000";
+const BASE_URL = process.env.SELF_BASE_URL || "http://127.0.0.1:3000";
 
 const POLL_TIMEOUT_MS = 30_000;
 const POLL_INTERVAL_QUESTIONS_MS = 1_000;
@@ -31,13 +31,13 @@ const TEST_STORY = [
   "I want to understand what biases might have been at play in this interaction.",
 ].join(" ");
 
-interface SmokeResult {
+interface IntegrationTestResult {
   passed: boolean;
   steps: Array<{ name: string; ok: boolean; detail?: string }>;
 }
 
-export async function runSmokeE2e(): Promise<SmokeResult> {
-  const steps: SmokeResult["steps"] = [];
+export async function runIntegrationTest(): Promise<IntegrationTestResult> {
+  const steps: IntegrationTestResult["steps"] = [];
 
   function step(name: string, ok: boolean, detail?: string) {
     steps.push({ name, ok, detail });
@@ -152,7 +152,10 @@ export async function runSmokeE2e(): Promise<SmokeResult> {
 
     return { passed: true, steps };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    let message = error instanceof Error ? error.message : "Unknown error";
+    if (error instanceof Error && error.cause) {
+      message += ` — cause: ${String(error.cause)}`;
+    }
     step("Unexpected error", false, message);
     return { passed: false, steps };
   }

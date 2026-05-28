@@ -12,7 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "deploy": "vercel deploy --prod",
     "deploy:e2e": "pnpm deploy && pnpm test:integration:trigger",
-    "test:integration:trigger": "tsx scripts/trigger-integration-test.ts",
+    "test:integration:trigger": "tsx --env-file=.env.local scripts/trigger-integration-test.ts",
     "test:integration": "vitest run tests/integration/reflection-flow.test.ts",
     "generate:types": "tsx scripts/generate-types.ts"
   },

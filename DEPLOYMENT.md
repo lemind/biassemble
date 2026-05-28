@@ -65,8 +65,8 @@ pnpm deploy
 ```bash
 cd ../frontend
 
-# Deploy (or use Vercel's automatic Git integration)
-pnpm build && vercel deploy --prod
+# Deploy
+pnpm deploy
 ```
 
 ## Post-Deploy Verification

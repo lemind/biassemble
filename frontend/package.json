@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "deploy": "vercel deploy --prod",
     "generate:types": "tsx scripts/generate-types.ts"
   },
   "dependencies": {

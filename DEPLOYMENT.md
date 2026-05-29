@@ -89,7 +89,7 @@ This sends a `biassemble/integration-test` event to Inngest, which runs the full
 
 ```bash
 cd biassemble/backend
-pnpm deploy:e2e
+pnpm deploy:test
 ```
 
 ### 3. Manual API check

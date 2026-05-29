@@ -1,4 +1,12 @@
-/** Mirror of backend contracts — manual sync until codegen. See plan.md Phase 6. */
+/**
+ * Backend-specific API contracts.
+ *
+ * Core reflection schemas (BiasItem, etc.) are auto-generated in
+ * `api.generated.ts` via `pnpm generate:types`.
+ */
+import type { BiasItem } from "./api.generated";
+
+export type { BiasItem } from "./api.generated";
 
 export interface SubmitStoryResponse {
   sessionId: string;
@@ -17,13 +25,6 @@ export interface SessionStatusResponse {
   questionCount: number;
   answerCount: number;
   assessmentReady: boolean;
-}
-
-export interface BiasItem {
-  name: string;
-  explanation: string;
-  storyConnection: string;
-  alternativePerspective: string;
 }
 
 export interface ResultResponse {

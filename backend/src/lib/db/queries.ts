@@ -52,8 +52,8 @@ export async function createSessionData(
   sessionId: string,
   story: string,
   questions: string[],
-  promptVersion?: string,
-  schemaVersion?: string
+  promptVersion?: string | null,
+  schemaVersion?: string | null
 ) {
   const [row] = await db()
     .insert(sessionData)
@@ -94,8 +94,8 @@ export async function saveAssessment(
     alternativePerspective: string;
   }>,
   reflectionPrompt: string,
-  promptVersion?: string,
-  schemaVersion?: string
+  promptVersion?: string | null,
+  schemaVersion?: string | null
 ) {
   const [row] = await db()
     .update(sessionData)

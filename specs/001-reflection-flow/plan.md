@@ -52,7 +52,8 @@ Build the core conversational reflection flow: users write a story, receive ALL 
 |-------|------|------|
 | AI Core contract | `lib/ai/contracts.ts` | Output shapes (biasItemSchema, questionOutputSchema, assessmentOutputSchema) |
 | DB/API validation | `lib/validation/assessment.ts` | Extends contracts with sessionId; imports biasItemSchema |
-| DB tables | `drizzle/schema.ts` | `sessions` + `session_data` (jsonb for questions/answers/biases) |
+| DB tables | `drizzle/schema.ts` | `sessions` + `session_data` (jsonb for questions/answers/biases, `prompt_version`/`schema_version` text columns) |
+| Frontend types | `frontend/src/types/api.ts` | Mirrors backend contracts; `ResultResponse` includes optional `prompt_version`/`schema_version` |
 
 ## Constitution Check
 

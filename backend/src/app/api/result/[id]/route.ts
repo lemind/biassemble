@@ -27,6 +27,8 @@ export async function GET(
       answers: data.answers,
       biases: data.biases,
       reflectionPrompt: data.reflectionPrompt,
+      prompt_version: data.promptVersion,
+      schema_version: data.schemaVersion,
     });
   } catch (error) {
     if (error instanceof AppException) {

@@ -75,7 +75,20 @@
   - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
   - Ready to paste into ChatGPT or any AI assistant
 
-### Phase 4b: Rate limit handling + prompt fixes ✅
+### Phase 4b: Version stamping + bias normalization ✅
+
+- [x] T052 [P] Add `prompt_version` and `schema_version` columns to `session_data` Drizzle schema
+- [x] T053 [P] Wire version fields through `lib/db/queries.ts` (`createSessionData`, `saveAssessment`)
+- [x] T054 [P] Return `prompt_version` and `schema_version` in `GET /api/result/[id]`
+- [x] T055 [P] Add optional version fields to `frontend/src/types/api.ts` `ResultResponse`
+- [x] T056 [P] Add `biasCatalogId` to `BiasItem` in backend contracts (backward-compatible)
+- [x] T057 [P] Update `dev-mock-client.ts` to return mock version fields
+- [x] T058 [P] Update integration test (`reflection-flow.test.ts`) to validate version fields
+- [x] T059 [P] Update Inngest function schema validation for version fields
+
+**Migration note**: Run `drizzle-kit generate && drizzle-kit push` before deploying to pick up new columns.
+
+### Phase 4c: Rate limit handling + prompt fixes ✅
 
 - [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
   - Catch 429 errors, parse for quota vs per-minute limit

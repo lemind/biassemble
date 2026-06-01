@@ -113,6 +113,8 @@ export const inngestFunctions = [
         const parseResult = assessmentOutputSchema.safeParse({
           biases: assessmentData.biases,
           reflectionPrompt: assessmentData.reflectionPrompt,
+          prompt_version: assessmentData.promptVersion,
+          schema_version: assessmentData.schemaVersion,
         });
 
         if (!parseResult.success) {

@@ -10,6 +10,20 @@ biassemble-core (Vercel)        biassemble/backend (Vercel)      biassemble/fron
                                    GET /api/session, result
 ```
 
+## Schema Migration
+
+[!WARNING]
+After deploying code that changes the database schema, apply pending migrations to the production database.
+
+Drizzle config lives in `biassemble/backend/drizzle.config.ts` — it reads `DATABASE_URL` from the environment (`.env.local`).
+
+```bash
+cd biassemble/backend
+pnpm db:push
+```
+
+This adds any missing columns, tables, or indexes. Run it whenever `src/drizzle/schema.ts` changes.
+
 ## Prerequisites
 
 - Vercel account with CLI installed (`vercel`)

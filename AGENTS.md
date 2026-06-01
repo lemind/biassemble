@@ -34,6 +34,7 @@
 - Keep commit messages short and descriptive. Example: `feat: add retry logic` — not `feat: add retry logic to syncQueue with exponential backoff and timeout`. If you need details, put them in the body.
 - Never force-push or rewrite history without explicit approval.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
+- **NEVER push to `main` directly.** All work goes to feature branches (e.g. `phase-4-versioning`). Pushing to `main` is strictly forbidden without explicit human approval.
 
 ## Architecture
 
@@ -85,6 +86,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - `spec.md` stays technology-agnostic where possible; stack and paths belong in `plan.md` / `tasks.md`, not in functional requirements.
 - **Never add prompts, model IDs, or LLM API keys to the public repo** — use `biassemble-core` (private) and `lib/ai/core-client.ts` only.
 - **Phase immutability**: Once a phase is marked complete (`✅`), never add new items to it. New work that's out of scope for the current phase goes into the **current/last active phase** (or a new sub-phase under it). Completed phases are frozen — do not modify them.
+- **Chronological ordering in tasks.md**: Add new sub-phases to the **end** of the current phase, not in the middle. Sub-phase letters (`4a`, `4b`, `4c`, `4d`) must reflect actual completion order, not planned order. If you add work after other sub-phases were already completed, give it the next letter in sequence.
 
 **Trigger examples** (docs update required): new `frontend/` or `backend/` package, API route added/renamed, env var moved server-side, phase completed, MVP scope narrowed or expanded.
 

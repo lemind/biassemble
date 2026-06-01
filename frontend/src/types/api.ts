@@ -33,4 +33,6 @@ export interface ResultResponse {
   answers: string[];
   biases: BiasItem[];
   reflectionPrompt: string;
+  prompt_version?: string;
+  schema_version?: string;
 }

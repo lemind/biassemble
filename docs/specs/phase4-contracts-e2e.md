@@ -10,6 +10,24 @@
 
 Only data shapes are exposed — no AI prompts, model IDs, API keys, or internal architecture. Safe to share publicly.
 
+## Version Fields
+
+Since Phase 4b, every `QuestionOutput` and `AssessmentOutput` carries:
+- `prompt_version` — semver tag from `PromptRegistry.getVersion()` (e.g. `"1.0.0"`)
+- `schema_version` — `SCHEMA_VERSION` constant from contracts (e.g. `"1.0.0"`)
+
+These are persisted in `session_data.prompt_version` and `session_data.schema_version` and returned in `GET /api/result/[id]`.
+
+## Migration
+
+Before deploying, run:
+
+```bash
+cd backend
+pnpm db:generate   # detects new prompt_version / schema_version columns
+pnpm db:push       # applies to Supabase
+```
+
 ## Integration Test
 
 ### Local run
@@ -36,7 +54,7 @@ The Inngest job `biassemble/integration-test`:
 3. Asserts 2-5 questions
 4. Submits matching answers
 5. Polls `GET /api/result/[id]` for assessment
-6. Validates all output shapes against Zod schemas
+6. Validates all output shapes against Zod schemas (including version fields)
 
 ## Type Generation
 

@@ -75,7 +75,7 @@
   - "Copy Everything" button that copies story + Q&A + assessment + reflection prompt as a single text block
   - Ready to paste into ChatGPT or any AI assistant
 
-### Phase 4b: Rate limit handling + prompt fixes ✅
+### Phase 4c: Rate limit handling + prompt fixes ✅
 
 - [x] T043 [P] Detect Gemini rate limit errors in provider — `biassemble-core/src/providers/gemini.ts`
   - Catch 429 errors, parse for quota vs per-minute limit
@@ -94,6 +94,10 @@
   - `story/route.ts`, `answers/route.ts`, `session/[id]/route.ts`, `result/[id]/route.ts`
   - Check `error instanceof AppException` and use `error.statusCode` (502 for AI errors, 400 for validation, etc.)
   - Previously all errors returned 500 regardless of type
+
+### Phase 4d: Version stamping + bias normalization ✅
+
+- [x] T052 [P] Add `prompt_version`, `schema_version`, `biasCatalogId` to Drizzle schema, queries, API, frontend types, dev-mock, integration test, and Inngest validation
 
 ---
 

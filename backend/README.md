@@ -41,5 +41,6 @@ cp .env.example .env.local
 pnpm install
 pnpm dev          # http://localhost:3000
 pnpm db:generate
-pnpm db:push
+pnpm db:push          # Apply pending schema migrations to the database
+                      # Required after schema.ts changes and during deployment
 ```

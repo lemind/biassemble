@@ -44,8 +44,8 @@ export const biasItemSchema = z.object({
 export const assessmentOutputSchema = z.object({
   biases: z.array(biasItemSchema).min(1),
   reflectionPrompt: z.string().min(10),
-  prompt_version: z.string().optional(),
-  schema_version: z.string().optional(),
+  prompt_version: z.string().nullish(),
+  schema_version: z.string().nullish(),
 });
 
 export type AssessmentOutput = z.infer<typeof assessmentOutputSchema>;

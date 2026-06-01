@@ -18,7 +18,13 @@ export async function handleAssessmentGeneration(sessionId: string) {
     answers: data.answers,
   });
 
-  await saveAssessment(sessionId, result.biases, result.reflectionPrompt);
+  await saveAssessment(
+    sessionId,
+    result.biases,
+    result.reflectionPrompt,
+    result.prompt_version,
+    result.schema_version
+  );
   await updateSessionStatus(sessionId, "completed");
 
   return result;

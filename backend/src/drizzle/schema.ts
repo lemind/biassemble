@@ -37,6 +37,10 @@ export const sessionData = pgTable("session_data", {
     >(),
 
   reflectionPrompt: text("reflection_prompt"),
+
+  // Version tracking — stamped from AI Core response
+  promptVersion: text("prompt_version"),
+  schemaVersion: text("schema_version"),
 });
 
 // ── Type exports ──

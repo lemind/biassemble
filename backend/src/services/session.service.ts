@@ -20,7 +20,13 @@ export async function handleCreateSession(storyText: string) {
   });
 
   // Persist story + all questions in session_data
-  await createSessionData(session.id, storyText, aiResult.questions);
+  await createSessionData(
+    session.id,
+    storyText,
+    aiResult.questions,
+    aiResult.prompt_version,
+    aiResult.schema_version
+  );
 
   // Mark session as questioning
   await updateSessionStatus(session.id, "questioning");

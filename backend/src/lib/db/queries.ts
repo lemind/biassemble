@@ -51,11 +51,13 @@ export async function updateSessionStatus(
 export async function createSessionData(
   sessionId: string,
   story: string,
-  questions: string[]
+  questions: string[],
+  promptVersion?: string,
+  schemaVersion?: string
 ) {
   const [row] = await db()
     .insert(sessionData)
-    .values({ sessionId, story, questions })
+    .values({ sessionId, story, questions, promptVersion, schemaVersion })
     .returning();
   return row;
 }
@@ -91,11 +93,13 @@ export async function saveAssessment(
     storyConnection: string;
     alternativePerspective: string;
   }>,
-  reflectionPrompt: string
+  reflectionPrompt: string,
+  promptVersion?: string,
+  schemaVersion?: string
 ) {
   const [row] = await db()
     .update(sessionData)
-    .set({ biases, reflectionPrompt })
+    .set({ biases, reflectionPrompt, promptVersion, schemaVersion })
     .where(eq(sessionData.sessionId, sessionId))
     .returning();
   return row;

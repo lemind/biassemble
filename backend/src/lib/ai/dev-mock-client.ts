@@ -23,6 +23,8 @@ export function createDevMockClient(): AiClient {
           "[dev-mock] What would change if you viewed this from their perspective?",
         ],
         isComplete: true,
+        prompt_version: "1.0.0",
+        schema_version: "1.0.0",
       };
     },
     async generateAssessment(
@@ -60,6 +62,8 @@ export function createDevMockClient(): AiClient {
         ],
         reflectionPrompt:
           "[dev-mock] What would you do differently if you assumed the opposite?",
+        prompt_version: "1.0.0",
+        schema_version: "1.0.0",
       };
     },
   };

@@ -137,6 +137,8 @@ export async function runReflectionFlow(baseUrl: string): Promise<FlowResult> {
     const parsed = assessmentOutputSchema.safeParse({
       biases: resultBody.biases,
       reflectionPrompt: resultBody.reflectionPrompt,
+      prompt_version: resultBody.prompt_version,
+      schema_version: resultBody.schema_version,
     });
 
     if (!parsed.success) {

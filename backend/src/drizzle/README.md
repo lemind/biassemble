@@ -24,5 +24,14 @@ Supabase projects expose tables via the auto-generated REST API. Without RLS, an
 
 ```bash
 cd backend
-pnpm drizzle-kit migrate
+pnpm db:generate   # detect schema changes and create migration SQL
+pnpm db:push       # apply to Supabase
 ```
+
+### Schema changes (Phase 4b)
+
+The `session_data` table now includes:
+- `prompt_version` (text) — semver tag from AI Core's `PromptRegistry.getVersion()`
+- `schema_version` (text) — `SCHEMA_VERSION` constant from contracts
+
+These are optional columns populated from AI Core responses. When adding new columns, always run `pnpm db:generate` to create the migration before deploying.

@@ -77,14 +77,7 @@
 
 ### Phase 4b: Version stamping + bias normalization ✅
 
-- [x] T052 [P] Add `prompt_version` and `schema_version` columns to `session_data` Drizzle schema
-- [x] T053 [P] Wire version fields through `lib/db/queries.ts` (`createSessionData`, `saveAssessment`)
-- [x] T054 [P] Return `prompt_version` and `schema_version` in `GET /api/result/[id]`
-- [x] T055 [P] Add optional version fields to `frontend/src/types/api.ts` `ResultResponse`
-- [x] T056 [P] Add `biasCatalogId` to `BiasItem` in backend contracts (backward-compatible)
-- [x] T057 [P] Update `dev-mock-client.ts` to return mock version fields
-- [x] T058 [P] Update integration test (`reflection-flow.test.ts`) to validate version fields
-- [x] T059 [P] Update Inngest function schema validation for version fields
+- [x] T052–T059 [P] Add `prompt_version`, `schema_version`, `biasCatalogId` to Drizzle schema, queries, API, frontend types, dev-mock, integration test, and Inngest validation
 
 **Migration note**: Run `drizzle-kit generate && drizzle-kit push` before deploying to pick up new columns.
 

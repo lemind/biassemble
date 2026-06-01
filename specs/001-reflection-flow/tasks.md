@@ -97,9 +97,7 @@
 
 ### Phase 4d: Version stamping + bias normalization ✅
 
-- [x] T052–T059 [P] Add `prompt_version`, `schema_version`, `biasCatalogId` to Drizzle schema, queries, API, frontend types, dev-mock, integration test, and Inngest validation
-
-**Migration note**: Run `drizzle-kit generate && drizzle-kit push` before deploying to pick up new columns.
+- [x] T052 [P] Add `prompt_version`, `schema_version`, `biasCatalogId` to Drizzle schema, queries, API, frontend types, dev-mock, integration test, and Inngest validation
 
 ---
 

@@ -8,6 +8,8 @@ AI-assisted conversational web application that helps users identify cognitive b
 
 Biassemble guides users through a reflective process: write a personal situation, answer AI-generated follow-up questions, and receive personalized feedback about cognitive biases that may be influencing their thinking. The app provides contextual explanations tied to the user's story and offers alternative perspectives.
 
+The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
+
 ## Key Features
 
 - **Conversational Flow** – Step-by-step reflection with AI-generated questions
@@ -39,7 +41,7 @@ biassemble/
 └── AGENTS.md
 ```
 
-**biassemble-core/** (private, workspace sibling) — prompts, models, `POST /v1/reflection/*` ([API.md](../biassemble-core/API.md)).
+**biassemble-core/** (private, workspace sibling) — Gemini-powered reflection engine with structured reasoning traces, evidence binding per bias claim, two-phase assessment (story-only → post-questions), and quality metrics (evidence_grounded_rate, schema_parse_rate). CI-gated evaluation with golden and no_bias adversarial datasets. Stage 001 deployed, Stage 002 spec approved. ([API.md](../biassemble-core/API.md))
 
 ## Getting Started (Frontend)
 
@@ -54,12 +56,12 @@ pnpm build      # production build
 
 | Area | Status |
 |------|--------|
-| Phase 1 landing (`frontend/`) | Deployed — story form + validation + stub submit |
-| Phase 2 backend (`backend/`) | Done — jobs, workflow adapter, AI Core HTTP client (no prompts in public repo) |
-| Private AI Core | Implement `biassemble-core/API.md` |
-| P1 reflection flow | Phase 3 — DB, API routes, wire jobs + frontend |
+| Frontend (React + Vite) | Deployed — full reflection flow (story → questions → assessment → results) |
+| Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
+| Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables |
+| Private AI Core | Stage 001 deployed; Stage 002 spec approved (reasoning traces, evidence binding, CI eval) |
 
-**Next**: Phase 3 — `POST /api/story`, `runGenerateQuestions`, Core or `dev-mock`.
+**Next**: Implement stage 002 — reasoning traces, evidence binding, quality metrics, CI gating.
 
 ## License
 

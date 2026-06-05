@@ -2,6 +2,7 @@
 
 ## Philosophy
 
+- **AI must re-read this file at the start of every session.**
 - Prefer KISS over DRY.
 - Duplication is acceptable if abstraction harms readability.
 - Avoid abstractions before the third real use case.
@@ -56,6 +57,28 @@ This project contains **two separate git repositories** in sibling directories:
 - Never force-push or rewrite history without explicit approval.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 - **NEVER push to `main` directly.** All work goes to feature branches (e.g. `phase-4-versioning`). Pushing to `main` is strictly forbidden without explicit human approval.
+
+### Commit Convention
+
+Format: `<tag>(<scope>): <short description>`
+
+Tags:
+- `feat:` — new feature
+- `fix:` — bug fix
+- `review:` — addressing PR/code review feedback
+- `chore:` — tooling, config, deps, CI
+- `docs:` — documentation only
+- `test:` — adding/fixing tests
+- `refactor:` — code change with zero behavior change
+- `perf:` — performance improvement
+
+Scope (optional): task ID if applicable, e.g. `T102`, `T1b3`
+
+Examples:
+- `feat(T102): add computeSystemMetrics function`
+- `fix: correct schemaParseRate null on empty input`
+- `review: drop traceType, add sessions comment`
+- `chore: add drizzle config for core schema`
 
 ## Architecture
 

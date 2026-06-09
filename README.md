@@ -10,6 +10,8 @@ Biassemble guides users through a reflective process: write a personal situation
 
 The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
 
+> **Reasoning infrastructure complete** — auditable traces, evidence-based assessment, two-phase evaluation, and CI quality gates. See [biassemble-core README](../biassemble-core/README.md) for details.
+
 ## Key Features
 
 - **Conversational Flow** – Step-by-step reflection with AI-generated questions
@@ -59,9 +61,9 @@ pnpm build      # production build
 | Frontend (React + Vite) | Deployed — full reflection flow (story → questions → assessment → results) |
 | Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
 | Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables |
-| Private AI Core | Stage 001 deployed; Stage 002 spec approved (reasoning traces, evidence binding, CI eval) |
+| Private AI Core | Stage 001 + Stage 002 deployed (reasoning traces, evidence binding, CI eval) |
 
-**Next**: Implement stage 002 — reasoning traces, evidence binding, quality metrics, CI gating.
+**Next**: Backend unit tests (T014), E2E Playwright tests (T016).
 
 ## License
 

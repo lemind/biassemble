@@ -43,9 +43,11 @@ vercel env add GEMINI_MODEL           # gemini-2.0-flash
 vercel env add AI_CORE_API_KEY        # Generate a strong random key (e.g., openssl rand -hex 32)
 vercel env add PORT                   3001
 
-# Deploy
+# Deploy + auto-sync Inngest functions
 pnpm deploy
 ```
+
+The `deploy` script runs `vercel deploy --prod` followed by `pnpm run inngest:sync`, which tells Inngest to discover the functions served at `/api/inngest`.
 
 After deploy, note the URL (e.g., `https://biassemble-core.vercel.app`).
 
@@ -56,6 +58,10 @@ curl -s https://biassemble-core.vercel.app/health
 
 curl -s https://biassemble-core.vercel.app/v1/contracts | head -c 100
 # → {"reflection":{"GenerateQuestionRequest":...
+
+# Check Inngest functions are registered
+curl -s https://biassemble-core.vercel.app/api/inngest -H "Authorization: Bearer $AI_CORE_API_KEY"
+# → {"ids":["eval-golden-story","eval-no-bias-story","reflection-assessment",...],...}
 ```
 
 ## Deploy Backend + Frontend (public app)

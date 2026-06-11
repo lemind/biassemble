@@ -3,7 +3,7 @@ import { getSession } from '../api/client';
 import type { SessionStatusResponse } from '../types/api';
 
 const POLL_INTERVAL_MS = 2000;
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 120_000;
 
 interface UsePollAssessmentOptions {
   sessionId: string;

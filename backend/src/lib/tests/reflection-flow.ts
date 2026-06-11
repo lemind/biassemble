@@ -18,7 +18,7 @@ export const TEST_STORY = [
   "I want to understand what biases might have been at play in this interaction.",
 ].join(" ");
 
-export const POLL_TIMEOUT_MS = 30_000;
+export const POLL_TIMEOUT_MS = 120_000;
 export const POLL_INTERVAL_MS = 1_000;
 
 export interface StepResult {

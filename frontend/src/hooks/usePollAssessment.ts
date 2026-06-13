@@ -47,6 +47,7 @@ export default function usePollAssessment({
 
     timeoutRef.current = setTimeout(() => {
       setTimedOut(true);
+      console.error(`[PollTimeout] Assessment not ready after ${TIMEOUT_MS / 1000}s for session ${sessionId}`);
       onErrorRef.current('Assessment generation is taking longer than expected. Please try again.');
       stopPolling();
     }, TIMEOUT_MS);

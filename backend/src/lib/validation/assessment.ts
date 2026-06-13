@@ -4,11 +4,11 @@ import { biasItemSchema } from "@/lib/ai/contracts";
 /**
  * DB/API shape for a persisted assessment.
  * Bias fields validated via contracts.ts (single source of truth).
- * At least 1 bias, no upper limit — AI decides.
+ * Empty biases allowed when noBiasDetected is true.
  */
 export const assessmentRecordSchema = z.object({
   sessionId: z.string().uuid(),
-  biases: z.array(biasItemSchema).min(1),
+  biases: z.array(biasItemSchema),
   reflectionPrompt: z.string().min(10),
 });
 

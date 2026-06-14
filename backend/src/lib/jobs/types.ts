@@ -1,10 +1,10 @@
 export type JobType = "generate-questions" | "generate-assessment";
 
 export interface GenerateQuestionsPayload {
-  sessionId: string;
+  inngestRunId: string;
 }
 export interface GenerateAssessmentPayload {
-  sessionId: string;
+  inngestRunId: string;
 }
 export type JobPayloadMap = {
   "generate-questions": GenerateQuestionsPayload;
@@ -13,7 +13,7 @@ export type JobPayloadMap = {
 
 /**
  * Validates and extracts the typed payload for a given job type.
- * Throws if sessionId is missing or invalid.
+ * Throws if inngestRunId is missing or invalid.
  */
 export function parseJobPayload<T extends JobType>(
   jobType: T,
@@ -21,9 +21,9 @@ export function parseJobPayload<T extends JobType>(
 ): JobPayloadMap[T] {
   const payload = data as Record<string, unknown>;
 
-  if (typeof payload.sessionId !== "string" || !payload.sessionId) {
-    throw new Error(`Job ${jobType} requires sessionId`);
+  if (typeof payload.inngestRunId !== "string" || !payload.inngestRunId) {
+    throw new Error(`Job ${jobType} requires inngestRunId`);
   }
 
-  return { sessionId: payload.sessionId } as JobPayloadMap[T];
+  return { ...payload, inngestRunId: payload.inngestRunId } as JobPayloadMap[T];
 }

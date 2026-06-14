@@ -16,7 +16,7 @@ function createJobFunction(jobType: JobType) {
     { id: jobType },
     { event: jobEventName(jobType) },
     async ({ event }) => {
-      await runJob(jobType, event.data);
+      await runJob(jobType, { ...event.data, inngestRunId: event.id });
     }
   );
 }

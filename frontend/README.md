@@ -36,22 +36,37 @@ pnpm preview
 
 ```
 src/
-├── App.tsx                 # Landing page with ErrorBoundary + Suspense
-├── main.tsx                # Entry point
-├── index.css               # Tailwind + DaisyUI styles
+├── App.tsx                    # Root: LandingPage with ErrorBoundary + Suspense
+├── main.tsx                   # Entry point
+├── index.css                  # Tailwind + DaisyUI styles
+├── api/
+│   └── client.ts              # Axios instance, POST /api/story, /api/answers, GET /api/result
+├── hooks/
+│   ├── useReflectionFlow.ts   # Orchestrates story → questions → answers → assessment flow
+│   └── usePollAssessment.ts   # Polls backend for async assessment completion
+├── types/
+│   ├── api.ts                 # Shared API type definitions
+│   ├── api.generated.ts       # Generated from Core contracts (pnpm generate:types)
+│   └── ui.ts                  # UI-specific types (step enums, status)
 └── components/
-    ├── common/
-    │   ├── ErrorBoundary.tsx   # Global error boundary with retry
-    │   └── LoadingFallback.tsx # Suspense fallback spinner
-    └── StoryForm.tsx       # Story input with Zod validation (lazy-loaded)
+    ├── LandingPage.tsx        # Story submission form with Zod validation
+    ├── QAFlow.tsx             # Question-answer interactive flow
+    ├── AssessmentLoading.tsx  # Loading state while assessment is computed
+    ├── ResultsView.tsx        # Bias assessment results display
+    ├── StoryForm.tsx          # Story input component (lazy-loaded)
+    └── common/
+        ├── ErrorBoundary.tsx  # Global error boundary with retry
+        ├── LoadingFallback.tsx# Suspense fallback spinner
+        └── BiassembleLayout.tsx # Shared layout wrapper
 ```
 
-## Features (Phase 0)
+## Features
 
-- Story submission form with character validation (50–3000 chars)
-- Console logging on submit
-- Thank You confirmation state
-- DaisyUI styled responsive layout
+- **Story Submission** — Form with character validation (50–3000 chars), submits to backend
+- **AI Question Flow** — Displays 2–5 contextual follow-up questions from AI, collects answers
+- **Assessment Results** — Displays bias analysis with explanations, story connections, alternative perspectives
+- **Async Polling** — Polls backend for assessment completion with loading state
+- **Error Handling** — Global error boundary with retry, per-step error states
 
 ## Environment
 
@@ -63,8 +78,9 @@ VITE_API_URL=http://localhost:3000
 
 Do **not** add Gemini or database keys here — those belong in `../backend/.env.local` only.
 
-## What's Next
+## Type Generation
 
-1. Backend scaffold (`../backend/`) — Next.js API routes
-2. Wire submit → `POST /api/story` via `src/api/client.ts`
-3. Session + results pages (`src/pages/`)
+Run whenever Core's Zod schemas change:
+
+```bash
+pnpm generate:types   # Reads Core JSON file → src/types/api.generated.ts

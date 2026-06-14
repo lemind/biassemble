@@ -31,7 +31,6 @@ const TEST_STORY = [
 
 /** Registered with serve() in app/api/inngest/route.ts only. */
 export const inngestFunctions = [
-  createJobFunction("generate-questions"),
   createJobFunction("generate-assessment"),
   inngest.createFunction(
     { id: "integration-test" },

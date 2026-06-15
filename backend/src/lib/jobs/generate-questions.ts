@@ -8,14 +8,13 @@ import type { GenerateQuestionsPayload } from "./types";
 export async function runGenerateQuestions(
   payload: GenerateQuestionsPayload
 ): Promise<void> {
-  const { sessionId } = payload;
+  const { inngestRunId } = payload;
   const ai = getAiClient();
 
   // Phase 3: load story + history from DB, then call AI Core
-  // const session = await queries.getSession(sessionId);
-  // const result = await ai.generateQuestion({ sessionId, story, ... });
+  // const result = await ai.generateQuestion({ sessionId: inngestRunId, story, ... });
 
   console.log(
-    `[job:generate-questions] session=${sessionId} aiClient=${ai.mode}`
+    `[job:generate-questions] run=${inngestRunId} aiClient=${ai.mode}`
   );
 }

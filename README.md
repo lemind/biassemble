@@ -34,15 +34,19 @@ The AI pipeline uses structured reasoning (story analysis → interpretations �
 
 ```
 biassemble/
-├── frontend/               # Vite + React SPA — deployed (Phase 1)
-├── backend/                # Next.js API server — scaffolded (Phase 2)
+├── frontend/               # Vite + React SPA — deployed (full reflection flow)
+├── backend/                # Next.js API server + Inngest jobs — deployed
 ├── specs/001-reflection-flow/
 │   └── architecture.md     # public backend vs private AI Core
+├── docs/
+│   └── specs/
+│       └── phase4-contracts-e2e.md
+├── DEPLOYMENT.md
+├── TYPE_GENERATION.md
 └── AGENTS.md
 ```
 
-**biassemble-core/** (private, workspace sibling) — Gemini-powered reflection engine with structured reasoning traces, evidence binding per bias claim, two-phase assessment (story-only → post-questions), and quality metrics (evidence_grounded_rate, schema_parse_rate). CI-gated evaluation with golden and no_bias adversarial datasets. Stage 001 deployed, Stage 002 spec approved. ([API.md](../biassemble-core/API.md))
-
+**biassemble-core/** (private, workspace sibling) — Gemini-powered reflection engine with structured reasoning traces (story analysis → interpretations → bias hypotheses → evidence mapping), field-level parse recovery, evidence validation, CI-gated evaluation (golden + no_bias datasets, ~30 biases), and LLM latency logging. Prompt v1.1.0 / Schema v1.0.0. Deployed. ([API.md](../biassemble-core/API.md))
 ## Getting Started (Frontend)
 
 ```bash
@@ -58,11 +62,10 @@ pnpm build      # production build
 |------|--------|
 | Frontend (React + Vite) | Deployed — full reflection flow (story → questions → assessment → results) |
 | Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
-| Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables |
-| Private AI Core | Stage 001 deployed; Stage 002 spec approved (reasoning traces, evidence binding, CI eval) |
+| Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables (RLS-enabled) |
+| Private AI Core | Prompt v1.1.0 / Schema v1.0.0 — Deployed (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging) |
 
-**Next**: Implement stage 002 — reasoning traces, evidence binding, quality metrics, CI gating.
-
+**Next**: Stage 003 planning.
 ## License
 
 Proprietary — All rights reserved.

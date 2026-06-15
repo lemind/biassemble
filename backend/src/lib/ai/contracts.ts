@@ -40,9 +40,9 @@ export const biasItemSchema = z.object({
   alternativePerspective: z.string().min(10),
 });
 
-/** At least 1 bias, no upper limit — AI decides how many are found. */
+/** Empty biases allowed when noBiasDetected is true. */
 export const assessmentOutputSchema = z.object({
-  biases: z.array(biasItemSchema).min(1),
+  biases: z.array(biasItemSchema),
   reflectionPrompt: z.string().min(10),
   prompt_version: z.string().nullish(),
   schema_version: z.string().nullish(),

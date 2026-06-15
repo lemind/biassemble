@@ -5,7 +5,7 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10_000,
+  timeout: 120_000,
 });
 
 export async function submitStory(text: string) {

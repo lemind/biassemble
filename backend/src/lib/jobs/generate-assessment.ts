@@ -1,13 +1,13 @@
-import { handleAssessmentGeneration } from "@/services/assessment.service";
 import type { GenerateAssessmentPayload } from "./types";
 
 /**
  * Generate bias assessment for a completed session.
- * Transport-agnostic — called from the queue worker (Inngest) or tests.
+ * Real assessment runs via setImmediate in question.service.ts, not Inngest.
+ * This handler exists only for Inngest Cloud registration.
  */
 export async function runGenerateAssessment(
   payload: GenerateAssessmentPayload
 ): Promise<void> {
-  const { sessionId } = payload;
-  await handleAssessmentGeneration(sessionId);
+  const { inngestRunId } = payload;
+  console.log(`[job:generate-assessment] run=${inngestRunId}`);
 }

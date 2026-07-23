@@ -46,7 +46,17 @@ biassemble/
 └── AGENTS.md
 ```
 
-**biassemble-core/** (private, workspace sibling) — Gemini-powered reflection engine with structured reasoning traces (story analysis → interpretations → bias hypotheses → evidence mapping), field-level parse recovery, evidence validation, CI-gated evaluation (golden + no_bias datasets, ~30 biases), and LLM latency logging. Prompt v1.1.0 / Schema v1.0.0. Deployed. ([API.md](../biassemble-core/API.md))
+## Related Repositories
+
+This app is the frontend/backend half of a 3-repo system. The AI logic lives in two sibling repos, each independently deployed:
+
+- **[biassemble-core](../biassemble-core/README.md)** (private) — Gemini-powered reflection engine. Structured reasoning traces (story analysis → interpretations → bias hypotheses → evidence mapping), field-level parse recovery, evidence validation, CI-gated evaluation. Prompt v1.1.0 / Schema v1.0.0. Deployed. ([API.md](../biassemble-core/API.md))
+- **[biassemble-engine](../biassemble-engine/README.md)** — RAG sidecar called by biassemble-core, never by this repo directly. Retrieves candidate biases for a story from a curated knowledge base and hands them to core as extra context, rather than relying on the LLM's own recall alone.
+  - **RAG**: vector search (pgvector + sentence-transformers) over a bias-catalog knowledge base, unioned with a second pass from a small local LLM that catches biases the vector index misses in unfamiliar domains.
+  - **Fine-tuning**: that local LLM (Gemma-3-4B) is being LoRA fine-tuned on weak-supervision pairs mined from real eval runs, to close blind spots the base model has on certain bias types — tracked as a candidate build, gated by the same CI eval suite before promotion.
+
+Dependency direction: this repo → biassemble-core → biassemble-engine → pgvector. Never reversed.
+
 ## Getting Started (Frontend)
 
 ```bash

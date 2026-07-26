@@ -36,6 +36,33 @@
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 - **NEVER push to `main` directly.** All work goes to feature branches (e.g. `phase-4-versioning`). Pushing to `main` is strictly forbidden without explicit human approval.
 
+## Repository Structure & Shared Secrets
+
+Three separate git repositories, each with its own `.git`, deploy target, and Vercel/HF project — none of this is a monorepo:
+
+```
+/home/dl/_prog/biassemble/          ← NOT a git repo (workspace container only)
+├── biassemble/                     ← App repo (BE + FE) — YOU ARE HERE
+│   ├── backend/                    → Vercel project "biassemble-be" (biassemble-backend.vercel.app)
+│   └── frontend/                   → separate Vercel project
+├── biassemble-core/                ← Core repo (private) — Gemini reasoning engine, HTTP API
+│   └──                             → Vercel project "biassemble-core" (biassemble-core.vercel.app)
+└── biassemble-engine/               ← RAG sidecar (Python, pure retriever, no LLM calls)
+    └──                             → Hugging Face Space
+```
+
+Dependency direction: `biassemble` (this repo's backend) → `biassemble-core` → `biassemble-engine` → `pgvector`. Never reversed.
+
+**Shared secrets that MUST match across two deploy targets at once — a mismatch fails silently as `401 Invalid API key`, not a build error:**
+
+| Secret | Set in (this repo) | Must match | Set in (other repo) |
+|---|---|---|---|
+| `AI_CORE_API_KEY` | `backend`'s Vercel env (`biassemble-be`) | ⟷ | `biassemble-core`'s Vercel env (`AI_CORE_API_KEY`) |
+| `AI_CORE_BASE_URL` | `backend`'s Vercel env | must point at | `biassemble-core`'s actual deployed URL |
+| — | — | (biassemble-core ⟷ biassemble-engine's `RAG_API_KEY` is a `biassemble-core`-side concern, documented there — this repo has no direct dependency on the engine) |
+
+**Rotate `AI_CORE_API_KEY` in exactly one place and the other silently breaks** — this happened for real (2026-07-22): rotating it in `biassemble-core`'s Vercel env without updating this repo's backend broke every backend→core call with `401 Invalid API key`, no build failure, no obvious error until someone hit the app. If you ever rotate this key in either repo, update it in **both** Vercel projects in the same sitting, then verify with a real call through the backend (e.g. its `/api/contracts` proxy route) — not just a call to core directly, since that alone won't prove the backend's copy is still valid.
+
 ## Architecture
 
 - API routes must stay thin.
@@ -98,6 +125,17 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - Preserve existing architecture unless explicitly requested.
 - Treat spec/plan/tasks updates as part of the change, not a follow-up chore.
 
+## Scope Discipline
+
+**Do only what was explicitly asked. Everything else is out of scope.**
+
+- If the user asks to update spec files, do not touch source code.
+- If the user asks to fix a bug, do not refactor surrounding code.
+- If the user asks to implement Phase 1, do not start Phase 2.
+- When in doubt whether an action is in scope: **don't do it, ask first.**
+
+This applies even if the extra work seems obviously correct, helpful, or "the right thing to do." The user may have a reason for the narrow scope (reviewing incrementally, testing assumptions, coordinating with other work). Unsolicited work wastes review time and can conflict with the user's plan.
+
 ## Autonomy
 
 ### Act without asking:
@@ -112,6 +150,7 @@ After **any** change that affects behavior, scope, architecture, stack, file lay
 - Adding/removing dependencies or changing versions
 - Altering public APIs, DB schemas, or auth flows
 - Committing code — show summary of changes first, ask user to review before running `git commit`
+- **Any work beyond the explicitly stated task — even if it seems related or necessary**
 
 ## Forbidden
 

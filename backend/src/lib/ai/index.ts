@@ -23,4 +23,7 @@ export type {
   AssessmentOutput,
   GenerateQuestionRequest,
   GenerateAssessmentRequest,
+  ExtractClaimsRequest,
+  ExtractClaimsOutput,
+  GrounnelStatusOutput,
 } from "./contracts";

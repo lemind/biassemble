@@ -1,8 +1,11 @@
 import type { AiClient } from "./client";
 import type {
   AssessmentOutput,
+  ExtractClaimsOutput,
+  ExtractClaimsRequest,
   GenerateAssessmentRequest,
   GenerateQuestionRequest,
+  GrounnelStatusOutput,
   QuestionOutput,
 } from "./contracts";
 
@@ -64,6 +67,34 @@ export function createDevMockClient(): AiClient {
           "[dev-mock] What would you do differently if you assumed the opposite?",
         prompt_version: "1.0.0",
         schema_version: "1.0.0",
+      };
+    },
+    async extractClaims(
+      _input: ExtractClaimsRequest
+    ): Promise<ExtractClaimsOutput> {
+      return { id: "00000000-0000-4000-8000-000000000000" };
+    },
+    async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
+      return {
+        id,
+        status: "done",
+        progress: { checked: 1, total: 1 },
+        claims: [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            text: "[dev-mock] The Eiffel Tower was completed in 1889.",
+            status: "done",
+            verdict: "supported",
+            evidence: "[dev-mock] The tower was finished in 1889 for the World's Fair.",
+            confidence: 0.95,
+            reason: "[dev-mock] Confirmed by the mocked source.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok" },
+            ],
+          },
+        ],
+        score: { grounded_pct: 100, grounded_n: 1, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 1 },
+        caps_hit: false,
       };
     },
   };

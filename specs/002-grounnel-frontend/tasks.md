@@ -11,19 +11,17 @@
 
 ---
 
-## Phase 1: Foundational (Blocking Prerequisites)
+## Phase 1: Foundational (Blocking Prerequisites) ✅ Done
 
 **Purpose**: Shared data layer, matching util, and polling/state every user story depends on. Routing is deliberately NOT in this phase — see T010 (Phase 2) — it needs `GrounnelApp` to exist first, and this phase's checkpoint requires a clean build.
 
-**⚠️ CRITICAL**: No user story work should start until this phase is complete.
+- [x] T001 [P] Grounnel API client functions — `frontend/src/api/client.ts`: `submitGrounnelText(text)` → `POST /api/grounnel/extract`, `getGrounnelStatus(id)` → `GET /api/grounnel/status/:id`. Untyped `response.data`, matching the file's existing convention exactly (double-quoted strings, same as the rest of the file — not reformatted to the project's prettier config, to avoid an unrelated whole-file diff).
+- [x] T002 [P] Grounnel types — `frontend/src/types/grounnel.ts`: plain interfaces (`GrounnelStatusOutput`, `Claim`, `ClaimSource` as a discriminated union, `Score`), mirroring `backend/src/lib/ai/contracts.ts` field-for-field.
+- [x] T003 [P] `matchClaimSpans` — `frontend/src/lib/matchClaimSpans.ts`, all 5 steps implemented (exact match → Jaccard ≥0.5 sentence fallback → null → position/id overlap tie-break with dev-only `console.warn` → runs over every claim regardless of status). **Found and fixed while implementing**: `import.meta.env.DEV` crashed outside Vite's transform (including its own tests, run via `tsx`) — changed to `import.meta.env?.DEV`. 8 plain-assert tests in the co-located `matchClaimSpans.test.ts`, run via `npx tsx src/lib/matchClaimSpans.test.ts` — all passing, covering exact/sentence-fallback/no-match/overlap/tie-break/pending-claim cases from the real observed sample. Required excluding `*.test.ts` from `tsconfig.app.json` (Node-context file, browser-only tsconfig didn't have `node` types) — see Phase 5 T017 for the fuller test suite this seeds.
+- [x] T004 `usePollGrounnelStatus` — `frontend/src/hooks/usePollGrounnelStatus.ts`: 5s interval, swallow-and-retry, no fixed cutoff. **Found and fixed while implementing**: an imperative `setStatus(null)` at the top of the effect body was a real `react-hooks/set-state-in-effect` ESLint violation — replaced with a derived check (`status.id === runId ? status : null`, using the fact that `GrounnelStatusOutput.id` always equals the polled `runId`) instead of a synchronous reset.
+- [x] T005 `useGrounnelRun` — `frontend/src/hooks/useGrounnelRun.ts`: owns `{ runId, status, error }` + `submit`/`dismissError`; composes `usePollGrounnelStatus` internally. Resubmission clears `runId` before the new id arrives, so the poll hook's own runId-keyed effect naturally tears down/replaces prior state (FR-013). Also derives a run-level error message from `status.status === 'failed'` (FR-012's run-level half).
 
-- [ ] T001 [P] Grounnel API client functions — `frontend/src/api/client.ts`: add `submitGrounnelText(text)` → `POST /api/grounnel/extract`, `getGrounnelStatus(id)` → `GET /api/grounnel/status/:id` (ADR-002 §4 shape). No dependency on T002 — matches this file's existing convention (`submitStory`/`getResult`/etc. already return `response.data` untyped; callers type the result, not the client functions).
-- [ ] T002 [P] Grounnel types — `frontend/src/types/grounnel.ts`: mirrors `backend/src/lib/ai/contracts.ts`'s Grounnel shapes (`GrounnelStatusOutput`, `Claim`, `ClaimSource`, `Score`)
-- [ ] T003 [P] `matchClaimSpans` — `frontend/src/lib/matchClaimSpans.ts`: pure function, `(articleText, claims: Claim[]) => Map<claimId, Span | null>`, per plan.md's 5-step algorithm — exact substring match → sentence-level Jaccard (≥0.5) fallback → no-match (null) → overlap resolution by span-start-position then `claim.id` (never array order) → runs over every claim regardless of `status` (`pending` included, per FR-005); presentation-only, never adjusts verdict/confidence (plan.md § Claim → text span matching); logs a dev-only `console.warn` with both claim ids whenever an overlap tie-break discards a claim, so collision frequency is observable (depends on T002 for the `Claim` type)
-- [ ] T004 `usePollGrounnelStatus` — `frontend/src/hooks/usePollGrounnelStatus.ts`: 5s-interval poll loop (not `usePollAssessment`'s 2s; ADR-002 §5, revised 2026-08-11), swallow-and-retry on transient fetch errors, no fixed cutoff (depends on T001)
-- [ ] T005 `useGrounnelRun` — `frontend/src/hooks/useGrounnelRun.ts`: owns `{ runId, status, error }`; resubmission tears down prior polling and replaces (not merges) run state (FR-013) (depends on T001, T004)
-
-**Checkpoint**: Data layer, matching, and polling/state all exist and build clean — user story UI work can begin.
+**Checkpoint**: `tsc -b` clean, `eslint` clean, `vite build` succeeds, 8/8 `matchClaimSpans` tests pass (all actually run, not just written) — data layer, matching, and polling/state all exist and build clean.
 
 ---
 

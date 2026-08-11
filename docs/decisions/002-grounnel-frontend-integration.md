@@ -56,6 +56,10 @@ This ADR settles the skeleton: where the code lives, how it's reached, how it's 
 
 These need their own `spec-driven-development` pass (`spec.md` → `plan.md` → `tasks.md`) before any of that UI gets built — the same discipline `biassemble-core`'s side of Grounnel has followed throughout, not skipped now that a frontend exists to build.
 
+## 6a. Implementation status (as of 2026-08-11)
+
+**Not started.** No route, no `<GrounnelApp />`, no `usePollGrounnelStatus`, no `components/grounnel/` directory, no additions to `src/api/client.ts` — this ADR records an accepted decision, not completed work. The backend proxy this frontend would call (ADR-001) is built, tested, and merged; nothing on the frontend side consumes it yet.
+
 ## 7. Consequences
 
 - `frontend/src/components/grounnel/` (new directory) holds this feature's components, kept separate from the existing reflection-product components rather than interleaved — matches the existing `components/common/` vs. feature-component split.

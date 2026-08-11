@@ -28,7 +28,9 @@ D020 §5 explicitly decided per-IP rate limiting stays a `biassemble-core`-side 
 
 **As currently built, this breaks the limiter's intent, not just its precision**: `biassemble-core`'s `request.ip` will be `biassemble/backend`'s own outbound IP (or a shared Vercel egress) for every Grounnel user, every time. "5 requests per IP per hour" silently becomes "5 requests total, across every user of the product, per hour" — not a degraded version of the control, a different and much stricter one that nobody decided on purpose.
 
-**Decision:** `biassemble/backend`'s Grounnel proxy route forwards the real end-user IP (read from Vercel's own `x-forwarded-for` on the incoming request) to `biassemble-core` via a header — `X-Grounnel-Client-IP`, not reusing the ambiguous, easily-spoofed `X-Forwarded-For` name for an internal, already-authenticated hop. `biassemble-core`'s `routes/grounnel.ts` needs a small matching change to prefer this header over `request.ip` when present, falling back to `request.ip` unchanged when it's absent (local dev, direct testing) — **not yet made**, tracked as a required follow-up in `biassemble-core`'s own tasks.md when this ADR is acted on, not silently assumed to already exist.
+**Decision:** `biassemble/backend`'s Grounnel proxy route forwards the real end-user IP (read from Vercel's own `x-forwarded-for` on the incoming request) to `biassemble-core` via a header — `X-Grounnel-Client-IP`, not reusing the ambiguous, easily-spoofed `X-Forwarded-For` name for an internal, already-authenticated hop. `biassemble-core`'s `routes/grounnel.ts` needs a small matching change to prefer this header over `request.ip` when present, falling back to `request.ip` unchanged when it's absent (local dev, direct testing).
+
+**Done, both sides (confirmed 2026-08-11):** this repo's `app/api/grounnel/extract/route.ts` reads `x-forwarded-for` and forwards it as `X-Grounnel-Client-IP` via `core-client.ts`'s `extractClaims`; `biassemble-core`'s `routes/grounnel.ts` prefers that header over `request.ip`, falling back correctly when absent. No longer an open follow-up.
 
 ## 5. Scope boundary — same "do not" list as D020 §5, restated for this repo
 
@@ -39,9 +41,9 @@ D020 §5 explicitly decided per-IP rate limiting stays a `biassemble-core`-side 
 
 ## 6. Consequences
 
-- `biassemble-core`'s `/extract` route needs the `X-Grounnel-Client-IP`-preferring change (§4) before this proxy's rate limiting behaves as originally specified — sequence this repo's T013-equivalent work after that change lands there, or land both together.
+- `biassemble-core`'s `/extract` route needed the `X-Grounnel-Client-IP`-preferring change (§4) before this proxy's rate limiting would behave as originally specified — landed on both sides, see §4.
 - `AiClient`'s dev-mock parity means local frontend development against Grounnel never needs a live `biassemble-core` key — same story as reflection today.
-- This ADR does not cover the frontend at all — see ADR-002.
+- This ADR does not cover the frontend at all — see ADR-002 (as of 2026-08-11, ADR-002's plan has not been implemented at all: no route, no components, no API client functions exist yet in `frontend/`).
 
 ## 7. Related documents
 

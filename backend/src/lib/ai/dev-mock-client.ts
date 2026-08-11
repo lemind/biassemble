@@ -89,12 +89,14 @@ export function createDevMockClient(): AiClient {
             confidence: 0.95,
             reason: "[dev-mock] Confirmed by the mocked source.",
             sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok" },
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok", retrievalMethod: "diy_fetch" },
             ],
           },
         ],
         score: { grounded_pct: 100, grounded_n: 1, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 1 },
         caps_hit: false,
+        started_at: new Date().toISOString(),
+        elapsed_seconds: 3,
       };
     },
   };

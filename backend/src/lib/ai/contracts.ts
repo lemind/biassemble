@@ -76,6 +76,9 @@ const grounnelClaimSourceSchema = z.discriminatedUnion("kind", [
     domain: z.string(),
     url: z.string(),
     status: grounnelSourceStatusSchema,
+    // Added to biassemble-core's response after this schema was first written — was being
+    // silently stripped by Zod's default parse. Optional since "attached" sources never have it.
+    retrievalMethod: z.enum(["diy_fetch", "tavily_fallback"]).optional(),
   }),
   z.object({
     kind: z.literal("attached"),
@@ -113,6 +116,10 @@ export const grounnelStatusResponseSchema = z.object({
     eligible: z.number(),
   }),
   caps_hit: z.boolean(),
+  // Added to biassemble-core's response after this schema was first written — was being
+  // silently stripped by Zod's default parse. Lets a future poller show elapsed time/ETA.
+  started_at: z.string().datetime().nullable(),
+  elapsed_seconds: z.number().int().nonnegative().nullable(),
 });
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;

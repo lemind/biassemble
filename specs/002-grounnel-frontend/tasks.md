@@ -25,19 +25,17 @@
 
 ---
 
-## Phase 2: User Story 1 - Paste an article and get it fact-checked (Priority: P1) 🎯 MVP
+## Phase 2: User Story 1 - Paste an article and get it fact-checked (Priority: P1) 🎯 MVP ✅ Done
 
 **Goal**: FR-001, FR-002, FR-003, FR-006, FR-007, FR-010, FR-012 (run-level half), FR-014 — submit text, see it redisplayed with matched claim spans colored by verdict, with a real error state if the run itself fails.
 
-**Independent Test**: Paste a sample with ≥1 checkable claim, submit, confirm the article reappears below the textarea with ≥1 span highlighted and colored per its verdict.
+- [x] T006 [P] [US1] `GrounnelApp` shell — `frontend/src/components/grounnel/GrounnelApp.tsx`: wires `useGrounnelRun`; `ArticleInput` always rendered, results rendered once `runId` exists.
+- [x] T007 [P] [US1] `ArticleInput` — `frontend/src/components/grounnel/ArticleInput.tsx`: textarea + run button; rejects empty/whitespace-only text client-side (FR-002); disabled while `isRunInFlight`.
+- [x] T008 [P] [US1] `HighlightedArticle` (base) — `frontend/src/components/grounnel/HighlightedArticle.tsx`: renders article text, applies `matchClaimSpans` output, colors matched spans + non-color icon per verdict (FR-007); unmatched/pending (verdict-less) claims render as plain text for now (pending styling is T013, Phase 3).
+- [x] T009 [US1] Wired submit flow + run-level error state in `GrounnelApp`. **Found and fixed while implementing**: `useGrounnelRun` (Phase 1) had no way to distinguish "idle" from "initial POST in flight" — both looked like `runId: null, error: null` — so `ArticleInput` couldn't correctly disable itself during that window. Added `isRunInFlight` (`submitting || (runId set && status non-terminal)`) to `useGrounnelRun`.
+- [x] T010 App routing — `frontend/src/App.tsx`: `isGrounnelRoute()` helper + branch to `<GrounnelApp />`. **Found and fixed while implementing**: the initial version called `useReflectionFlow()` after the branch's early `return` — a real Rules-of-Hooks violation, caught by ESLint (`react-hooks/rules-of-hooks`). Fixed by hoisting the hook call above the branch.
 
-- [ ] T006 [P] [US1] `GrounnelApp` shell — `frontend/src/components/grounnel/GrounnelApp.tsx`: wires `useGrounnelRun` + `usePollGrounnelStatus`; `ArticleInput` always rendered, results rendered once a run exists (depends on T005)
-- [ ] T007 [P] [US1] `ArticleInput` — `frontend/src/components/grounnel/ArticleInput.tsx`: textarea + run button; rejects empty/whitespace-only text client-side before any request (FR-002); disabled while a run is in flight
-- [ ] T008 [P] [US1] `HighlightedArticle` (base) — `frontend/src/components/grounnel/HighlightedArticle.tsx`: renders article text, applies `matchClaimSpans` output, colors matched spans + attaches the matching non-color icon per the verdict table (plan.md § Verdict → color mapping, FR-007); unmatched claims render no span (depends on T002, T003 — a standalone presentational component that doesn't need `GrounnelApp` to exist yet, same creation/wiring split as T015/`ClaimSourceList`)
-- [ ] T009 [US1] Wire submit flow + run-level error state in `GrounnelApp` — submit → run id → poll → pass status into `HighlightedArticle`; render `useGrounnelRun`'s `error` (including overall `status: failed`) as a dismissible inline error state that lets the user submit new text (FR-012 run-level half, spec.md's "run status becomes failed" edge case) (depends on T006, T007, T008)
-- [ ] T010 App routing — `frontend/src/App.tsx`: `isGrounnelRoute()` helper wrapping `window.location.pathname === '/grounnel'`, branching to `<GrounnelApp />` before existing phase logic (ADR-002 §3, FR-014) (depends on T006 — deliberately not in Phase 1: `GrounnelApp.tsx` doesn't exist until this phase, and Phase 1's checkpoint requires a clean build)
-
-**Checkpoint**: US1 independently functional — paste text, see verdict-colored highlights, see a real error state on run failure.
+**Checkpoint**: `tsc -b`/`eslint`/`vite build` all clean. **End-to-end usability check actually run in a real browser** (Playwright + system Chrome, not simulated): started both dev servers, submitted the dev-mock's exact claim text at `/grounnel`, confirmed the article reappeared highlighted green with the ✓ icon, zero console/page errors. Required adding a dev-only Vite proxy (`vite.config.ts` `server.proxy`) — local dev had no way to run FE+BE together at all before this (a real, pre-existing gap unrelated to Grounnel: no CORS config anywhere in this backend, no existing proxy; production works via a mechanism outside this repo's visibility that wasn't fully resolved during investigation). The proxy is dev-only and does not affect production builds.
 
 ---
 

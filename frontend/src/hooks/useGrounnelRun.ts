@@ -5,6 +5,7 @@ import usePollGrounnelStatus from './usePollGrounnelStatus';
 interface GrounnelRunState {
   runId: string | null;
   error: string | null;
+  submitting: boolean;
 }
 
 /**
@@ -14,17 +15,21 @@ interface GrounnelRunState {
  * the previous one.
  */
 export default function useGrounnelRun() {
-  const [state, setState] = useState<GrounnelRunState>({ runId: null, error: null });
+  const [state, setState] = useState<GrounnelRunState>({
+    runId: null,
+    error: null,
+    submitting: false,
+  });
   const { status } = usePollGrounnelStatus({ runId: state.runId });
 
   const submit = useCallback(async (text: string) => {
-    setState({ runId: null, error: null });
+    setState({ runId: null, error: null, submitting: true });
     try {
       const result = await submitGrounnelText(text);
-      setState({ runId: result.id, error: null });
+      setState({ runId: result.id, error: null, submitting: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit text';
-      setState({ runId: null, error: message });
+      setState({ runId: null, error: message, submitting: false });
     }
   }, []);
 
@@ -36,10 +41,18 @@ export default function useGrounnelRun() {
   // case) surfaces as an error too, not just submission failures.
   const runLevelError = status?.status === 'failed' ? 'The fact-check run failed.' : null;
 
+  // "In flight" covers the initial POST (submitting) AND the poll window before a terminal
+  // status arrives — distinct from `submitting` alone, which usePollGrounnelStatus's async
+  // gap (runId set, first poll not yet resolved) would otherwise leave unaccounted for.
+  const isRunInFlight =
+    state.submitting ||
+    (state.runId !== null && status?.status !== 'done' && status?.status !== 'failed');
+
   return {
     runId: state.runId,
     status,
     error: state.error ?? runLevelError,
+    isRunInFlight,
     submit,
     dismissError,
   };

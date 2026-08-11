@@ -96,7 +96,7 @@ A user sees a claim highlighted in the article and wants to know what evidence p
 
 ### Key Entities
 
-- **GrounnelRun**: One fact-check submission. Attributes: id, overall status (`extracting` / `verifying` / `done` / `failed`), progress (checked/total claims), score (aggregate grounded/unclear/contradicted counts), whether claim-checking was capped, timestamps.
+- **GrounnelRun**: One fact-check submission. Attributes: id, overall status (`extracting` / `verifying` / `done` / `failed`), progress (checked/total claims), score (`grounded_pct`, plus per-bucket counts `grounded_n`/`unclear_n`/`no_evidence_n`/`contradicted_n`/`not_checked_n` and total `eligible` — 7 fields, confirmed against a real response body, not the 5 verdict names), whether claim-checking was capped, timestamps.
 - **Claim**: One atomic, checkable factual statement extracted from the submitted text. Attributes: id, extracted text (near-original wording, not guaranteed verbatim), per-claim status (`pending` / `done` / `failed`), verdict (`supported` / `partially_supported` / `unsupported` / `contradicted` / `unverifiable`, or none yet), evidence passage, confidence, a one-line reason, and its sources.
 - **ClaimSource**: Evidence backing a claim's verdict — either a web source (title, domain, URL, reachability status) or an attached-document source (not produced in this phase, per backend contract).
 

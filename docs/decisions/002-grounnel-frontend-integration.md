@@ -43,7 +43,9 @@ These call `biassemble/backend`'s new routes (ADR-001), never `biassemble-core`.
 
 ## 5. Polling model
 
-`usePollAssessment.ts` is the direct template: `setInterval` + a timeout guard + swallow-and-retry on transient fetch errors. A new `usePollGrounnelStatus` hook follows the same shape, polling `getGrounnelStatus` — `biassemble-core/specs/009-grounnel/spec.md`'s ~10-second cadence assumption (not `usePollAssessment`'s 2s; Grounnel's pipeline is a longer-running, multi-claim process, not a single assessment call) is a real, deliberate difference to carry over, not an oversight if a future implementer copies the 2s value by habit.
+`usePollAssessment.ts` is the direct template: `setInterval` + a timeout guard + swallow-and-retry on transient fetch errors. A new `usePollGrounnelStatus` hook follows the same shape, polling `getGrounnelStatus` — not `usePollAssessment`'s 2s; Grounnel's pipeline is a longer-running, multi-claim process, not a single assessment call, so copying the 2s value by habit is a real, specific mistake to guard against, not this section restating the obvious.
+
+**Revised 2026-08-11 (specs/002-grounnel-frontend/plan.md review): 5s, not `biassemble-core/specs/009-grounnel/spec.md`'s original ~10s assumption.** The ~10s figure was carried over deliberately at first, but the user overrode it directly during the frontend plan's review — Grounnel streams claim-by-claim results in real time (extraction is near-instant, verification is the slow part per that same core spec), and 10s reads as laggy against that. Still well above `usePollAssessment`'s 2s (this is a longer, variable multi-claim process, not a single bounded call) and still a deliberate, explicit choice — just a different number than this section originally recorded.
 
 ## 6. Explicitly not decided here — the next spec
 

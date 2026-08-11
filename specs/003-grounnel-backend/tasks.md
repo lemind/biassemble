@@ -27,7 +27,7 @@
 - [x] T010 [US2] Session linkage — `handleCreateGrounnelExtract` calls `createSession()` (reused, unmodified `lib/db/queries.ts`) before the AI call, forwards `session.id` as `sessionId` (ADR-003)
 - [x] T011 [US3] `X-Grounnel-Client-IP` forwarding — `clientIpFrom()` in the extract route reads `x-forwarded-for`'s first value; `core-client.ts` only sets the header when a value is present, so local calls without one still work (core falls back to its own `request.ip`)
 
-**Checkpoint**: Both endpoints implemented and functional end to end (verification evidence: see plan.md's "Backend (already complete)" table).
+**Checkpoint**: Both endpoints implemented and functional end to end (verification evidence: see plan.md's Summary).
 
 ---
 

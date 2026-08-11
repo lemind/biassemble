@@ -1,6 +1,6 @@
 # Implementation Plan: Grounnel — Backend Proxy
 
-**Branch**: `grounnel` | **Date**: 2026-08-11 (retroactive) | **Spec**: [spec.md](spec.md)
+**Branch**: `grounnel` | **Date**: 2026-08-11 (retroactive) | **Spec**: [spec.md](spec.md) | **Architecture**: [architecture.md](architecture.md)
 
 **Input**: Feature specification from `specs/003-grounnel-backend/spec.md`
 
@@ -44,7 +44,9 @@ biassemble-core POST /extract  →  { id: runId }  (core's OWN id, not session.i
 
 Polling (`GET /api/grounnel/status/:id`) is the same two-hop shape, minus session creation — `status/[id]/route.ts` → `handleGetGrounnelStatus` → `getGrounnelStatus(id)` → `getCore("/status/:id", grounnelStatusResponseSchema)` → relayed back unmodified.
 
-**Why session creation happens here, in the extract route, and nowhere else**: ADR-003 amends ADR-001's original "no session linkage" position specifically because `biassemble-core`'s own D023 added a durable-persistence layer (`grounnel_runs.session_id`) that needed *something* to key history by, and reusing the reflection product's existing generic session mechanism was cheaper than inventing a new one. This is additive and reversible by design (ADR-003 §3) — deleting the `createSession()` call and passing `sessionId: undefined` is a one-line rollback, since `biassemble-core` already treats the field as optional.
+Why session creation happens here and nowhere else, and why it's write-once/read-never: see "Session linkage" under Design Decisions, below.
+
+**Full request-by-request walk-through (submission → session creation → core handoff → polling → termination), plus why two separate identities (`session.id` vs `runId`) exist at all: see [architecture.md](architecture.md).**
 
 ## Design Decisions
 
@@ -56,7 +58,9 @@ Confirmed by direct inspection of `biassemble-core/src/lib/auth.ts` (2026-08-11)
 
 ### Session linkage is write-once, read-never (by this repo)
 
-`createSession()` is called exactly once per submission, and the resulting row is never updated or read back by any Grounnel code path afterward (confirmed: `handleGetGrounnelStatus` never touches the `sessions` table at all — it's a pure passthrough to `getGrounnelStatus`). The session's only purpose is to exist, so its `id` can be handed to `biassemble-core` as an opaque, unverified, nullable `sessionId` column value (`grounnel_runs.session_id`, no FK — confirmed in `biassemble-core/src/db/schema.ts`) for future cross-run analytics. This repo currently has no code that ever reads Grounnel history back out of that linkage — it's pure write-side plumbing for a consumer that doesn't exist yet.
+`createSession()` is called exactly once per submission, and the resulting row is never updated or read back by any Grounnel code path afterward (`handleGetGrounnelStatus` never touches the `sessions` table — pure passthrough). The session's only purpose is to exist, so its `id` can be handed to `biassemble-core` as an opaque, unverified, nullable `sessionId` column value (`grounnel_runs.session_id`, no FK) for future cross-run analytics — this repo has no code that reads Grounnel history back out of that linkage yet.
+
+This exists at all because ADR-003 amends ADR-001's original "no session linkage" position: `biassemble-core`'s own D023 added a durable-persistence layer that needed *something* to key history by, and reusing the reflection product's existing generic session mechanism was cheaper than inventing a new one. It's additive and reversible by design (ADR-003 §3) — deleting the `createSession()` call and passing `sessionId: undefined` is a one-line rollback, since `biassemble-core` already treats the field as optional.
 
 ### Errors are typed, not generic 500s
 
@@ -88,7 +92,7 @@ No new tables, no new Drizzle migration, no new top-level directory — every fi
 
 ## Constitution Check
 
-*GATE: Pass, with one named gap — see Complexity Tracking below.* No new dependencies. Routes stay thin (FR-012), business logic in `services/`. No prompts/model IDs in this public repo (unchanged — `core-client.ts` still only makes HTTP calls, never sees a prompt). Reuses existing `sessions` mechanism rather than inventing a new one (KISS, "avoid abstractions before the third real use case" — this is the second use of the generic session concept, not a new one).
+*GATE: Pass, with one named gap — see Complexity Tracking below.* No new dependencies. Routes stay thin — parse/validate/call-service/map-errors only, business logic lives in `services/grounnel.service.ts` (AGENTS.md Architecture: "API routes must stay thin"; this is a repo-wide rule this feature follows, not something specific to it). No prompts/model IDs in this public repo (unchanged — `core-client.ts` still only makes HTTP calls, never sees a prompt). Reuses existing `sessions` mechanism rather than inventing a new one (KISS, "avoid abstractions before the third real use case" — this is the second use of the generic session concept, not a new one).
 
 ## Complexity Tracking
 

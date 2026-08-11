@@ -16,7 +16,7 @@ This documents an **already-built, already-merged** feature (commits `d1e7e02`, 
 
 **AI boundary**: `biassemble-core` (private repo), HTTP, `AI_CORE_API_KEY` Bearer auth — same pattern the reflection product's `generateQuestion`/`generateAssessment` already use, not a new integration shape.
 
-**Testing**: No dedicated test suite was added for this feature (confirmed by inspection — no `grounnel`-named test files under `backend/`, unlike `biassemble-core`'s own `tests/integration/grounnel-*.test.ts`). This is a real, if minor, gap — see Complexity Tracking.
+**Testing**: `backend/tests/unit/` (parsers, service validation, `clientIpFrom`) + `backend/tests/integration/grounnel.test.ts` (extract → poll, against a live `AI_CLIENT_MODE=dev-mock` server, mirroring `reflection-flow.test.ts`'s shape) — added `tasks.md` Phase 2, 2026-08-11.
 
 **Constraints**: No new tables/columns on `sessions`/`session_data` (ADR-001 §5, ADR-003). No Inngest/queue wiring — both routes are synchronous pass-throughs (ADR-001 §5, D019 §1). No change to the reflection product's existing two `AiClient` methods.
 
@@ -71,37 +71,40 @@ Both routes catch `AppException` specifically and use its `statusCode`, falling 
 ### Source Code (as built)
 
 ```text
-backend/src/
-├── app/api/grounnel/
-│   ├── extract/route.ts          # POST — thin: parse, clientIp, call service, map errors
-│   └── status/[id]/route.ts      # GET — thin: call service, map errors
-├── services/
-│   └── grounnel.service.ts       # handleCreateGrounnelExtract, handleGetGrounnelStatus
-├── lib/
-│   ├── validation/grounnel.ts    # grounnelTextSchema (text.min(1))
-│   └── ai/
-│       ├── client.ts             # AiClient interface += extractClaims, getGrounnelStatus
-│       ├── contracts.ts          # += ExtractClaimsRequest/Output, GrounnelStatusOutput schemas
-│       ├── core-client.ts        # += extractClaims (postCore), getGrounnelStatus (new getCore helper)
-│       ├── dev-mock-client.ts    # += fixed mock responses for both methods
-│       └── index.ts              # unchanged — getAiClient() already mode-switches generically
-└── lib/db/queries.ts              # createSession() — pre-existing, reused unchanged
+backend/
+├── src/
+│   ├── app/api/grounnel/
+│   │   ├── extract/route.ts          # POST — thin: parse, clientIp, call service, map errors
+│   │   │                             #   (no inline text validation — service is the only source, T015)
+│   │   └── status/[id]/route.ts      # GET — thin: call service, map errors
+│   ├── services/
+│   │   └── grounnel.service.ts       # handleCreateGrounnelExtract, handleGetGrounnelStatus
+│   ├── lib/
+│   │   ├── http.ts                   # NEW (T013) — clientIpFrom(), extracted out of the route for testability
+│   │   ├── validation/grounnel.ts    # grounnelTextSchema (text.min(1))
+│   │   ├── tests/grounnel-flow.ts    # NEW (T012) — shared integration-test flow logic
+│   │   └── ai/
+│   │       ├── client.ts             # AiClient interface += extractClaims, getGrounnelStatus
+│   │       ├── contracts.ts          # += ExtractClaimsRequest/Output, GrounnelStatusOutput schemas
+│   │       ├── core-client.ts        # += extractClaims (postCore), getGrounnelStatus (new getCore helper)
+│   │       ├── dev-mock-client.ts    # += fixed mock responses for both methods
+│   │       ├── parsers.ts            # CHANGED (T015) — parseJsonFromAi throws aiParseError(), not ParseError
+│   │       └── index.ts              # unchanged — getAiClient() already mode-switches generically
+│   └── lib/db/queries.ts             # createSession() — pre-existing, reused unchanged
+└── tests/
+    ├── unit/                         # NEW (T012, T013) — http.test.ts, parsers.test.ts, grounnel.service.test.ts
+    └── integration/grounnel.test.ts  # NEW (T012)
 ```
 
 No new tables, no new Drizzle migration, no new top-level directory — every file above either already existed (extended) or slots into an existing directory pattern the reflection product established first.
 
 ## Constitution Check
 
-*GATE: Pass, with one named gap — see Complexity Tracking below.* No new dependencies. Routes stay thin — parse/validate/call-service/map-errors only, business logic lives in `services/grounnel.service.ts` (AGENTS.md Architecture: "API routes must stay thin"; this is a repo-wide rule this feature follows, not something specific to it). No prompts/model IDs in this public repo (unchanged — `core-client.ts` still only makes HTTP calls, never sees a prompt). Reuses existing `sessions` mechanism rather than inventing a new one (KISS, "avoid abstractions before the third real use case" — this is the second use of the generic session concept, not a new one).
+*GATE: Pass.* No new dependencies. Routes stay thin — parse/validate/call-service/map-errors only, business logic lives in `services/grounnel.service.ts` (AGENTS.md Architecture: "API routes must stay thin"; this is a repo-wide rule this feature follows, not something specific to it). No prompts/model IDs in this public repo (unchanged — `core-client.ts` still only makes HTTP calls, never sees a prompt). Reuses existing `sessions` mechanism rather than inventing a new one (KISS, "avoid abstractions before the third real use case" — this is the second use of the generic session concept, not a new one).
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|---|---|---|
-| No automated tests for this feature (confirmed gap, not a design choice) | N/A — this is a real gap, not a justified complexity tradeoff | N/A |
-| `AppException` mapping is incomplete — two error paths (`biassemble-core` response parse failures, and `handleCreateGrounnelExtract`'s own validation error) throw plain `Error`/`ParseError` instead of the existing, unused `aiParseError()`/`validationError()` helpers, so FR-008 isn't fully true of the current code (confirmed 2026-08-11 review) | N/A — a real, pre-existing gap this retroactive spec surfaced, not introduced by it | N/A |
-
-Neither row is phrased as a justified tradeoff — both are honest gaps this retroactive spec surfaces rather than papers over. See tasks.md's Phase 2 (T012–T015) for the concrete follow-up.
+Both gaps this section originally tracked are closed as of `tasks.md` Phase 2 (2026-08-11): automated tests now exist (`backend/tests/unit/`, `backend/tests/integration/grounnel.test.ts`), and `AppException` mapping is complete — `parseJsonFromAi` throws `aiParseError()`, `handleCreateGrounnelExtract` throws `validationError()`, and (found while closing the gap) `extract/route.ts`'s own redundant inline check — which had made the service-level fix unreachable via HTTP — was removed. No open rows remain.
 
 ## Related documents
 

@@ -31,12 +31,14 @@
 
 ---
 
-## Phase 2: Gap closure (Priority: P2) — not started
+## Phase 2: Gap closure (Priority: P2) ✅ Done
 
-- [ ] T012 [P] Integration tests — `backend/tests/integration/grounnel.test.ts`, extending this repo's existing convention (`backend/tests/integration/reflection-flow.test.ts` already exists — this is not a new pattern): `POST /api/grounnel/extract` and `GET /api/grounnel/status/:id` against `AI_CLIENT_MODE=dev-mock`, covering the 400/202/200 paths and the `AppException` mapping (including T015's fixes, once landed)
-- [ ] T013 [P] Unit test for `X-Grounnel-Client-IP` forwarding logic (`clientIpFrom()`) — multi-value `x-forwarded-for`, missing header, malformed header
-- [ ] T014 Document the local `AI_CORE_BASE_URL` misconfiguration risk found this session (`backend/.env.local` pointed at an unrelated local project on port 3001 instead of `biassemble-core`'s real local port 3011) as a checked-in note (e.g. `.env.example` comment) so it doesn't quietly recur for the next person who sets up local `core`-mode testing
-- [ ] T015 Close the `AppException` mapping gap (2026-08-11 review, spec.md FR-008/Edge Cases, plan.md Complexity Tracking): (1) `lib/ai/parsers.ts`'s `parseJsonFromAi` should throw the existing `aiParseError()` (or callers should catch `ParseError` and rethrow via it) instead of a plain `ParseError` that neither route recognizes; (2) `services/grounnel.service.ts`'s `handleCreateGrounnelExtract` should throw `validationError()` instead of `new Error(...)` for its text-validation failure. Both currently fall through to a generic uncoded 500 instead of the typed, correctly-statused response FR-008 promises
+- [x] T015 Closed the `AppException` mapping gap: `lib/ai/parsers.ts`'s `parseJsonFromAi` now throws `aiParseError()` (AI_PARSE_ERROR, 502) instead of the dead-end `ParseError` class (removed — zero other call sites); `services/grounnel.service.ts`'s `handleCreateGrounnelExtract` now throws `validationError()` (VALIDATION_ERROR, 400) instead of a plain `Error`. **Also found and fixed while implementing this**: `extract/route.ts` had its own redundant inline `!text` check that intercepted every case before the service's Zod validation could ever run — the service-level fix was correct but unreachable via HTTP until this route-level duplicate was removed too. Verified live via `curl` (empty/missing/non-string text → 400 with specific messages; valid text → 202) and by direct unit test of both fixed functions.
+- [x] T013 [P] Unit test for `clientIpFrom()` — `backend/tests/unit/http.test.ts` (multi-value/whitespace/missing/empty/malformed `x-forwarded-for`, 6 cases). Extracted `clientIpFrom()` out of `extract/route.ts` into `backend/src/lib/http.ts` first — it was a private, unexported function inside a route file, not testable in isolation otherwise.
+- [x] T012 [P] Integration tests — `backend/tests/integration/grounnel.test.ts` + `backend/src/lib/tests/grounnel-flow.ts` (mirrors `reflection-flow.ts`'s shape), extending the existing `reflection-flow.test.ts` convention. Covers empty-text → 400, valid submission → 202, status poll → 200 with the full response shape, run via `pnpm test:integration:grounnel` against a live `AI_CLIENT_MODE=dev-mock` server. Also added `tests/unit/parsers.test.ts` (T015's `parseJsonFromAi` fix: invalid JSON and schema-mismatch both now throw `AppException`) and `tests/unit/grounnel.service.test.ts` (T015's `handleCreateGrounnelExtract` fix). New `pnpm test:unit` script.
+- [x] T014 Documented the `AI_CORE_BASE_URL` misconfiguration risk — `.env.example` now has a comment telling the next person to check what port `biassemble-core`'s own `pnpm dev` actually binds to, not assume one.
+
+**Checkpoint**: 12 tests (11 unit, 1 integration) pass against a live `dev-mock` server; clean `tsc --noEmit`. Verified the pre-existing `reflection-flow.test.ts` timeout is unrelated to this phase's changes (reproduced on a clean baseline via `git stash`). No database migration involved.
 
 ## Dependencies & Execution Order
 
@@ -45,5 +47,5 @@
 
 ## Notes
 
-- No backend code changes are required by this spec — it documents what already shipped. Phase 2 is the only real forward-looking work.
+- Phase 1 required no backend code changes (it documents what already shipped). Phase 2 did — see its Checkpoint above.
 - Task numbering restarts at T001 for this feature directory (self-contained, not a continuation of `specs/001-reflection-flow/` or `specs/002-grounnel-frontend/`'s numbering).

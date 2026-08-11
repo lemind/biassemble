@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
 import { handleCreateGrounnelExtract } from "@/services/grounnel.service";
 import { AppException } from "@/lib/errors";
-
-// Real end-user IP, not this server's own egress IP (ADR-001 §4) — x-forwarded-for's first
-// value is the original client per the standard proxy-chain convention; Vercel sets this header.
-function clientIpFrom(request: Request): string | undefined {
-  const xff = request.headers.get("x-forwarded-for");
-  return xff?.split(",")[0]?.trim() || undefined;
-}
+import { clientIpFrom } from "@/lib/http";
 
 export async function POST(request: Request) {
   try {
     const { text } = await request.json();
 
-    if (!text || typeof text !== "string") {
-      return NextResponse.json(
-        { error: "Text is required" },
-        { status: 400 }
-      );
-    }
-
+    // No inline validation here — handleCreateGrounnelExtract's own grounnelTextSchema check
+    // (Zod, via validationError()) is the single source of truth for text validation, mapped
+    // to a proper 400 by the catch block below. A duplicate route-level check previously made
+    // that service-level validation unreachable in practice (2026-08-11 fix, T015).
     const result = await handleCreateGrounnelExtract(text, clientIpFrom(request));
     return NextResponse.json(result, { status: 202 });
   } catch (error) {

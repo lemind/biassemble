@@ -14,6 +14,8 @@
     "deploy:test": "pnpm deploy && pnpm test:integration:trigger",
     "test:integration:trigger": "tsx --env-file=.env.local scripts/trigger-integration-test.ts",
     "test:integration": "vitest run tests/integration/reflection-flow.test.ts",
+    "test:integration:grounnel": "vitest run tests/integration/grounnel.test.ts",
+    "test:unit": "vitest run tests/unit/",
     "generate:types": "tsx scripts/generate-types.ts"
   },
   "dependencies": {

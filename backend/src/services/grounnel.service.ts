@@ -1,6 +1,7 @@
 import { getAiClient } from "@/lib/ai";
 import { createSession } from "@/lib/db/queries";
 import { grounnelTextSchema } from "@/lib/validation/grounnel";
+import { validationError } from "@/lib/errors";
 
 /**
  * Mirrors handleCreateSession's shape (session.service.ts) with one real difference: no
@@ -11,7 +12,13 @@ import { grounnelTextSchema } from "@/lib/validation/grounnel";
 export async function handleCreateGrounnelExtract(text: string, clientIp?: string) {
   const result = grounnelTextSchema.safeParse({ text });
   if (!result.success) {
-    throw new Error(`Invalid text: ${result.error.issues[0]?.message ?? "required"}`);
+    // AppException (VALIDATION_ERROR, 400), not a plain Error — so the route's
+    // `error instanceof AppException` check maps this correctly instead of falling
+    // through to a generic 500 (2026-08-11 fix, T015).
+    throw validationError(
+      `Invalid text: ${result.error.issues[0]?.message ?? "required"}`,
+      result.error.flatten()
+    );
   }
 
   // Session exists purely to give this submission a stable identity for D023 §2's history/

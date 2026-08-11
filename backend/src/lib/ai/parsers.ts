@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { aiParseError } from "@/lib/errors";
 
 /**
  * Parses raw AI output (markdown-fenced JSON or plain JSON) using a Zod schema.
  * Extracts JSON from ```json ... ``` blocks if present.
+ *
+ * Throws `AppException` (AI_PARSE_ERROR, 502) on failure — not a plain Error — so callers'
+ * `error instanceof AppException` checks map this to a typed, correctly-coded response instead
+ * of falling through to a generic 500 (2026-08-11 fix, T015: this was silently not the case).
  */
 export async function parseJsonFromAi<T>(
   raw: string,
@@ -15,29 +20,16 @@ export async function parseJsonFromAi<T>(
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new ParseError("Failed to parse AI output as JSON", raw);
+    throw aiParseError("Failed to parse AI output as JSON", { raw });
   }
 
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    throw new ParseError(
-      "AI output failed Zod validation",
+    throw aiParseError("AI output failed Zod validation", {
       raw,
-      result.error.flatten()
-    );
+      zodErrors: result.error.flatten(),
+    });
   }
 
   return result.data;
-}
-
-export class ParseError extends Error {
-  public readonly raw: string;
-  public readonly zodErrors?: unknown;
-
-  constructor(message: string, raw: string, zodErrors?: unknown) {
-    super(message);
-    this.name = "ParseError";
-    this.raw = raw;
-    this.zodErrors = zodErrors;
-  }
 }

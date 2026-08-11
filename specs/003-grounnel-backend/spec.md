@@ -64,7 +64,7 @@ Having received a run id, a client polls for its current state — claims, verdi
 
 ### Edge Cases
 
-- What happens when `biassemble-core`'s response fails this proxy's own Zod validation (a schema drift between repos)? — The request fails loudly rather than passing a silently-wrong response to the client, but not as cleanly as FR-008 requires — see FR-008's known gap.
+- What happens when `biassemble-core`'s response fails this proxy's own Zod validation (a schema drift between repos)? — The request fails loudly with a typed `AppException` (AI_PARSE_ERROR, 502), not a silently-wrong response passed to the client and not a generic uncoded 500 (fixed 2026-08-11, `tasks.md` T015).
 - What happens when `AI_CLIENT_MODE=dev-mock` is active (local development, no live `biassemble-core` key)? — Both endpoints work identically in shape, returning fixed mock data, so frontend development is never blocked on a live core deployment or key.
 - What happens when a caller polls a run id that was never created by this proxy (e.g., a stale/malformed id)? — `biassemble-core` returns its own not-found-shaped error; this proxy passes that through via `AppException`, not a generic 500.
 - What happens to the session row created for a submission — is it ever updated after creation? — No (FR-011; rationale in plan.md's "Session linkage" Design Decision).
@@ -82,7 +82,6 @@ Having received a run id, a client polls for its current state — claims, verdi
 - **FR-006**: System MUST expose `GET /api/grounnel/status/:id`, requiring no caller-supplied AI credential, returning the full `StatusResponse` shape unmodified from `biassemble-core`.
 - **FR-007**: System MUST validate every response from `biassemble-core` against a Zod schema mirroring `biassemble-core`'s own contract field-for-field before returning it to the caller.
 - **FR-008**: System MUST map validation, upstream, and internal errors to typed `AppException`s with appropriate HTTP status codes, never a bare unhandled 500 with no context.
-  **Known implementation gap:** current implementation does not yet satisfy this requirement in all error paths — see plan.md's Complexity Tracking and `tasks.md` T015 for which paths and why.
 - **FR-009**: System MUST support a `dev-mock` mode with fixed, schema-valid responses for both endpoints, requiring no live `biassemble-core` deployment or credential.
 - **FR-010**: System MUST NOT expose `AI_CORE_API_KEY`, `AI_CORE_BASE_URL`, or any other `biassemble-core` connection detail to any caller of these two routes.
 - **FR-011**: System MUST NOT write any status update or Grounnel-specific data back to the local session record after creation — the run's full lifecycle lives in `biassemble-core`'s own state.

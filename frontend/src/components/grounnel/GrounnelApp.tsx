@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import ArticleInput from './ArticleInput';
+import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
 
@@ -45,6 +46,8 @@ export default function GrounnelApp() {
             </div>
           </div>
         )}
+
+        {runId && <ClaimSourceList articleText={articleText} claims={status?.claims ?? []} />}
       </div>
     </div>
   );

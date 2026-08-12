@@ -53,17 +53,18 @@
 
 ---
 
-## Phase 4: User Story 3 - Follow a highlighted claim to its evidence (Priority: P2)
+## Phase 4: User Story 3 - Follow a highlighted claim to its evidence (Priority: P2) ✅ Done
 
 **Goal**: FR-008, FR-009 — sources reachable from both the highlighted span and a dedicated list.
 
 **Independent Test**: Submit an article, let ≥1 claim resolve with sources, confirm those sources are reachable from the span's tooltip and listed below the article.
 
-- [ ] T014 [US3] Tooltip on highlighted spans — `HighlightedArticle.tsx`: hover/focus affordance linking to ≥1 source per matched claim, rendered ONLY when `claim.sources.length > 0` — a zero-source claim keeps its verdict color/icon but gets no tooltip at all, never an empty one (FR-008, spec.md's zero-source edge case) (depends on T013 — same file, lands after pending/failed styling per Phase 3's ordering)
-- [ ] T015 [P] [US3] `ClaimSourceList` — `frontend/src/components/grounnel/ClaimSourceList.tsx`: per-claim source links (≤2 shown), grouped by claim (never globally deduped across claims); ordered by each claim's matched span position in the article (matched-first, unmatched claims appended at the end in `claims[]` order) — not array order or completion order (plan.md § Component structure); explicit "no sources found" state for zero-source claims, never a broken link (depends on T002, T003 — needs `matchClaimSpans`' resolved positions to order by)
-- [ ] T016 [US3] Wire `ClaimSourceList` into `GrounnelApp`, below `HighlightedArticle` (depends on T006, T015)
+- [x] T014 [US3] Tooltip on highlighted spans — `HighlightedArticle.tsx`: `<mark>` gets `tabIndex={0}` + `group relative` only when `claim.sources.length > 0`; a `group-hover`/`group-focus-within`-driven panel (real `<a>` links via the new shared `SourceLink`) appears below the span — zero-source claims get no `tabIndex`, no panel, keep only their verdict color/icon (FR-008, spec.md's zero-source edge case). Keyboard-reachable (the `<mark>` itself is the focus target, so `focus-within` fires without needing to tab past it first) (depends on T013).
+- [x] T015 [P] [US3] `ClaimSourceList` — `frontend/src/components/grounnel/ClaimSourceList.tsx`: per-claim source links (≤2 shown) via the same shared `SourceLink`; ordered by `matchClaimSpans`' resolved start position (matched-first, unmatched claims appended at the end in `claims[]` order); explicit "No sources found" state for zero-source claims (depends on T002, T003).
+- [x] T016 [US3] Wired `ClaimSourceList` into `GrounnelApp`, below the `HighlightedArticle` card (depends on T006, T015).
+- New: `frontend/src/components/grounnel/SourceLink.tsx` — small shared presentational component (not in the original task list) factored out once T014 and T015 both needed identical source-rendering logic: `kind: 'web'` → real link (`target="_blank" rel="noopener noreferrer"`), `kind: 'attached'` → plain text (no URL exists for attached sources in this phase, per backend contract — rendering it as a link would be a broken one).
 
-**Checkpoint**: All three user stories independently functional.
+**Checkpoint**: `tsc -b`/`eslint`/`vite build` all clean. **End-to-end verified in a real browser** (Playwright + system Chrome, `page.route` synthetic 2-claim/2-source response): confirmed real `<a>` elements in the source list with correct `href`/`target`/`rel`; confirmed the tooltip's links become visible on `hover()` (not just present in the DOM); confirmed the zero-source claim's `<mark>` has no `tabindex` (no tooltip trigger) and the source list shows "No sources found" for it — screenshot-confirmed, zero console/page errors.
 
 ---
 

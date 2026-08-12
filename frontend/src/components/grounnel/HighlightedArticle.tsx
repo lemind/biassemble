@@ -1,4 +1,5 @@
 import { matchClaimSpans } from '../../lib/matchClaimSpans';
+import SourceLink from './SourceLink';
 import type { Claim, ClaimVerdict } from '../../types/grounnel';
 
 interface HighlightedArticleProps {
@@ -82,8 +83,17 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
           return <span key={index}>{segment.text}</span>;
         }
 
+        // Tooltip only when sources exist (FR-008, spec.md's zero-source edge case) — a
+        // zero-source claim keeps its verdict color/icon but never gets an (empty) tooltip.
+        const sources = claim.sources.slice(0, 2);
+        const hasTooltip = sources.length > 0;
+
         return (
-          <mark key={index} className={`rounded px-0.5 ${style.className}`}>
+          <mark
+            key={index}
+            tabIndex={hasTooltip ? 0 : undefined}
+            className={`group relative rounded px-0.5 ${style.className} ${hasTooltip ? 'cursor-help' : ''}`}
+          >
             {segment.text}
             {claim.status === 'pending' ? (
               <span
@@ -96,6 +106,20 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
               </span>
             )}
             <span className="sr-only">{` (${style.label})`}</span>
+            {hasTooltip && (
+              <span
+                className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs
+                  opacity-0 transition-opacity group-hover:pointer-events-auto
+                  group-hover:opacity-100 group-focus-within:pointer-events-auto
+                  group-focus-within:opacity-100"
+              >
+                <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
+                  {sources.map((source, sourceIndex) => (
+                    <SourceLink key={sourceIndex} source={source} />
+                  ))}
+                </span>
+              </span>
+            )}
           </mark>
         );
       })}

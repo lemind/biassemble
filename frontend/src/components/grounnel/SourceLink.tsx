@@ -15,7 +15,12 @@ export default function SourceLink({ source }: SourceLinkProps) {
         rel="noopener noreferrer"
         className="link link-hover text-info"
       >
-        {source.title || source.domain}
+        {/* Domain only, never the title (2026-08-12) — matches lib/sourceLabel.ts's rule, so a
+            web source never shows a full article headline in one place and a clean domain in
+            another within the same tooltip (CitationQuote, right above this, already used
+            sourceLabel()). Attached-document sources below have no domain to fall back to, so
+            they're untouched. */}
+        {source.domain}
       </a>
     );
   }

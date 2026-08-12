@@ -1,4 +1,4 @@
-import { matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
+import { matchClaimSpans, MatchTier, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
 import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
@@ -42,13 +42,14 @@ const FAILED_STYLE = {
 interface Segment {
   text: string;
   claim: Claim | null;
+  isFallback: boolean;
 }
 
 function buildSegments(articleText: string, claims: Claim[], spans: Map<string, Span | null>): Segment[] {
   const matched = claims
     .map((claim) => ({ claim, span: spans.get(claim.id) ?? null }))
     .filter(
-      (entry): entry is { claim: Claim; span: { start: number; end: number } } =>
+      (entry): entry is { claim: Claim; span: Span } =>
         entry.span !== null,
     )
     .sort((a, b) => a.span.start - b.span.start);
@@ -57,13 +58,17 @@ function buildSegments(articleText: string, claims: Claim[], spans: Map<string, 
   let cursor = 0;
   for (const { claim, span } of matched) {
     if (span.start > cursor) {
-      segments.push({ text: articleText.slice(cursor, span.start), claim: null });
+      segments.push({ text: articleText.slice(cursor, span.start), claim: null, isFallback: false });
     }
-    segments.push({ text: articleText.slice(span.start, span.end), claim });
+    segments.push({
+      text: articleText.slice(span.start, span.end),
+      claim,
+      isFallback: span.tier === MatchTier.Fallback,
+    });
     cursor = span.end;
   }
   if (cursor < articleText.length) {
-    segments.push({ text: articleText.slice(cursor), claim: null });
+    segments.push({ text: articleText.slice(cursor), claim: null, isFallback: false });
   }
   return segments;
 }
@@ -76,7 +81,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
   return (
     <div className="whitespace-pre-wrap leading-relaxed">
       {segments.map((segment, index) => {
-        const { claim } = segment;
+        const { claim, isFallback } = segment;
         if (!claim) {
           return <span key={index}>{segment.text}</span>;
         }
@@ -96,19 +101,31 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         // case) — a claim with neither sources nor citations keeps its verdict color/icon but
         // never gets an (empty) tooltip. Citations checked separately: they're independently
         // defaulted arrays (D027) — a claim can have citations with an empty `sources` list.
+        // isFallback also forces a tooltip even with zero sources, since it's the only place the
+        // "approximate location" disclaimer below can be shown.
         const sources = citedSources(claim, 2);
-        const hasTooltip = sources.length > 0 || claim.citations.length > 0;
+        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback;
         const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
         const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
         const refNumbers = claimNumbers.get(claim.id) ?? [];
+
+        // Fallback-tier spans never cleared JACCARD_THRESHOLD — they're the least-bad available
+        // slot, not a confirmed match to this exact text (real observed bug, 2026-08-12: an
+        // unrelated claim's verdict landed on a date-heavy sentence and read as if it were about
+        // the date). Dashed underline (code-review finding, 2026-08-12: reuses the same "not a
+        // confirmed verdict" dashed idiom as FAILED_STYLE and GrounnelProgress's Unconfirmed/
+        // FailedDot, instead of introducing a third, one-off convention) + "approximate location"
+        // note keep the coverage guarantee ("every claim highlighted somewhere") without implying
+        // precision it doesn't have.
+        const fallbackClass = isFallback ? 'border-b-2 border-dashed border-base-content/40' : '';
 
         return (
           <mark
             key={index}
             id={`claim-mark-${claim.id}`}
             tabIndex={hasTooltip ? 0 : undefined}
-            className={`group rounded px-0.5 ${style.className} ${hasTooltip ? 'cursor-help' : ''}`}
+            className={`group rounded px-0.5 ${style.className} ${fallbackClass} ${hasTooltip ? 'cursor-help' : ''}`}
           >
             {segment.text}
             {/*
@@ -148,6 +165,12 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                 >
                   <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
+                    {isFallback && (
+                      <span className="text-base-content/60">
+                        Approximate location — this text wasn't confirmed as a close match for the
+                        claim; it's just the least-bad spot available.
+                      </span>
+                    )}
                     {/* One combined link (source name + exact cited sentence) per shown citation
                         — a separate SourceLink for that same url would be a second link pointing
                         at essentially the same place. Sources NOT covered by a shown citation
@@ -169,7 +192,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                 </span>
               )}
             </span>
-            <span className="sr-only">{` (${style.label})`}</span>
+            <span className="sr-only">{` (${style.label}${isFallback ? ', approximate location' : ''})`}</span>
           </mark>
         );
       })}

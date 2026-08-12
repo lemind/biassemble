@@ -8,6 +8,13 @@ import type { Claim } from '../types/grounnel';
 export interface Span {
   start: number;
   end: number;
+  // Only set on spans returned by matchClaimSpans() itself — plain internal spans (sentence/
+  // clause candidates before overlap resolution) don't carry one. MatchTier.Fallback here is the
+  // signal a renderer needs to visually flag "best-effort guess, not a confirmed match to this
+  // exact text" (real observed confusion, 2026-08-12: a claim about an unrelated fact fell back
+  // onto a date-heavy sentence purely because it was the least-bad available slot, and rendered
+  // indistinguishably from a real match — the user read its verdict label as being about the date).
+  tier?: MatchTier;
 }
 
 // Starting point, not tuned by measurement yet — see plan.md's Design Decisions. Revisit as this
@@ -98,13 +105,13 @@ function splitSentences(articleText: string): Sentence[] {
 // guess's span happens to start a few characters earlier (e.g. a whole-sentence fallback always
 // starts at or before any of its own clauses, which would otherwise let it evict an already-solid
 // clause-level match purely on position).
-const MatchTier = {
+export const MatchTier = {
   Exact: 0,
   Sentence: 1,
   Clause: 2,
   Fallback: 3,
 } as const;
-type MatchTier = (typeof MatchTier)[keyof typeof MatchTier];
+export type MatchTier = (typeof MatchTier)[keyof typeof MatchTier];
 
 interface TieredSpan {
   span: Span;
@@ -125,9 +132,18 @@ function findExactMatch(articleText: string, claimText: string): TieredSpan | nu
 // short stories and six novels...") dilutes Jaccard when scored whole — a claim extracted for
 // just one of those facts shares few tokens against the sentence's combined token set. Splitting
 // on commas and "and"/"but" gives each fact its own, much smaller candidate span to match against.
+// The comma in "August 16, 1920" is NOT a clause boundary — it's part of one date. Real observed
+// bug: without the lookahead below, a date got chopped at every internal comma (day/year AND
+// year/year in a birth-death range), so "August 16, 1920" and "March 9, 1984" each got split into
+// two separately-colored highlight fragments across two different claims instead of staying whole.
+// The comma is only spared when it sits between a 1-2 digit day and a 4-digit year specifically
+// (both the lookbehind AND lookahead must hold) — code-review finding, 2026-08-12: an earlier
+// version of this fix keyed off the lookahead alone (any comma before a bare 4-digit number), which
+// wrongly merged non-date clauses too, e.g. "He owns three cars, 1500 books, and a boat." stopped
+// splitting at the comma before "1500" even though it's an ordinary list, not a date.
 function splitClauses(sentence: Sentence): Span[] {
   const clauses: Span[] = [];
-  const boundary = /,\s+|\s+(?:and|but)\s+/gi;
+  const boundary = /(?<!\b\d{1,2}),\s+(?=\d{4}\b)|,\s+(?!\d{4}\b)|\s+(?:and|but)\s+/gi;
   let start = sentence.start;
   let match: RegExpExecArray | null;
   while ((match = boundary.exec(sentence.text)) !== null) {
@@ -210,6 +226,10 @@ function findSentenceMatch(articleText: string, claimText: string): TieredSpan |
  * independent of claims[] array order on purpose (biassemble-core gives no ordering guarantee
  * across polls) — logs a dev-only console.warn per discarded overlap so collision frequency is
  * observable.
+ *
+ * Every returned span carries its MatchTier so a renderer can visually distinguish a confirmed
+ * match (Exact/Sentence/Clause, all threshold-gated) from a Fallback guess, which by definition
+ * never cleared JACCARD_THRESHOLD and can land on text the claim isn't actually about.
  */
 export function matchClaimSpans(articleText: string, claims: Claim[]): Map<string, Span | null> {
   const candidates = new Map<string, TieredSpan | null>();
@@ -256,8 +276,9 @@ export function matchClaimSpans(articleText: string, claims: Claim[]): Map<strin
       }
       result.set(claim.id, null);
     } else {
-      result.set(claim.id, span);
-      occupied.push({ span, claimId: claim.id });
+      const taggedSpan = { ...span, tier: tiered.tier };
+      result.set(claim.id, taggedSpan);
+      occupied.push({ span: taggedSpan, claimId: claim.id });
     }
   }
 

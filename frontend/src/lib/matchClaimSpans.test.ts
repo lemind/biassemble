@@ -7,7 +7,7 @@
  * content cases.
  */
 import assert from 'node:assert/strict';
-import { matchClaimSpans, assignHomeSentence } from './matchClaimSpans';
+import { matchClaimSpans, assignHomeSentence, MatchTier } from './matchClaimSpans';
 import type { Claim } from '../types/grounnel';
 
 let passed = 0;
@@ -192,6 +192,37 @@ test('a claim whose text is a duplicate substring of the article matches the fir
   assert.ok(span, 'expected a match');
   assert.equal(span!.start, 0);
   assert.equal(span!.end, 5);
+});
+
+// ─── Date-comma fix must not over-merge non-date clauses ───
+// Code-review finding, 2026-08-12: the first version of the date-comma fix keyed off the
+// lookahead alone (any comma before a bare 4-digit number), which wrongly suppressed splitting
+// for ordinary lists too, not just dates — the day-number lookbehind narrows it back down.
+test('a comma before a 4-digit count that is not a year still splits into its own clause', () => {
+  const article = 'He owns three cars, 1500 books, several bicycles, and a boat.';
+  const c = claim({ id: 'c1', text: 'He owns 1500 books.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a clause-level match');
+  assert.equal(article.slice(span!.start, span!.end), '1500 books');
+});
+
+// ─── Tier is exposed on the returned span, so a renderer can flag low-confidence guesses ───
+// Added 2026-08-12 alongside HighlightedArticle's fallback-tier dotted-underline treatment — the
+// tier has to survive onto the span the caller actually receives, not just live inside this
+// module's internal TieredSpan bookkeeping.
+test('exact match is tagged with MatchTier.Exact', () => {
+  const article = 'The Eiffel Tower was completed in 1889.';
+  const c = claim({ id: 'c1', text: 'The Eiffel Tower was completed in 1889.' });
+  const result = matchClaimSpans(article, [c]);
+  assert.equal(result.get('c1')!.tier, MatchTier.Exact);
+});
+
+test('last-resort fallback match is tagged with MatchTier.Fallback', () => {
+  const article = 'The Eiffel Tower was completed in 1889.';
+  const c = claim({ id: 'c1', text: 'Quantum computers use qubits instead of classical bits.' });
+  const result = matchClaimSpans(article, [c]);
+  assert.equal(result.get('c1')!.tier, MatchTier.Fallback);
 });
 
 // ─── assignHomeSentence: zero-overlap claims must not collapse together ───

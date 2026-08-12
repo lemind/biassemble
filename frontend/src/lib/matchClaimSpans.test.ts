@@ -7,7 +7,7 @@
  * content cases.
  */
 import assert from 'node:assert/strict';
-import { matchClaimSpans } from './matchClaimSpans';
+import { matchClaimSpans, assignHomeSentence } from './matchClaimSpans';
 import type { Claim } from '../types/grounnel';
 
 let passed = 0;
@@ -62,6 +62,21 @@ test('appositive-removed claim falls back to the containing sentence', () => {
   const span = result.get('c1');
   assert.ok(span, 'expected a sentence-level match');
   assert.equal(article.slice(span!.start, span!.end), article);
+});
+
+// ─── Clause-level fallback: compound sentence bundling multiple facts ─────
+// Real observed case (2026-08-12): a 13-claim extraction over a real Bukowski bio paragraph
+// matched only 3/13 before this fallback existed — EXTRACT correctly split one compound sentence
+// into several atomic claims, but each one scored below JACCARD_THRESHOLD against the *whole*
+// sentence (diluted by its siblings' tokens). Verified against the real matcher: 9/13 after.
+test('a claim for one fact in a compound sentence matches its own clause, not the whole sentence', () => {
+  const article =
+    'He wrote thousands of poems, hundreds of short stories and six novels, eventually publishing over one hundred sixty books during the course of his career.';
+  const c = claim({ id: 'c1', text: 'Bukowski wrote six novels.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a clause-level match');
+  assert.equal(article.slice(span!.start, span!.end), 'six novels');
 });
 
 // ─── Sentence-level fallback: pronoun resolved ────────────────────
@@ -162,6 +177,25 @@ test('a claim whose text is a duplicate substring of the article matches the fir
   assert.ok(span, 'expected a match');
   assert.equal(span!.start, 0);
   assert.equal(span!.end, 5);
+});
+
+// ─── assignHomeSentence: zero-overlap claims must not collapse together ───
+// Code-review finding: the original implementation defaulted to sentence index 0 whenever a
+// claim shared zero tokens with every sentence, silently bucketing unrelated zero-overlap claims
+// into the same progress-dot group as if they belonged to the article's first sentence.
+test('assignHomeSentence gives two unrelated zero-overlap claims distinct groups, not both sentence 0', () => {
+  const article = 'The cat sat on the mat. A dog ran in the park.';
+  const a = claim({ id: 'a', text: 'Xyzzy plugh quux.' });
+  const b = claim({ id: 'b', text: 'Frobnicate wibble wobble.' });
+  const result = assignHomeSentence(article, [a, b]);
+  assert.notEqual(result.get('a'), result.get('b'), 'unrelated zero-overlap claims must not share a group');
+});
+
+test('assignHomeSentence still groups a real match to its actual sentence index', () => {
+  const article = 'The cat sat on the mat. A dog ran in the park.';
+  const c = claim({ id: 'c', text: 'A dog ran in the park.' });
+  const result = assignHomeSentence(article, [c]);
+  assert.equal(result.get('c'), 1);
 });
 
 console.log(`\n${passed} tests passed`);

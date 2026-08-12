@@ -11,7 +11,9 @@ export const VERDICT_HIGHLIGHT_CLASS: Record<ClaimVerdict, string> = {
   supported: 'bg-success/30',
   contradicted: 'bg-error/30',
   partially_supported: 'bg-warning/30',
-  unsupported: 'bg-neutral/20',
+  // Plain gray, not DaisyUI's "neutral" token — this theme's neutral is a near-black charcoal,
+  // which reads as an unreadable black smudge on the highlight and a solid black progress dot.
+  unsupported: 'bg-gray-400/30',
   unverifiable: 'bg-info/30',
 };
 
@@ -19,6 +21,6 @@ export const VERDICT_DOT_CLASS: Record<ClaimVerdict, string> = {
   supported: 'bg-success',
   contradicted: 'bg-error',
   partially_supported: 'bg-warning',
-  unsupported: 'bg-neutral',
+  unsupported: 'bg-gray-400',
   unverifiable: 'bg-info',
 };

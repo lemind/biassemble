@@ -1,4 +1,5 @@
-import { matchClaimSpans } from '../../lib/matchClaimSpans';
+import { matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
+import { numberCitations } from '../../lib/numberCitations';
 import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
 import SourceLink from './SourceLink';
@@ -43,8 +44,7 @@ interface Segment {
   claim: Claim | null;
 }
 
-function buildSegments(articleText: string, claims: Claim[]): Segment[] {
-  const spans = matchClaimSpans(articleText, claims);
+function buildSegments(articleText: string, claims: Claim[], spans: Map<string, Span | null>): Segment[] {
   const matched = claims
     .map((claim) => ({ claim, span: spans.get(claim.id) ?? null }))
     .filter(
@@ -69,7 +69,9 @@ function buildSegments(articleText: string, claims: Claim[]): Segment[] {
 }
 
 export default function HighlightedArticle({ articleText, claims }: HighlightedArticleProps) {
-  const segments = buildSegments(articleText, claims);
+  const spans = matchClaimSpans(articleText, claims);
+  const segments = buildSegments(articleText, claims, spans);
+  const { claimNumbers } = numberCitations(articleText, claims, spans);
 
   return (
     <div className="whitespace-pre-wrap leading-relaxed">
@@ -97,9 +99,12 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         const sources = citedSources(claim, 2);
         const hasTooltip = sources.length > 0 || claim.citations.length > 0;
 
+        const refNumbers = claimNumbers.get(claim.id) ?? [];
+
         return (
           <mark
             key={index}
+            id={`claim-mark-${claim.id}`}
             tabIndex={hasTooltip ? 0 : undefined}
             className={`group rounded px-0.5 ${style.className} ${hasTooltip ? 'cursor-help' : ''}`}
           >
@@ -124,6 +129,14 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                   {style.icon}
                 </span>
               )}
+              {/* Wikipedia-style inline reference markers — one per unique cited source (D027's
+                  citations, deduped by url via numberCitations), each jumping to that source's
+                  numbered entry in the References list below. A claim can carry several. */}
+              {refNumbers.map((n) => (
+                <a key={n} href={`#ref-${n}`} className="ml-0.5 align-super text-xs text-info hover:underline">
+                  [{n}]
+                </a>
+              ))}
               {hasTooltip && (
                 <span
                   className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs

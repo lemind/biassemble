@@ -28,6 +28,21 @@ export default function GrounnelApp() {
           </p>
         </div>
 
+        <div className="collapse collapse-arrow border border-base-300 bg-base-100">
+          {/* No defaultChecked — collapsed by default, same collapse pattern as ResultsView.tsx */}
+          <input type="checkbox" />
+          <div className="collapse-title text-sm font-medium">What is Grounnel?</div>
+          <div className="collapse-content text-sm text-base-content/70">
+            <p>
+              Grounnel checks factual claims in a piece of text against sources on the open web.
+              Paste in an article or any claim-heavy text, and it extracts the individual factual
+              claims, searches for evidence, and highlights each one by verdict — supported,
+              contradicted, or unclear — so you can see at a glance what&apos;s actually backed by
+              a source and what isn&apos;t.
+            </p>
+          </div>
+        </div>
+
         <ArticleInput onSubmit={handleSubmit} disabled={isRunInFlight} />
 
         {error && (
@@ -39,7 +54,7 @@ export default function GrounnelApp() {
           </div>
         )}
 
-        {runId && <GrounnelProgress status={status} />}
+        {runId && <GrounnelProgress status={status} articleText={articleText} />}
 
         {runId && (
           <div className="card bg-base-100 shadow">

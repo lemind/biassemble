@@ -84,10 +84,24 @@
 
 - [x] T022 `ClaimCitation` type + `Claim.citations` — `frontend/src/types/grounnel.ts`, mirroring backend's new field.
 - [x] T023 [P] `CitationQuote.tsx` (new, shared) — links the specific cited sentence to its real source URL; same shared-component pattern as `SourceLink.tsx` (depends on T022).
-- [x] T024 [P] Wired into `ClaimSourceList.tsx` — up to 3 citation quotes per claim, below the existing (≤2) source links (depends on T023).
+- [x] T024 [P] Wired into `ClaimSourceList.tsx`'s hover tooltip citation preview (depends on T023). **Superseded by T026-T029**: the original "≤3 citation quotes per claim" list design was replaced by a Wikipedia-style numbered References list (one entry per unique source, not per claim) — see Phase 7.
 - [x] T025 Wired into `HighlightedArticle.tsx`'s hover tooltip — capped to 1, `line-clamp-2`, so the panel stays small next to the highlight (the original bug-report context) (depends on T023).
 
 **Checkpoint**: `tsc -b` clean.
+
+---
+
+## Phase 7: Wikipedia-style References, deep links, match/progress fixes
+
+**Goal**: real-run testing surfaced three more gaps — only 3/15 claims highlighted on a real compound-sentence-heavy article, citation links only reached a source's homepage not the exact text, and the unsupported verdict color was indistinguishable from black. Also folds in code-review findings from the Phase 6/7 rework itself.
+
+- [x] T026 Clause-splitting fallback — `frontend/src/lib/matchClaimSpans.ts`: compound sentences bundling multiple atomic facts ("wrote thousands of poems, hundreds of short stories and six novels...") diluted Jaccard when scored whole; splits on commas/"and"/"but" as a second-pass fallback, only when no whole-sentence match clears the threshold. Real-run improvement: 3/13 → 9/13 matched on an observed Bukowski sample. New tests in `matchClaimSpans.test.ts`.
+- [x] T027 Text-fragment deep links — `frontend/src/lib/textFragment.ts` (new): builds a browser `#:~:text=` link from a citation's real cited sentence, so clicking scrolls to and highlights the exact text on the source page, not just its homepage. Verified live against real pages (EBSCO, Wikipedia). Found and fixed during review: a stray space-before-punctuation artifact from upstream HTML-to-text extraction broke Chrome's matcher; normalized before building the anchor.
+- [x] T028 Wikipedia-style References — `frontend/src/lib/numberCitations.ts` (new) + `ClaimSourceList.tsx` rework: one numbered `[n]` entry per unique cited *source* (not per claim — a source cited twice reuses its number), inline `[n]` markers in `HighlightedArticle.tsx` linking down to it, `^` back-links. Claims with attempted-but-uncited sources still shown (found during review — the initial rework had silently dropped them) in a separate "Not independently sourced" section.
+- [x] T029 Progress-dot grouping — `GrounnelProgress.tsx`: dots grouped by sentence (via new `assignHomeSentence` in `matchClaimSpans.ts`) instead of one dot per claim, so claims collapsed by the clause-splitting fallback don't draw redundant identical dots; unconfirmed claims get a clickable dot linking to their entry below instead of a hover-only tooltip. Found and fixed during review: claims with genuinely different verdicts in one sentence were collapsing into a single dot (now one dot per distinct verdict); zero-token-overlap claims were all defaulting to "sentence 0" instead of their own group.
+- [x] T030 `unsupported` verdict color — `frontend/src/lib/verdictStyle.ts`: DaisyUI's `neutral` token is a near-black charcoal in this theme, unreadable as both a highlight and a progress dot; swapped to plain `gray-400`.
+
+**Checkpoint**: `tsc -b` clean, `matchClaimSpans.test.ts` 14/14 passing. `/code-review high` run against the full Phase 6+7 diff — 8 parallel finder angles, 7 of 10 findings fixed (multi-verdict dot collapse, zero-overlap sentence grouping, pending-count display, uncited-sources visibility, redundant `matchClaimSpans` recomputation, empty text-fragment guard, unnormalized displayed-quote-vs-link mismatch); 3 lower-priority findings deferred with reasoning (per-source single-citation-link limit, a small source-label helper duplicating existing logic, this spec/tasks sync itself).
 
 ## Dependencies & Execution Order
 

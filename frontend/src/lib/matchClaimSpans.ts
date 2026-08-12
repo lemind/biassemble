@@ -99,13 +99,49 @@ function findExactMatch(articleText: string, claimText: string): Span | null {
   return { start: index, end: index + claimText.length };
 }
 
+// A compound sentence bundling several atomic facts ("He wrote thousands of poems, hundreds of
+// short stories and six novels...") dilutes Jaccard when scored whole — a claim extracted for
+// just one of those facts shares few tokens against the sentence's combined token set. Splitting
+// on commas and "and"/"but" gives each fact its own, much smaller candidate span to match against.
+function splitClauses(sentence: Sentence): Span[] {
+  const clauses: Span[] = [];
+  const boundary = /,\s+|\s+(?:and|but)\s+/gi;
+  let start = sentence.start;
+  let match: RegExpExecArray | null;
+  while ((match = boundary.exec(sentence.text)) !== null) {
+    const end = sentence.start + match.index;
+    if (end > start) clauses.push({ start, end });
+    start = sentence.start + match.index + match[0].length;
+  }
+  if (start < sentence.end) clauses.push({ start, end: sentence.end });
+  return clauses;
+}
+
 function findSentenceMatch(articleText: string, claimText: string): Span | null {
   const claimTokens = tokenize(claimText);
+  const sentences = splitSentences(articleText);
+
+  // Whole-sentence pass first, exactly as before (matchClaimSpans.test.ts's appositive/pronoun/
+  // ellipsis cases all clear the threshold at this stage already — a compound sentence bundling
+  // multiple facts is the only case where nothing here reaches JACCARD_THRESHOLD).
   let best: { score: number; span: Span } | null = null;
-  for (const sentence of splitSentences(articleText)) {
+  for (const sentence of sentences) {
     const score = jaccard(claimTokens, tokenize(sentence.text));
     if (score >= JACCARD_THRESHOLD && (!best || score > best.score)) {
       best = { score, span: { start: sentence.start, end: sentence.end } };
+    }
+  }
+  if (best) return best.span;
+
+  // Clause fallback, only reached when no whole sentence matched anything — splitting on commas
+  // and "and"/"but" gives each fact in a compound sentence its own smaller candidate to match
+  // against, instead of always being diluted by its siblings' tokens.
+  for (const sentence of sentences) {
+    for (const clause of splitClauses(sentence)) {
+      const score = jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end)));
+      if (score >= JACCARD_THRESHOLD && (!best || score > best.score)) {
+        best = { score, span: clause };
+      }
     }
   }
   return best?.span ?? null;
@@ -163,5 +199,63 @@ export function matchClaimSpans(articleText: string, claims: Claim[]): Map<strin
     if (!result.has(claim.id)) result.set(claim.id, null);
   }
 
+  return result;
+}
+
+/**
+ * Wikipedia-style reference numbers, 1-based: matched claims first in reading order (by span
+ * start — same ordering ClaimSourceList already used before this existed), then unmatched claims
+ * appended in claims[] order. A single shared function so HighlightedArticle's inline "[n]"
+ * markers and the References list at the bottom can never disagree about which number is whose —
+ * both call this with the same (articleText, claims) and get the same answer.
+ *
+ * `precomputedSpans` is optional — a caller that already ran `matchClaimSpans` for its own
+ * purposes (e.g. HighlightedArticle building highlight segments) can pass that result straight
+ * through instead of paying for the same O(claims × sentences) scan a second time.
+ */
+export function numberClaims(
+  articleText: string,
+  claims: Claim[],
+  precomputedSpans?: Map<string, Span | null>
+): Map<string, number> {
+  const spans = precomputedSpans ?? matchClaimSpans(articleText, claims);
+  const matched = claims
+    .filter((claim) => spans.get(claim.id) !== null)
+    .sort((a, b) => spans.get(a.id)!.start - spans.get(b.id)!.start);
+  const unmatched = claims.filter((claim) => spans.get(claim.id) === null);
+
+  const result = new Map<string, number>();
+  [...matched, ...unmatched].forEach((claim, index) => result.set(claim.id, index + 1));
+  return result;
+}
+
+/**
+ * Which sentence a claim "belongs to," for progress-dot grouping only — independent of whether
+ * that claim actually cleared JACCARD_THRESHOLD and got a rendered highlight. Every claim gets
+ * an answer (closest sentence by raw score, no threshold), including ones matchClaimSpans
+ * couldn't place at all, so the progress row can still group an unmatched claim with its matched
+ * siblings from the same sentence instead of losing track of it entirely.
+ */
+export function assignHomeSentence(articleText: string, claims: Claim[]): Map<string, number> {
+  const sentences = splitSentences(articleText);
+  const sentenceTokens = sentences.map((s) => tokenize(s.text));
+  const result = new Map<string, number>();
+  // Negative, strictly-decreasing counter for claims with zero real overlap against every
+  // sentence — each gets its own unique group instead of all silently defaulting to sentence 0,
+  // which would falsely bucket unrelated zero-overlap claims together as if they shared a home.
+  let nextUngroupedIndex = -1;
+  for (const claim of claims) {
+    const claimTokens = tokenize(claim.text);
+    let bestIndex = -1;
+    let bestScore = 0;
+    sentenceTokens.forEach((tokens, index) => {
+      const score = jaccard(claimTokens, tokens);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    result.set(claim.id, bestIndex === -1 ? nextUngroupedIndex-- : bestIndex);
+  }
   return result;
 }

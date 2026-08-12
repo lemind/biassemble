@@ -1,9 +1,7 @@
 import type { Claim, ClaimSource } from '../types/grounnel';
 
-// Tooltip is small and lives right next to the highlight; the full list below the article has
-// more room. Named so a future "show one more" change is one edit, not a hunt across two files.
+// Tooltip is small and lives right next to the highlight — capped so the hover panel stays small.
 export const CITATION_TOOLTIP_MAX = 1;
-export const CITATION_LIST_MAX = 3;
 
 // `claim.sources` is every source the pipeline attempted (paywalled/unreachable/blocked
 // included), in original search order — not the same list `claim.citations[].url` resolves

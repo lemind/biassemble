@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import ArticleInput from './ArticleInput';
+import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
 
 export default function GrounnelApp() {
@@ -34,6 +35,8 @@ export default function GrounnelApp() {
             </button>
           </div>
         )}
+
+        {runId && <GrounnelProgress status={status} />}
 
         {runId && (
           <div className="card bg-base-100 shadow">

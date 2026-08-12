@@ -39,17 +39,17 @@
 
 ---
 
-## Phase 3: User Story 2 - Watch the check happen, not just wait for it (Priority: P1)
+## Phase 3: User Story 2 - Watch the check happen, not just wait for it (Priority: P1) ✅ Done
 
 **Goal**: FR-004, FR-005, FR-011, FR-012 (claim-level half) — live checked/total feedback, distinct pending/failed treatment.
 
 **Independent Test**: Submit a multi-claim article, observe checked/total counts advance across polls with a distinct running state for unchecked claims, until a terminal state.
 
-- [ ] T011 [P] [US2] `GrounnelProgress` — `frontend/src/components/grounnel/GrounnelProgress.tsx`: checked/total display; indeterminate "Finding claims…" state before the first status poll returns (no numeric `0 / 0`); counter pulses while `status` is non-terminal, static once `done`/`failed` (FR-005); `caps_hit` partial-results note (FR-011); soft "taking longer than usual" note past 60s elapsed with a non-terminal status, using `started_at`/`elapsed_seconds` (depends on T002, T004)
-- [ ] T012 [US2] Wire `GrounnelProgress` into `GrounnelApp`, positioned between the textarea and the article body per spec.md (depends on T006, T011)
-- [ ] T013 [US2] Pending/failed claim styling in `HighlightedArticle` — `status: pending` → plain gray pulse + spinner icon; `status: failed` → muted gray dashed outline + warning-triangle icon, distinct from `unverifiable` (FR-012 claim-level half) (depends on T008 — same file, must land before T014)
+- [x] T011 [P] [US2] `GrounnelProgress` — `frontend/src/components/grounnel/GrounnelProgress.tsx`: indeterminate "Finding claims…" (with a `loading-dots` spinner) when `status` is `null`; numeric `checked / total` once it arrives, pulsing (`animate-pulse` + spinner) while non-terminal, static once `done`/`failed` (FR-005); `caps_hit` partial-results note (FR-011); soft "taking longer than usual" note once `elapsed_seconds` passes 60s while non-terminal, per plan.md's threshold (depends on T002, T004).
+- [x] T012 [US2] Wired `GrounnelProgress` into `GrounnelApp`, between `ArticleInput` and the `HighlightedArticle` card, gated on `runId` like the article card (depends on T006, T011).
+- [x] T013 [US2] Pending/failed claim styling in `HighlightedArticle` — `status: pending` → subtle gray pulse (`bg-base-300/50 animate-pulse`) + spinner icon in place of the usual verdict glyph; `status: failed` → dashed outline + warning-triangle icon, distinct from `unverifiable` (FR-012 claim-level half). Verdict-vs-status precedence: a claim's `verdict` (once present) always wins over its `status` for styling. **Found and fixed while implementing**: the failed-claim style set only a border and text color, no explicit background — the browser's UA-default `mark { background: yellow }` bled through underneath the dashed border. Fixed by adding an explicit `bg-base-100` (depends on T008 — same file, must land before T014).
 
-**Checkpoint**: US1 + US2 — progress visible live; pending/failed claims read distinctly from verdicts.
+**Checkpoint**: `tsc -b`/`eslint`/`vite build` all clean. **End-to-end verified in a real browser** (Playwright + system Chrome): the dev-mock's real single-claim `done` flow re-verified with no regression (green ✓ highlight, zero console errors). Since the dev-mock only ever returns an immediate `done` status (fixed fixture, no pending/failed/caps_hit/stalled states to exercise), the three new states plus `caps_hit` and the 60s-stalled note were verified by intercepting `/api/grounnel/status/:id` at the network layer (Playwright `page.route`, synthetic 3-claim response) and confirming real DOM output: `1 / 3 claims checked` with pulse+spinner, the partial-results note, the stalled note, and all three claim renderings (green/pulse-gray/dashed-warning) — screenshot-confirmed, zero console/page errors both before and after the background-bleed fix.
 
 ---
 

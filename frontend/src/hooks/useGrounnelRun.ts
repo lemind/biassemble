@@ -41,18 +41,16 @@ export default function useGrounnelRun() {
   // case) surfaces as an error too, not just submission failures.
   const runLevelError = status?.status === 'failed' ? 'The fact-check run failed.' : null;
 
-  // "In flight" covers the initial POST (submitting) AND the poll window before a terminal
-  // status arrives — distinct from `submitting` alone, which usePollGrounnelStatus's async
-  // gap (runId set, first poll not yet resolved) would otherwise leave unaccounted for.
-  const isRunInFlight =
-    state.submitting ||
-    (state.runId !== null && status?.status !== 'done' && status?.status !== 'failed');
-
+  // Only the initial POST gates the input (prevents double-firing a second submission before
+  // the first's runId comes back). FR-013 requires letting a user submit a new run "at any
+  // time" — including while a previous run is still polling — so the polling window itself
+  // must NOT disable resubmission; `submit()` already tears down the old poll before starting
+  // the new one (see hook doc comment above).
   return {
     runId: state.runId,
     status,
     error: state.error ?? runLevelError,
-    isRunInFlight,
+    isRunInFlight: state.submitting,
     submit,
     dismissError,
   };

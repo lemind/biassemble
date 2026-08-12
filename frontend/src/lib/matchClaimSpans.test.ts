@@ -132,4 +132,35 @@ test('every input claim gets a map entry', () => {
   assert.equal(result.get('c2'), null);
 });
 
+// ─── Duplicate content: two identical sentences, one claim ───────
+test('a claim matching text that appears twice in the article matches the first occurrence', () => {
+  const article = 'The cat sat on the mat. The cat sat on the mat.';
+  const c = claim({ id: 'c1', text: 'The cat sat on the mat.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a match');
+  assert.equal(span!.start, 0, 'indexOf-based exact match always resolves to the first occurrence');
+});
+
+// ─── Duplicate content: two claims, identical text, one occurrence ──
+test('two claims with identical text both target the same single occurrence; overlap tie-break picks one', () => {
+  const article = 'The cat sat on the mat.';
+  const a = claim({ id: 'zzz', text: 'The cat sat on the mat.' });
+  const b = claim({ id: 'aaa', text: 'The cat sat on the mat.' });
+  const result = matchClaimSpans(article, [a, b]);
+  assert.ok(result.get('aaa'), 'lower id should win the identical-span collision');
+  assert.equal(result.get('zzz'), null, 'higher id should lose, not silently duplicate the highlight');
+});
+
+// ─── Duplicate content: claim text is a substring appearing twice ───
+test('a claim whose text is a duplicate substring of the article matches the first occurrence', () => {
+  const article = 'Paris is the capital of France. Paris has a population of over 2 million.';
+  const c = claim({ id: 'c1', text: 'Paris' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a match');
+  assert.equal(span!.start, 0);
+  assert.equal(span!.end, 5);
+});
+
 console.log(`\n${passed} tests passed`);

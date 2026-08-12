@@ -17,7 +17,9 @@ export default function GrounnelApp() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 px-4 py-12">
+    // pt-36 clears BiassembleLayout's absolutely-positioned w-32/h-32 logo — plain py-12 left the
+    // heading overlapping it at narrow widths (found during the T021 mobile pass).
+    <div className="min-h-screen bg-base-200 px-4 pt-36 pb-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold">Grounnel</h1>

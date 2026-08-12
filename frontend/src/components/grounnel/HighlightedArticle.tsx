@@ -1,4 +1,5 @@
 import { matchClaimSpans } from '../../lib/matchClaimSpans';
+import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
 import SourceLink from './SourceLink';
 import type { Claim, ClaimVerdict } from '../../types/grounnel';
 
@@ -9,11 +10,15 @@ interface HighlightedArticleProps {
 
 // Non-color icon per verdict (FR-007) — color is never the only cue.
 const VERDICT_STYLE: Record<ClaimVerdict, { className: string; icon: string; label: string }> = {
-  supported: { className: 'bg-success/30', icon: '✓', label: 'Supported' },
-  contradicted: { className: 'bg-error/30', icon: '✗', label: 'Contradicted' },
-  partially_supported: { className: 'bg-warning/30', icon: '≈', label: 'Partially supported' },
-  unsupported: { className: 'bg-neutral/20', icon: '?', label: 'No evidence found' },
-  unverifiable: { className: 'bg-info/30', icon: '?', label: 'Unverifiable' },
+  supported: { className: VERDICT_HIGHLIGHT_CLASS.supported, icon: '✓', label: 'Supported' },
+  contradicted: { className: VERDICT_HIGHLIGHT_CLASS.contradicted, icon: '✗', label: 'Contradicted' },
+  partially_supported: {
+    className: VERDICT_HIGHLIGHT_CLASS.partially_supported,
+    icon: '≈',
+    label: 'Partially supported',
+  },
+  unsupported: { className: VERDICT_HIGHLIGHT_CLASS.unsupported, icon: '?', label: 'No evidence found' },
+  unverifiable: { className: VERDICT_HIGHLIGHT_CLASS.unverifiable, icon: '?', label: 'Unverifiable' },
 };
 
 // Claim-level (not verdict) states — a `pending` claim has no verdict yet, a `failed` claim's
@@ -92,34 +97,46 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
           <mark
             key={index}
             tabIndex={hasTooltip ? 0 : undefined}
-            className={`group relative rounded px-0.5 ${style.className} ${hasTooltip ? 'cursor-help' : ''}`}
+            className={`group rounded px-0.5 ${style.className} ${hasTooltip ? 'cursor-help' : ''}`}
           >
             {segment.text}
-            {claim.status === 'pending' ? (
-              <span
-                aria-hidden="true"
-                className="loading loading-spinner loading-xs ml-0.5 align-middle"
-              />
-            ) : (
-              <span aria-hidden="true" className="ml-0.5 align-super text-xs">
-                {style.icon}
-              </span>
-            )}
-            <span className="sr-only">{` (${style.label})`}</span>
-            {hasTooltip && (
-              <span
-                className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs
-                  opacity-0 transition-opacity group-hover:pointer-events-auto
-                  group-hover:opacity-100 group-focus-within:pointer-events-auto
-                  group-focus-within:opacity-100"
-              >
-                <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
-                  {sources.map((source, sourceIndex) => (
-                    <SourceLink key={sourceIndex} source={source} />
-                  ))}
+            {/*
+              The tooltip anchors to THIS icon badge, not the <mark> itself. <mark> is inline and
+              can wrap across multiple lines (a claim span is often a full sentence) — an
+              absolutely-positioned child of a *wrapped* inline box gets positioned relative to
+              one of its line fragments (Chrome resolves it against the tail fragment), landing
+              the tooltip hundreds of pixels from the visible highlight. The icon badge below is a
+              single non-wrapping inline-block, so `relative`/`absolute` on it has an unambiguous,
+              predictable containing block right next to what the user is actually pointing at.
+            */}
+            <span className="relative inline-block">
+              {claim.status === 'pending' ? (
+                <span
+                  aria-hidden="true"
+                  className="loading loading-spinner loading-xs ml-0.5 align-middle"
+                />
+              ) : (
+                <span aria-hidden="true" className="ml-0.5 align-super text-xs">
+                  {style.icon}
                 </span>
-              </span>
-            )}
+              )}
+              {hasTooltip && (
+                <span
+                  className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs
+                    opacity-0 transition-opacity group-hover:pointer-events-auto
+                    group-hover:opacity-100 group-focus-within:pointer-events-auto
+                    group-focus-within:opacity-100"
+                >
+                  <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
+                    <span className="font-semibold">{style.label}</span>
+                    {sources.map((source, sourceIndex) => (
+                      <SourceLink key={sourceIndex} source={source} />
+                    ))}
+                  </span>
+                </span>
+              )}
+            </span>
+            <span className="sr-only">{` (${style.label})`}</span>
           </mark>
         );
       })}

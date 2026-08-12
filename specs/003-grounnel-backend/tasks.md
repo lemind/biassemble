@@ -40,6 +40,15 @@
 
 **Checkpoint**: 12 tests (11 unit, 1 integration) pass against a live `dev-mock` server; clean `tsc --noEmit`. Verified the pre-existing `reflection-flow.test.ts` timeout is unrelated to this phase's changes (reproduced on a clean baseline via `git stash`). No database migration involved.
 
+---
+
+## Phase 3: Citation provenance passthrough (biassemble-core D027)
+
+- [x] T016 [US1] `grounnelClaimCitationSchema` + `citations` on `grounnelClaimSchema` — `backend/src/lib/ai/contracts.ts`, mirroring `biassemble-core/src/contracts/grounnel.schemas.ts`'s new `ClaimCitationSchema` field-for-field. `.default([])`, same pattern as `retrievalMethod`/`started_at` — without it this field would be silently stripped by `getCore`'s strict parse in `core-client.ts`, exactly the drift class T002's own note already warns about.
+- [x] T017 [P] [US1] `dev-mock-client.ts` fixture — added one `citations` entry to the mock claim so local dev-mock flow exercises the new field instead of always hitting the `[]` default path.
+
+**Checkpoint**: `tsc --noEmit` clean.
+
 ## Dependencies & Execution Order
 
 - Phase 1 is complete; nothing here blocks `specs/002-grounnel-frontend/`'s own tasks, which consume this API as-is.

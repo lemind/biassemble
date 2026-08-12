@@ -25,6 +25,15 @@ export type ClaimSource =
       documentId: string;
     };
 
+// D027 (biassemble-core) — one entry per VERIFY citation, in citation order, never merged by
+// source; `url` is already the real resolved source URL, not the internal `source` label.
+export interface ClaimCitation {
+  source: string;
+  sentence: number;
+  url: string;
+  text: string;
+}
+
 export type ClaimStatus = 'pending' | 'done' | 'failed';
 
 export type ClaimVerdict =
@@ -43,6 +52,7 @@ export interface Claim {
   confidence: number | null;
   reason: string | null;
   sources: ClaimSource[];
+  citations: ClaimCitation[];
 }
 
 export interface Score {

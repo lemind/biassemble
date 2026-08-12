@@ -1,6 +1,8 @@
 import { matchClaimSpans } from '../../lib/matchClaimSpans';
 import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
+import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
 import SourceLink from './SourceLink';
+import CitationQuote from './CitationQuote';
 import type { Claim, ClaimVerdict } from '../../types/grounnel';
 
 interface HighlightedArticleProps {
@@ -88,10 +90,12 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
           return <span key={index}>{segment.text}</span>;
         }
 
-        // Tooltip only when sources exist (FR-008, spec.md's zero-source edge case) — a
-        // zero-source claim keeps its verdict color/icon but never gets an (empty) tooltip.
-        const sources = claim.sources.slice(0, 2);
-        const hasTooltip = sources.length > 0;
+        // Tooltip only when there's something to show it (FR-008, spec.md's zero-source edge
+        // case) — a claim with neither sources nor citations keeps its verdict color/icon but
+        // never gets an (empty) tooltip. Citations checked separately: they're independently
+        // defaulted arrays (D027) — a claim can have citations with an empty `sources` list.
+        const sources = citedSources(claim, 2);
+        const hasTooltip = sources.length > 0 || claim.citations.length > 0;
 
         return (
           <mark
@@ -129,8 +133,14 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                 >
                   <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
-                    {sources.map((source, sourceIndex) => (
-                      <SourceLink key={sourceIndex} source={source} />
+                    {sources.map((source) => (
+                      <SourceLink key={source.kind === 'web' ? source.url : source.documentId} source={source} />
+                    ))}
+                    {/* The specific sentence(s) VERIFY cited, not just the source's homepage (D027). */}
+                    {claim.citations.slice(0, CITATION_TOOLTIP_MAX).map((citation) => (
+                      <span key={`${citation.source}-${citation.sentence}`} className="line-clamp-2">
+                        <CitationQuote citation={citation} />
+                      </span>
                     ))}
                   </span>
                 </span>

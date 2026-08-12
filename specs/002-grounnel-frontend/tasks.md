@@ -78,6 +78,17 @@
 
 ---
 
+## Phase 6: Citation provenance rendering (biassemble-core D027)
+
+**Goal**: the "particular link to text" gap investigated earlier this session — `citations` (backend's Phase 3, T016/T017) exposes exactly which sentence backed a verdict; render it instead of only a bare source link.
+
+- [x] T022 `ClaimCitation` type + `Claim.citations` — `frontend/src/types/grounnel.ts`, mirroring backend's new field.
+- [x] T023 [P] `CitationQuote.tsx` (new, shared) — links the specific cited sentence to its real source URL; same shared-component pattern as `SourceLink.tsx` (depends on T022).
+- [x] T024 [P] Wired into `ClaimSourceList.tsx` — up to 3 citation quotes per claim, below the existing (≤2) source links (depends on T023).
+- [x] T025 Wired into `HighlightedArticle.tsx`'s hover tooltip — capped to 1, `line-clamp-2`, so the panel stays small next to the highlight (the original bug-report context) (depends on T023).
+
+**Checkpoint**: `tsc -b` clean.
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Foundational)** blocks every user story — nothing in Phase 2–4 should start first. Routing (T010) is intentionally in Phase 2, not here — see T010's own note.

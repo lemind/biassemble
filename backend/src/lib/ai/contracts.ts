@@ -87,6 +87,15 @@ const grounnelClaimSourceSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+// D027 (biassemble-core) — one entry per VERIFY citation, in citation order, never merged by
+// source; `url` is already the real resolved source URL, not the internal `source` label.
+const grounnelClaimCitationSchema = z.object({
+  source: z.string(),
+  sentence: z.number(),
+  url: z.string(),
+  text: z.string(),
+});
+
 const grounnelClaimSchema = z.object({
   id: z.string(),
   text: z.string(),
@@ -96,6 +105,9 @@ const grounnelClaimSchema = z.object({
   confidence: z.number().nullable(),
   reason: z.string().nullable(),
   sources: z.array(grounnelClaimSourceSchema),
+  // Additive (D027) — defaulted so a claim from before this field existed still parses instead
+  // of being silently stripped, same rationale as retrievalMethod/started_at above.
+  citations: z.array(grounnelClaimCitationSchema).default([]),
 });
 
 export const grounnelStatusResponseSchema = z.object({

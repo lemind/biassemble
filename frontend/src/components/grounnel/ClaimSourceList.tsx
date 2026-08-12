@@ -1,5 +1,7 @@
 import { matchClaimSpans } from '../../lib/matchClaimSpans';
+import { citedSources, CITATION_LIST_MAX } from '../../lib/citedSources';
 import SourceLink from './SourceLink';
+import CitationQuote from './CitationQuote';
 import type { Claim } from '../../types/grounnel';
 
 interface ClaimSourceListProps {
@@ -41,14 +43,23 @@ export default function ClaimSourceList({ articleText, claims }: ClaimSourceList
             <p className="text-base-content/80">{claim.text}</p>
             {claim.sources.length > 0 ? (
               <ul className="flex flex-col gap-0.5 pl-4">
-                {claim.sources.slice(0, 2).map((source, index) => (
-                  <li key={index}>
+                {citedSources(claim, 2).map((source) => (
+                  <li key={source.kind === 'web' ? source.url : source.documentId}>
                     <SourceLink source={source} />
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="pl-4 italic text-base-content/50">No sources found</p>
+            )}
+            {claim.citations.length > 0 && (
+              <ul className="flex flex-col gap-0.5 pl-4 pt-1">
+                {claim.citations.slice(0, CITATION_LIST_MAX).map((citation) => (
+                  <li key={`${citation.source}-${citation.sentence}`}>
+                    <CitationQuote citation={citation} />
+                  </li>
+                ))}
+              </ul>
             )}
           </li>
         ))}

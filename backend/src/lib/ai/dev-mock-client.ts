@@ -91,6 +91,9 @@ export function createDevMockClient(): AiClient {
             sources: [
               { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok", retrievalMethod: "diy_fetch" },
             ],
+            citations: [
+              { source: "A", sentence: 1, url: "https://example.com", text: "[dev-mock] The tower was finished in 1889 for the World's Fair." },
+            ],
           },
         ],
         score: { grounded_pct: 100, grounded_n: 1, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 1 },

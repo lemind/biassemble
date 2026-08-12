@@ -31,6 +31,7 @@ function claim(overrides: Partial<Claim> & { id: string; text: string }): Claim 
     confidence: null,
     reason: null,
     sources: [],
+    citations: [],
     ...overrides,
   };
 }

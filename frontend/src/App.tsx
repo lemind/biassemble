@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingFallback from './components/common/LoadingFallback';
 import BiassembleLayout from './components/common/BiassembleLayout';
@@ -12,6 +12,16 @@ const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
 
 export default function App() {
+  // No client-side router (ADR-002 §3) — BiassembleLayout's cross-nav links are plain <a> tags
+  // that always full-reload, so a route change always remounts App from scratch. Setting the
+  // document title once here (not per sub-view) is enough; index.html's static <title> is only
+  // the pre-JS default for the non-Grounnel route.
+  useEffect(() => {
+    document.title = isGrounnelRoute()
+      ? 'Grounnel — Fact-Check Claims Against the Open Web'
+      : 'Biassemble — Identify Cognitive Biases';
+  }, []);
+
   // useReflectionFlow must run unconditionally (Rules of Hooks) even on /grounnel, where its
   // state is simply unused — an early return before this call would call the hook
   // conditionally, which React (correctly) rejects.

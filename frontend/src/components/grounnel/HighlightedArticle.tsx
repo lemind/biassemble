@@ -105,6 +105,12 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         // "approximate location" disclaimer below can be shown.
         const sources = citedSources(claim, 2);
         const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback;
+        // citedSources() falls back to claim.sources — every page the pipeline attempted,
+        // paywalled/unreachable/irrelevant included — whenever there's no real citation to
+        // resolve against (real observed confusion, 2026-08-12: an `unsupported` claim showed
+        // two source links with nothing indicating they were searched-and-rejected, not
+        // evidence, which reads as if they somehow back a claim the label says has no evidence).
+        const sourcesAreUnconfirmed = claim.citations.length === 0 && sources.length > 0;
         const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
         const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
@@ -166,9 +172,13 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                   <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
                     {isFallback && (
+                      // A fallback-tier span's own words aren't a reliable stand-in for the claim
+                      // (that's the whole reason it's fallback) — telling the user "not confirmed"
+                      // with nothing else leaves them unable to tell what was actually checked.
+                      // Showing the claim's real extracted text here is the actionable version:
+                      // the user can read exactly what was verified, independent of where it landed.
                       <span className="text-base-content/60">
-                        Approximate location — this text wasn't confirmed as a close match for the
-                        claim; it's just the least-bad spot available.
+                        Approximate location — the claim actually checked here was: “{claim.text}”
                       </span>
                     )}
                     {/* One combined link (source name + exact cited sentence) per shown citation
@@ -183,6 +193,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                         <CitationQuote citation={citation} sources={claim.sources} />
                       </span>
                     ))}
+                    {sourcesAreUnconfirmed && (
+                      <span className="text-base-content/60">Searched, found nothing that confirms this:</span>
+                    )}
                     {sources
                       .filter((source) => source.kind !== 'web' || !shownCitationUrls.has(source.url))
                       .map((source) => (
@@ -192,7 +205,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                 </span>
               )}
             </span>
-            <span className="sr-only">{` (${style.label}${isFallback ? ', approximate location' : ''})`}</span>
+            <span className="sr-only">
+              {` (${style.label}${isFallback ? `, approximate location — claim checked: "${claim.text}"` : ''})`}
+            </span>
           </mark>
         );
       })}

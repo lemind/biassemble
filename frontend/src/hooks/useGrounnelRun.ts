@@ -41,16 +41,20 @@ export default function useGrounnelRun() {
   // case) surfaces as an error too, not just submission failures.
   const runLevelError = status?.status === 'failed' ? 'The fact-check run failed.' : null;
 
-  // Only the initial POST gates the input (prevents double-firing a second submission before
-  // the first's runId comes back). FR-013 requires letting a user submit a new run "at any
-  // time" — including while a previous run is still polling — so the polling window itself
-  // must NOT disable resubmission; `submit()` already tears down the old poll before starting
-  // the new one (see hook doc comment above).
+  // Revised 2026-08-12 (explicit user ask — reverses the earlier FR-013 reading in T018): the
+  // Run button must stay disabled for the ENTIRE run, not just the initial POST — submitting a
+  // second run while the first is still extracting/verifying was confusing in practice (results
+  // from two overlapping runs could appear to blend together in the UI). `submit()` still tears
+  // down any previous poll first, so this is just gating the button, not a correctness fix.
+  // `status` stays null for the window between runId arriving and the first poll response
+  // landing (usePollGrounnelStatus's own currentStatus derivation) — that window is still "in
+  // flight", not terminal, so it's gated on `state.runId` being set, not on `status` existing.
+  const isTerminal = !state.runId || status?.status === 'done' || status?.status === 'failed';
   return {
     runId: state.runId,
     status,
     error: state.error ?? runLevelError,
-    isRunInFlight: state.submitting,
+    isRunInFlight: state.submitting || !isTerminal,
     submit,
     dismissError,
   };

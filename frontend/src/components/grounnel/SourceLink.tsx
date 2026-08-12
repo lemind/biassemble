@@ -1,3 +1,4 @@
+import { sourceLabel } from '../../lib/sourceLabel';
 import type { ClaimSource } from '../../types/grounnel';
 
 interface SourceLinkProps {
@@ -15,12 +16,11 @@ export default function SourceLink({ source }: SourceLinkProps) {
         rel="noopener noreferrer"
         className="link link-hover text-info"
       >
-        {/* Domain only, never the title (2026-08-12) — matches lib/sourceLabel.ts's rule, so a
-            web source never shows a full article headline in one place and a clean domain in
-            another within the same tooltip (CitationQuote, right above this, already used
-            sourceLabel()). Attached-document sources below have no domain to fall back to, so
-            they're untouched. */}
-        {source.domain}
+        {/* Routed through lib/sourceLabel.ts (2026-08-12, code-review finding) instead of an
+            inline `title || domain` — this is the same tooltip CitationQuote renders into right
+            above this, so both must use the identical "domain - title" formatting or the two
+            lines visibly disagree. */}
+        {sourceLabel(source.url, [source])}
       </a>
     );
   }

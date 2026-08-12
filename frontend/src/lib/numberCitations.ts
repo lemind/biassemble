@@ -12,6 +12,22 @@ export interface CitationNumbering {
   references: NumberedReference[];
 }
 
+// Real observed bug, 2026-08-12: a 14-entry References list for an article that visibly cites
+// far fewer distinct sources — each claim's evidence search runs independently, so the "same"
+// real page (e.g. the Charles Bukowski Wikipedia article) can come back with a different query
+// string, fragment, or trailing slash depending on which claim's search surfaced it, and exact
+// string equality on citation.url treated each variant as a separate source. Normalizing to
+// origin+pathname before using it as the dedup key collapses those back into one entry. Falls
+// back to the raw url unchanged if it doesn't parse (dedup key just degrades to old behavior).
+function normalizeForDedup(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.replace(/\/$/, '');
+  } catch {
+    return url;
+  }
+}
+
 // Wikipedia-style: one number per unique SOURCE (by url), not per claim and not per citation
 // instance — the same source cited twice (from one claim or from two different claims) reuses
 // its number instead of getting a second entry. Numbers assigned in reading order (numberClaims'
@@ -32,10 +48,11 @@ export function numberCitations(
   for (const claim of ordered) {
     const numbersForClaim: number[] = [];
     for (const citation of claim.citations) {
-      let number = urlToNumber.get(citation.url);
+      const dedupKey = normalizeForDedup(citation.url);
+      let number = urlToNumber.get(dedupKey);
       if (number === undefined) {
         number = references.length + 1;
-        urlToNumber.set(citation.url, number);
+        urlToNumber.set(dedupKey, number);
         references.push({ number, url: citation.url, citations: [] });
       }
       references[number - 1].citations.push(citation);

@@ -91,12 +91,27 @@ test('pronoun-resolved claim falls back to the containing sentence', () => {
   assert.ok(result.get('c1'), 'expected a sentence-level match');
 });
 
-// ─── No match clears the threshold ────────────────────────────────
-test('unrelated claim text does not match anything', () => {
+// ─── No-threshold last resort: every claim gets a span, even a bad one ─────
+// Changed 2026-08-12 — every claim used to fall through to `null` (unmatched, not shown in the
+// article body) once nothing cleared JACCARD_THRESHOLD. User-requested tradeoff: every claim now
+// gets SOME location rather than silently vanishing from the highlighted text; a poor match beats
+// no visible location at all. Falls back to whichever sentence scores highest, even at score 0.
+test('unrelated claim text still gets a best-effort span, not null', () => {
   const article = 'The Eiffel Tower was completed in 1889.';
   const c = claim({ id: 'c1', text: 'Quantum computers use qubits instead of classical bits.' });
   const result = matchClaimSpans(article, [c]);
-  assert.equal(result.get('c1'), null);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a last-resort fallback span, not null');
+  assert.equal(article.slice(span!.start, span!.end), article);
+});
+
+test('with multiple sentences, the last-resort fallback still picks the highest-scoring one, not always the first', () => {
+  const article = 'The cat sat on the mat. Quantum computers use qubits for calculations.';
+  const c = claim({ id: 'c1', text: 'Quantum computers rely on qubits.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a span');
+  assert.equal(article.slice(span!.start, span!.end), 'Quantum computers use qubits for calculations.');
 });
 
 // ─── Overlap: earliest-start wins, loser still keyed (null) ──────

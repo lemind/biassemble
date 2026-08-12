@@ -22,21 +22,23 @@ function PendingDot({ count }: { count: number }) {
 }
 
 // Verified (real verdict/sources) but matchClaimSpans found nowhere in the article text to
-// highlight it — not lost, just not located. Links straight to it below (its first reference's
-// `#ref-<n>` if it has one, else ClaimSourceList's "Not independently sourced" `#claim-source-<id>`
-// fallback) instead of leaving a dashed dot that only explains itself on hover — no hover target
-// on touch devices, and even with a mouse a tooltip alone doesn't tell you WHERE to look.
-function UnconfirmedDot({ count, href }: { count: number; href: string }) {
-  return (
-    <a
-      href={href}
-      title={
-        count > 1
-          ? `${count} claims verified — not highlighted above, click to see them below`
-          : 'Verified — not highlighted above, click to see it below'
-      }
-      className="inline-block h-2.5 w-2.5 cursor-pointer rounded-full border border-dashed border-base-content/40 hover:border-base-content/70"
-    />
+// highlight it — not lost, just not located. Links to its first reference entry (`#ref-<n>`)
+// when it has one; a claim with no citation AND no span has nowhere valid to send a click
+// (review finding, 2026-08-12: the old `#claim-mark-<id>` fallback pointed at a DOM id that, by
+// construction, was never rendered for exactly this claim — it has no span, so no `<mark>` with
+// that id exists), so `href` is optional and this renders as a plain non-interactive dot instead.
+function UnconfirmedDot({ count, href }: { count: number; href?: string }) {
+  const title =
+    count > 1
+      ? `${count} claims verified — not highlighted above${href ? ', click to see them below' : ''}`
+      : `Verified — not highlighted above${href ? ', click to see it below' : ''}`;
+  const className =
+    'inline-block h-2.5 w-2.5 rounded-full border border-dashed border-base-content/40' +
+    (href ? ' cursor-pointer hover:border-base-content/70' : '');
+  return href ? (
+    <a href={href} title={title} className={className} />
+  ) : (
+    <span aria-hidden="true" title={title} className={className} />
   );
 }
 
@@ -73,15 +75,17 @@ function ConfirmedDot({ claim }: { claim: Claim }) {
 // 3 identical dots for what's visually one colored chunk; a claim that never got a highlight at
 // all (matchClaimSpans returned null) shouldn't silently vanish from the count either — it gets
 // folded into one shared "unconfirmed" dot per sentence instead of one dot per claim.
-// Where an unconfirmed claim's dot should send a click: its first cited source's reference entry
-// if it has one, else the "Not independently sourced" fallback entry ClaimSourceList always
-// renders for a claim with zero citations — either way, a real anchor that always exists.
-function unconfirmedHref(claims: Claim[], claimNumbers: Map<string, number[]>): string {
+// Where an unconfirmed claim's dot should send a click: its first cited source's reference entry,
+// if it has one. If none of the group's claims have a citation number either, there's no valid
+// anchor to link to — every claim here has status !== 'pending' AND matchClaimSpans returned null
+// (genuine oversubscription: more claim candidates than the article had non-conflicting sentence/
+// clause slots for), so none of them have a `#claim-mark-<id>` in the article body to point at.
+function unconfirmedHref(claims: Claim[], claimNumbers: Map<string, number[]>): string | undefined {
   for (const claim of claims) {
     const numbers = claimNumbers.get(claim.id) ?? [];
     if (numbers.length > 0) return `#ref-${numbers[0]}`;
   }
-  return `#claim-source-${claims[0]!.id}`;
+  return undefined;
 }
 
 function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: string; node: ReactNode }> {

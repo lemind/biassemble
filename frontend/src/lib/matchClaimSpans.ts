@@ -93,10 +93,32 @@ function splitSentences(articleText: string): Sentence[] {
   return sentences;
 }
 
-function findExactMatch(articleText: string, claimText: string): Span | null {
+// Confidence tier, lowest wins an overlap conflict — a real, threshold-clearing match must never
+// lose its highlight to a lower-confidence claim's desperate best-effort guess just because the
+// guess's span happens to start a few characters earlier (e.g. a whole-sentence fallback always
+// starts at or before any of its own clauses, which would otherwise let it evict an already-solid
+// clause-level match purely on position).
+const MatchTier = {
+  Exact: 0,
+  Sentence: 1,
+  Clause: 2,
+  Fallback: 3,
+} as const;
+type MatchTier = (typeof MatchTier)[keyof typeof MatchTier];
+
+interface TieredSpan {
+  span: Span;
+  tier: MatchTier;
+  // Only populated for MatchTier.Fallback — every sentence ranked by score, best first, so
+  // matchClaimSpans can walk past an already-occupied top choice instead of going straight to
+  // null. Exact/Sentence/Clause tiers don't need this: a real match earns its own span outright.
+  rankedFallbacks?: Span[];
+}
+
+function findExactMatch(articleText: string, claimText: string): TieredSpan | null {
   const index = articleText.toLowerCase().indexOf(claimText.toLowerCase());
   if (index === -1) return null;
-  return { start: index, end: index + claimText.length };
+  return { span: { start: index, end: index + claimText.length }, tier: MatchTier.Exact };
 }
 
 // A compound sentence bundling several atomic facts ("He wrote thousands of poems, hundreds of
@@ -117,48 +139,80 @@ function splitClauses(sentence: Sentence): Span[] {
   return clauses;
 }
 
-function findSentenceMatch(articleText: string, claimText: string): Span | null {
+function bestScoring(candidates: Array<{ span: Span; score: number }>): { span: Span; score: number } | null {
+  let best: { span: Span; score: number } | null = null;
+  for (const candidate of candidates) {
+    if (candidate.score >= JACCARD_THRESHOLD && (!best || candidate.score > best.score)) best = candidate;
+  }
+  return best;
+}
+
+function findSentenceMatch(articleText: string, claimText: string): TieredSpan | null {
   const claimTokens = tokenize(claimText);
   const sentences = splitSentences(articleText);
+  if (sentences.length === 0) return null;
+
+  // Score every sentence and every clause within it exactly once, up front — the three tiers
+  // below (whole-sentence, clause, no-threshold fallback) all read from these same two lists
+  // instead of each re-tokenizing and re-scoring the identical spans (review finding, 2026-08-12:
+  // the fallback tier used to redo this work a third time after the two tiers above it already
+  // did it, discarding the scores each time because they only checked against JACCARD_THRESHOLD).
+  const sentenceCandidates: Array<{ span: Span; score: number }> = [];
+  const clauseCandidates: Array<{ span: Span; score: number }> = [];
+  for (const sentence of sentences) {
+    sentenceCandidates.push({
+      span: { start: sentence.start, end: sentence.end },
+      score: jaccard(claimTokens, tokenize(sentence.text)),
+    });
+    for (const clause of splitClauses(sentence)) {
+      clauseCandidates.push({
+        span: clause,
+        score: jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end))),
+      });
+    }
+  }
 
   // Whole-sentence pass first, exactly as before (matchClaimSpans.test.ts's appositive/pronoun/
   // ellipsis cases all clear the threshold at this stage already — a compound sentence bundling
   // multiple facts is the only case where nothing here reaches JACCARD_THRESHOLD).
-  let best: { score: number; span: Span } | null = null;
-  for (const sentence of sentences) {
-    const score = jaccard(claimTokens, tokenize(sentence.text));
-    if (score >= JACCARD_THRESHOLD && (!best || score > best.score)) {
-      best = { score, span: { start: sentence.start, end: sentence.end } };
-    }
-  }
-  if (best) return best.span;
+  const bestSentence = bestScoring(sentenceCandidates);
+  if (bestSentence) return { span: bestSentence.span, tier: MatchTier.Sentence };
 
   // Clause fallback, only reached when no whole sentence matched anything — splitting on commas
   // and "and"/"but" gives each fact in a compound sentence its own smaller candidate to match
   // against, instead of always being diluted by its siblings' tokens.
-  for (const sentence of sentences) {
-    for (const clause of splitClauses(sentence)) {
-      const score = jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end)));
-      if (score >= JACCARD_THRESHOLD && (!best || score > best.score)) {
-        best = { score, span: clause };
-      }
-    }
-  }
-  return best?.span ?? null;
+  const bestClause = bestScoring(clauseCandidates);
+  if (bestClause) return { span: bestClause.span, tier: MatchTier.Clause };
+
+  // Last resort, no threshold — every claim gets located SOMEWHERE rather than left out of the
+  // article body entirely (user-requested tradeoff, 2026-08-12: "I want all claims highlighted
+  // anyhow"). Candidates include both whole sentences AND their individual clauses, not just
+  // sentences — a short article with many claims densely packs multiple real clause-level matches
+  // into one sentence, so a whole-sentence-only fallback would conflict with virtually every
+  // sentence that already has any real match in it at all, even where most of its characters are
+  // still free. Ranked by score, best first, so matchClaimSpans can walk down to the next-best
+  // candidate when a higher one is already occupied, instead of colliding and losing outright.
+  const ranked = [...sentenceCandidates, ...clauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
+  return { span: ranked[0]!, tier: MatchTier.Fallback, rankedFallbacks: ranked };
 }
 
 /**
  * Locates each claim's span in the pasted article, best-effort. Presentation-only — never
  * affects verdict computation (see plan.md's Design Decisions). Runs over every claim regardless
- * of status (pending included, per FR-005).
+ * of status (pending included, per FR-005). Every claim gets a real span as long as the article
+ * has at least one sentence — see findSentenceMatch's no-threshold last resort tier.
  *
- * Overlap resolution: the claim whose matched span starts earliest wins; on an exact tie, the
- * lower claim.id wins. This is independent of claims[] array order on purpose (biassemble-core
- * gives no ordering guarantee across polls) — logs a dev-only console.warn per discarded overlap
- * so collision frequency is observable.
+ * Overlap resolution: higher-confidence tiers win first (MatchTier — exact beats sentence beats
+ * clause beats the no-threshold fallback), so a real match is never evicted by a lower-confidence
+ * claim's span merely because that guess happens to start a few characters earlier (a whole-
+ * sentence fallback always starts at or before any clause within it). Within the same tier, the
+ * claim whose span starts earliest wins; on an exact tie, the lower claim.id wins. This is
+ * independent of claims[] array order on purpose (biassemble-core gives no ordering guarantee
+ * across polls) — logs a dev-only console.warn per discarded overlap so collision frequency is
+ * observable.
  */
 export function matchClaimSpans(articleText: string, claims: Claim[]): Map<string, Span | null> {
-  const candidates = new Map<string, Span | null>();
+  const candidates = new Map<string, TieredSpan | null>();
   for (const claim of claims) {
     candidates.set(
       claim.id,
@@ -170,16 +224,28 @@ export function matchClaimSpans(articleText: string, claims: Claim[]): Map<strin
   const matched = claims
     .filter((claim) => candidates.get(claim.id) !== null)
     .sort((a, b) => {
-      const spanA = candidates.get(a.id)!;
-      const spanB = candidates.get(b.id)!;
-      if (spanA.start !== spanB.start) return spanA.start - spanB.start;
+      const tieredA = candidates.get(a.id)!;
+      const tieredB = candidates.get(b.id)!;
+      if (tieredA.tier !== tieredB.tier) return tieredA.tier - tieredB.tier;
+      if (tieredA.span.start !== tieredB.span.start) return tieredA.span.start - tieredB.span.start;
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
 
+  const conflicts = (span: Span, occupied: Array<{ span: Span; claimId: string }>) =>
+    occupied.find((o) => span.start < o.span.end && o.span.start < span.end);
+
   const occupied: Array<{ span: Span; claimId: string }> = [];
   for (const claim of matched) {
-    const span = candidates.get(claim.id)!;
-    const conflict = occupied.find((o) => span.start < o.span.end && o.span.start < span.end);
+    const tiered = candidates.get(claim.id)!;
+    // Fallback tier only: don't stop at the top-ranked sentence if something higher-priority
+    // (a real match, or an earlier-processed fallback claim) already occupies it — walk down the
+    // ranked list to the next-best sentence instead of giving up outright (still "some claims
+    // highlighted" beats "all-or-nothing on the single best guess").
+    const span =
+      tiered.tier === MatchTier.Fallback && tiered.rankedFallbacks
+        ? (tiered.rankedFallbacks.find((candidate) => !conflicts(candidate, occupied)) ?? tiered.span)
+        : tiered.span;
+    const conflict = conflicts(span, occupied);
     if (conflict) {
       // import.meta.env is Vite-injected — undefined when this module runs outside Vite's
       // transform (e.g. these tests, via plain tsx), so `.env` itself must be optionally chained.

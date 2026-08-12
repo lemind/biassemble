@@ -103,6 +103,21 @@
 
 **Checkpoint**: `tsc -b` clean, `matchClaimSpans.test.ts` 14/14 passing. `/code-review high` run against the full Phase 6+7 diff — 8 parallel finder angles, 7 of 10 findings fixed (multi-verdict dot collapse, zero-overlap sentence grouping, pending-count display, uncited-sources visibility, redundant `matchClaimSpans` recomputation, empty text-fragment guard, unnormalized displayed-quote-vs-link mismatch); 3 lower-priority findings deferred with reasoning (per-source single-citation-link limit, a small source-label helper duplicating existing logic, this spec/tasks sync itself).
 
+---
+
+## Phase 8: Guaranteed highlighting, tooltip consolidation, nav
+
+**Goal**: user-requested behavior change — every claim should be located somewhere in the article body, not left unhighlighted when nothing clears the match confidence bar. Plus two smaller UX asks (merge the tooltip's two links into one, delete the "Not independently sourced" section) and cross-linking between the two products.
+
+- [x] T031 No-threshold fallback tier — `matchClaimSpans.ts`: `findSentenceMatch` gained a third, no-threshold tier ranking every sentence AND clause by score (best first) when nothing clears `JACCARD_THRESHOLD`, so a claim always gets a span (never `null`) as long as the article has ≥1 sentence. Real-run result: 13/13 claims highlighted on the Bukowski sample (was 9/13).
+- [x] T032 Confidence-tiered overlap resolution — `matchClaimSpans.ts`: `MatchTier` (Exact/Sentence/Clause/Fallback) added to `TieredSpan`; `matchClaimSpans`' overlap resolution now sorts by tier first, position second — **found and fixed during this same task**: without tier-awareness, a low-confidence whole-sentence fallback (which always starts at or before any of its own clauses) was evicting already-correct clause-level matches from other claims purely by starting earlier, regressing highlight count from 9/13 to 4/13 before the fix.
+- [x] T033 Occupancy-aware fallback — `matchClaimSpans.ts`: fallback-tier claims walk a ranked candidate list (`rankedFallbacks`) and take the first span not already occupied by a higher-priority claim, instead of colliding once and giving up.
+- [x] T034 Tooltip link consolidation — `CitationQuote.tsx` gained a `sources` prop and now renders one combined link (`sourceLabel — "quoted text"`) instead of a separate `SourceLink` next to a separate quote link; new shared `frontend/src/lib/sourceLabel.ts` (extracted from `ClaimSourceList.tsx`'s old inline `referenceLabel`, now used by both).
+- [x] T035 Deleted "Not independently sourced" section — `ClaimSourceList.tsx`: claims with no resolvable citation are no longer listed separately; every claim is now visible via T031's guaranteed highlighting instead.
+- [x] T036 Nav links between products — `BiassembleLayout.tsx`: "Try Grounnel →" / "← Back to Biassemble", using a new shared `frontend/src/lib/routes.ts` (`isGrounnelRoute`, deduplicating what had been a second copy of `App.tsx`'s own check).
+
+**Checkpoint**: `tsc -b` clean, `matchClaimSpans.test.ts` 15/15 passing. `/code-review medium` run — 8 parallel finder angles, 4 CONFIRMED findings fixed: `GrounnelProgress.tsx`'s unconfirmed-dot fallback linked to a `#claim-mark-<id>` DOM id that, by construction, could never exist for that claim (100%-broken whenever reached, not just rare — now renders as a plain non-interactive dot when there's truly nowhere to link); the tooltip silently hid a claim's second attempted source once any citation existed (now shown alongside); `isGrounnelRoute()` duplication (App.tsx/BiassembleLayout.tsx) extracted to `lib/routes.ts`; the fallback tier's candidate scoring was redundantly redone a third time after the two tiers above it already computed it (now scored once, all three tiers read from the same list). One finding (fallback-tier highlights are visually indistinguishable from confident matches, unlike `PENDING_STYLE`/`FAILED_STYLE`'s existing precedent) deferred — would need to revisit the explicit "highlight anyhow, no exceptions" decision this phase was built around, not a fix to make unilaterally.
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Foundational)** blocks every user story — nothing in Phase 2–4 should start first. Routing (T010) is intentionally in Phase 2, not here — see T010's own note.

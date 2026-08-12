@@ -3,18 +3,13 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingFallback from './components/common/LoadingFallback';
 import BiassembleLayout from './components/common/BiassembleLayout';
 import useReflectionFlow from './hooks/useReflectionFlow';
+import { isGrounnelRoute } from './lib/routes';
 
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const QAFlow = lazy(() => import('./components/QAFlow'));
 const AssessmentLoading = lazy(() => import('./components/AssessmentLoading'));
 const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
-
-// No router for one extra path (ADR-002 §3) — named as a small helper purely for readability,
-// not a routing abstraction; still just one pathname check.
-function isGrounnelRoute() {
-  return window.location.pathname === '/grounnel';
-}
 
 export default function App() {
   // useReflectionFlow must run unconditionally (Rules of Hooks) even on /grounnel, where its

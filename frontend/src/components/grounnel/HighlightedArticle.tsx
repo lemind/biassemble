@@ -98,6 +98,8 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         // defaulted arrays (D027) — a claim can have citations with an empty `sources` list.
         const sources = citedSources(claim, 2);
         const hasTooltip = sources.length > 0 || claim.citations.length > 0;
+        const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
+        const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
         const refNumbers = claimNumbers.get(claim.id) ?? [];
 
@@ -146,15 +148,23 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                 >
                   <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
-                    {sources.map((source) => (
-                      <SourceLink key={source.kind === 'web' ? source.url : source.documentId} source={source} />
-                    ))}
-                    {/* The specific sentence(s) VERIFY cited, not just the source's homepage (D027). */}
-                    {claim.citations.slice(0, CITATION_TOOLTIP_MAX).map((citation) => (
+                    {/* One combined link (source name + exact cited sentence) per shown citation
+                        — a separate SourceLink for that same url would be a second link pointing
+                        at essentially the same place. Sources NOT covered by a shown citation
+                        (review finding, 2026-08-12: citedSources' own cap of 2 can include a
+                        second real source beyond CITATION_TOOLTIP_MAX's single quoted citation —
+                        that used to always render, this keeps it visible instead of hiding it
+                        the moment any citation exists) still get a plain link below. */}
+                    {shownCitations.map((citation) => (
                       <span key={`${citation.source}-${citation.sentence}`} className="line-clamp-2">
-                        <CitationQuote citation={citation} />
+                        <CitationQuote citation={citation} sources={claim.sources} />
                       </span>
                     ))}
+                    {sources
+                      .filter((source) => source.kind !== 'web' || !shownCitationUrls.has(source.url))
+                      .map((source) => (
+                        <SourceLink key={source.kind === 'web' ? source.url : source.documentId} source={source} />
+                      ))}
                   </span>
                 </span>
               )}

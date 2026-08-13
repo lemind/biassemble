@@ -109,6 +109,7 @@ export function createDevMockClient(): AiClient {
             citations: [
               { source: "A", sentence: 1, url: "https://example.com", text: "[dev-mock] The tower was finished in 1889 for the World's Fair." },
             ],
+            sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
           },
         ] : [],
         score: { grounded_pct: status === "done" ? 100 : 0, grounded_n: status === "done" ? 1 : 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: status === "done" ? 0 : 1, eligible: 1 },

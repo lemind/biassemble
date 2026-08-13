@@ -63,7 +63,7 @@ function buildSegments(articleText: string, claims: Claim[], spans: Map<string, 
     segments.push({
       text: articleText.slice(span.start, span.end),
       claim,
-      isFallback: span.tier === MatchTier.Fallback,
+      isFallback: span.tier === MatchTier.Sentence,
     });
     cursor = span.end;
   }
@@ -116,9 +116,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
 
         const refNumbers = claimNumbers.get(claim.id) ?? [];
 
-        // Fallback-tier spans never cleared JACCARD_THRESHOLD — they're the least-bad available
-        // slot, not a confirmed match to this exact text (real observed bug, 2026-08-12: an
-        // unrelated claim's verdict landed on a date-heavy sentence and read as if it were about
+        // Sentence-tier spans (D028: source_excerpt missing or unlocatable) are the least-bad
+        // available slot, not a confirmed match to this exact text (real observed bug, 2026-08-12:
+        // an unrelated claim's verdict landed on a date-heavy sentence and read as if it were about
         // the date). Dashed underline (code-review finding, 2026-08-12: reuses the same "not a
         // confirmed verdict" dashed idiom as FAILED_STYLE and GrounnelProgress's Unconfirmed/
         // FailedDot, instead of introducing a third, one-off convention) + "approximate location"

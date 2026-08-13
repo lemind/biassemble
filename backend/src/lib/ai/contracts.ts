@@ -108,6 +108,9 @@ const grounnelClaimSchema = z.object({
   // Additive (D027) — defaulted so a claim from before this field existed still parses instead
   // of being silently stripped, same rationale as retrievalMethod/started_at above.
   citations: z.array(grounnelClaimCitationSchema).default([]),
+  // Additive (D028, biassemble-core) — verified verbatim source-text substring, or null;
+  // defaulted for the same reason as citations above.
+  sourceExcerpt: z.string().nullable().default(null),
 });
 
 export const grounnelStatusResponseSchema = z.object({

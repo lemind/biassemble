@@ -78,8 +78,8 @@ function ConfirmedDot({ claim }: { claim: Claim }) {
 // Where an unconfirmed claim's dot should send a click: its first cited source's reference entry,
 // if it has one. If none of the group's claims have a citation number either, there's no valid
 // anchor to link to — every claim here has status !== 'pending' AND matchClaimSpans returned null
-// (genuine oversubscription: more claim candidates than the article had non-conflicting sentence/
-// clause slots for), so none of them have a `#claim-mark-<id>` in the article body to point at.
+// (genuine oversubscription: more claim candidates than the article had non-conflicting sentence
+// slots for), so none of them have a `#claim-mark-<id>` in the article body to point at.
 function unconfirmedHref(claims: Claim[], claimNumbers: Map<string, number[]>): string | undefined {
   for (const claim of claims) {
     const numbers = claimNumbers.get(claim.id) ?? [];
@@ -114,11 +114,11 @@ function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: stri
       groups.push({ key: `${sentenceIndex}-pending`, node: <PendingDot count={pending.length} /> });
     }
     if (confirmed.length > 0) {
-      // One dot per DISTINCT verdict color present, not one dot total — the clause-splitting
-      // fallback in matchClaimSpans.ts means two claims from the same sentence can now match
-      // separate, differently-colored clauses (e.g. one supported, one contradicted); collapsing
-      // to a single dot colored by only the earliest-starting claim would silently hide the
-      // other verdict. Claims that already share a color (the common case this grouping exists
+      // One dot per DISTINCT verdict color present, not one dot total — two claims grouped into
+      // the same sentence (D028: distinct source_excerpts within one sentence, or a fallback-tier
+      // collision) can still have different verdicts (e.g. one supported, one contradicted);
+      // collapsing to a single dot colored by only the earliest-starting claim would silently hide
+      // the other verdict. Claims that already share a color (the common case this grouping exists
       // for) still collapse into one dot, in earliest-span order.
       const seenVerdicts = new Set<string>();
       for (const c of confirmed) {

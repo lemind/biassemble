@@ -8,18 +8,23 @@ import type { Claim } from '../types/grounnel';
 export interface Span {
   start: number;
   end: number;
-  // Only set on spans returned by matchClaimSpans() itself — plain internal spans (sentence/
-  // clause candidates before overlap resolution) don't carry one. MatchTier.Fallback here is the
-  // signal a renderer needs to visually flag "best-effort guess, not a confirmed match to this
-  // exact text" (real observed confusion, 2026-08-12: a claim about an unrelated fact fell back
-  // onto a date-heavy sentence purely because it was the least-bad available slot, and rendered
-  // indistinguishably from a real match — the user read its verdict label as being about the date).
+  // Only set on spans returned by matchClaimSpans() itself — plain internal spans (sentence
+  // candidates before overlap resolution) don't carry one. MatchTier.Sentence here is the signal
+  // a renderer needs to visually flag "best-effort guess, not the verified source excerpt" — it
+  // only fires when biassemble-core's own source_excerpt is missing or couldn't be located.
   tier?: MatchTier;
 }
 
-// Starting point, not tuned by measurement yet — see plan.md's Design Decisions. Revisit as this
-// one named constant if real usage shows it's wrong.
-const JACCARD_THRESHOLD = 0.5;
+// D028 (biassemble-core) — every claim now carries a verified, verbatim source_excerpt from
+// EXTRACT. That's the primary locator (findSourceExcerptSpan below); this file's job shrank from
+// "guess where a paraphrased claim came from" to "find one already-known exact quote, and fall
+// back to a simple whole-sentence guess when it's missing or can't be located." The old
+// clause-splitting machinery is deleted (it existed only to patch dilution in a compound sentence,
+// moot now that a real excerpt is the primary path) — see D028 and the biassemble plan history.
+// Heading exclusion (isHeadingLike below) is KEPT for the fallback tier: review finding, 2026-08-13
+// — splitSentences() alone still isolates a short heading as its own sentence (via the newline
+// boundary), independent of clause-splitting, and Jaccard's small-denominator bias lets a short
+// heading that happens to lexically echo the claim's wording outscore the real, longer sentence.
 
 const STOPWORDS = new Set([
   'a',
@@ -83,17 +88,11 @@ interface Sentence extends Span {
 }
 
 // Naive splitter — known failure modes (abbreviations, decimal-adjacent punctuation, ellipses)
-// are accepted for v1: a bad split can only ever cause a *missed* highlight, never a wrong color.
-// Also breaks on a bare newline run, not just punctuation+whitespace — real observed bug,
-// 2026-08-13: a plain-text section heading with no ending punctuation ("Family and early years")
-// was merging straight into the next real sentence, and splitClauses' "and"/"but" boundary then
-// isolated the heading's own "and" as a fake clause break, producing a nonsense 1-word "Family"
-// candidate that won a fallback match for an unrelated claim.
+// are accepted: a bad split can only ever cause a *missed* fallback highlight, never a wrong
+// color, and the fallback tier is now a rare last resort (only reached when source_excerpt is
+// missing or unlocatable), not the primary matching mechanism it used to be.
 function splitSentences(articleText: string): Sentence[] {
   const sentences: Sentence[] = [];
-  // \r? before \n+ — code-review finding, 2026-08-13: without it, a CRLF-ended line left a
-  // stray trailing \r attached to the end of the preceding sentence's text (harmless today
-  // since trim() runs before classification/comparison, but a latent landmine otherwise).
   const boundary = /[.?!]+\s+|\r?\n+/g;
   let start = 0;
   let match: RegExpExecArray | null;
@@ -109,191 +108,155 @@ function splitSentences(articleText: string): Sentence[] {
   return sentences;
 }
 
-// Starting point, not tuned by measurement yet — same caveat as JACCARD_THRESHOLD above.
-// Revisit if real usage shows it's wrong (code-review finding, 2026-08-13).
+// Starting point, not tuned by measurement — same caveat as JACCARD_THRESHOLD's old usage.
 const HEADING_MAX_CONTENT_WORDS = 6;
 
 // A heading has no sentence-ending punctuation and is short — "Family and early years", not
-// "He wrote thousands of poems." Excluded from every non-exact match tier (Sentence/Clause/
-// Fallback) so a section heading can never win a highlight for a claim it has nothing to do
-// with; exact-substring matches are untouched since those are correct by construction regardless
-// of what kind of text they land in. Counts CONTENT words via tokenize() (code-review finding,
-// 2026-08-13), not a raw whitespace split — a raw split disagreed with this file's own word-
-// significance definition elsewhere, e.g. misjudging a stopword-heavy title like "The Rise And
-// Fall Of The Empire" (7 raw words, so NOT flagged as a heading) even though its content-word
-// count ("rise", "fall", "empire") is clearly heading-length by every other measure in this file.
+// "He wrote thousands of poems." Only relevant to the fallback tier (findFallbackSentenceSpan/
+// assignHomeSentence) — a verified source_excerpt (Exact tier) is correct by construction
+// regardless of what kind of text it lands in.
 function isHeadingLike(text: string): boolean {
   const trimmed = text.trim();
   if (trimmed.length === 0 || /[.?!]/.test(trimmed)) return false;
   return tokenize(trimmed).size <= HEADING_MAX_CONTENT_WORDS;
 }
 
-// Real observed bug, 2026-08-13: isHeadingLike alone assumes a heading is newline-separated from
-// the next sentence, so it can be isolated as its own Sentence unit — real extracted article text
-// doesn't guarantee that ("Family and early years" ran straight into the next sentence with no
-// newline, so it never became its own Sentence and isHeadingLike never saw it in isolation).
-// splitClauses' "and"/"but" boundary still carved the bare word "Family" out as a 1-content-word
-// clause, which then won a fallback match for an unrelated claim. This is the deeper, newline-
-// independent fix: a clause with fewer than 2 real content words (after stopword removal) is
-// never a legitimate atomic fact on its own, heading or not.
-function clauseHasEnoughContent(text: string): boolean {
-  return tokenize(text).size >= 2;
-}
-
-// Confidence tier, lowest wins an overlap conflict — a real, threshold-clearing match must never
-// lose its highlight to a lower-confidence claim's desperate best-effort guess just because the
-// guess's span happens to start a few characters earlier (e.g. a whole-sentence fallback always
-// starts at or before any of its own clauses, which would otherwise let it evict an already-solid
-// clause-level match purely on position).
+// Two tiers only: Exact (a verified source_excerpt, located either verbatim or via a
+// whitespace-normalized secondary lookup) beats Sentence (the no-threshold whole-sentence
+// fallback, used only when source_excerpt is null or can't be found at all).
 export const MatchTier = {
   Exact: 0,
   Sentence: 1,
-  Clause: 2,
-  Fallback: 3,
 } as const;
 export type MatchTier = (typeof MatchTier)[keyof typeof MatchTier];
 
 interface TieredSpan {
   span: Span;
   tier: MatchTier;
-  // Only populated for MatchTier.Fallback — every sentence ranked by score, best first, so
+  // Only populated for MatchTier.Sentence — every sentence ranked by score, best first, so
   // matchClaimSpans can walk past an already-occupied top choice instead of going straight to
-  // null. Exact/Sentence/Clause tiers don't need this: a real match earns its own span outright.
+  // null. Exact doesn't need this: a real located excerpt earns its own span outright.
   rankedFallbacks?: Span[];
 }
 
-function findExactMatch(articleText: string, claimText: string): TieredSpan | null {
-  const index = articleText.toLowerCase().indexOf(claimText.toLowerCase());
-  if (index === -1) return null;
-  return { span: { start: index, end: index + claimText.length }, tier: MatchTier.Exact };
+interface NormalizedIndexMap {
+  normalized: string;
+  // origIndex[i] = the index into the ORIGINAL string where normalized[i] begins. A run of
+  // whitespace collapses to one normalized space but still only contributes ONE entry (the run's
+  // start), so mapping a normalized index back never depends on an intermediate string's own
+  // offsets — only ever on the original string passed in.
+  origIndex: number[];
 }
 
-// A compound sentence bundling several atomic facts ("He wrote thousands of poems, hundreds of
-// short stories and six novels...") dilutes Jaccard when scored whole — a claim extracted for
-// just one of those facts shares few tokens against the sentence's combined token set. Splitting
-// on commas and "and"/"but" gives each fact its own, much smaller candidate span to match against.
-// The comma in "August 16, 1920" is NOT a clause boundary — it's part of one date. Real observed
-// bug: without the lookahead below, a date got chopped at every internal comma (day/year AND
-// year/year in a birth-death range), so "August 16, 1920" and "March 9, 1984" each got split into
-// two separately-colored highlight fragments across two different claims instead of staying whole.
-// The comma is only spared when it sits between a 1-2 digit day and a 4-digit year specifically
-// (both the lookbehind AND lookahead must hold) — code-review finding, 2026-08-12: an earlier
-// version of this fix keyed off the lookahead alone (any comma before a bare 4-digit number), which
-// wrongly merged non-date clauses too, e.g. "He owns three cars, 1500 books, and a boat." stopped
-// splitting at the comma before "1500" even though it's an ordinary list, not a date.
-function splitClauses(sentence: Sentence): Span[] {
-  const clauses: Span[] = [];
-  const boundary = /(?<!\b\d{1,2}),\s+(?=\d{4}\b)|,\s+(?!\d{4}\b)|\s+(?:and|but)\s+/gi;
-  let start = sentence.start;
-  let match: RegExpExecArray | null;
-  while ((match = boundary.exec(sentence.text)) !== null) {
-    const end = sentence.start + match.index;
-    if (end > start) clauses.push({ start, end });
-    start = sentence.start + match.index + match[0].length;
+function buildNormalizedIndexMap(original: string): NormalizedIndexMap {
+  let normalized = '';
+  const origIndex: number[] = [];
+  let i = 0;
+  while (i < original.length) {
+    const ch = original[i]!;
+    if (/\s/.test(ch)) {
+      const runStart = i;
+      while (i < original.length && /\s/.test(original[i]!)) i++;
+      normalized += ' ';
+      origIndex.push(runStart);
+    } else {
+      normalized += ch;
+      origIndex.push(i);
+      i++;
+    }
   }
-  if (start < sentence.end) clauses.push({ start, end: sentence.end });
-  return clauses;
+  return { normalized, origIndex };
 }
 
-function bestScoring(candidates: Array<{ span: Span; score: number }>): { span: Span; score: number } | null {
-  let best: { span: Span; score: number } | null = null;
-  for (const candidate of candidates) {
-    if (candidate.score >= JACCARD_THRESHOLD && (!best || candidate.score > best.score)) best = candidate;
+// Secondary, rare path — only reached when a plain indexOf on the raw strings misses (e.g. a
+// line-ending or whitespace-collapsing difference introduced somewhere between EXTRACT verifying
+// the excerpt server-side and this exact string reaching the browser). Review finding: the naive
+// version of this (normalize both strings, indexOf in the normalized copy, reuse that index
+// directly against the original) is wrong whenever normalization changes anything BEFORE the
+// match point — every later offset shifts, silently pointing the returned span at the wrong
+// characters. This instead walks the original string's own index map, so start/end are always
+// real offsets into articleText as given, never offsets into an intermediate normalized copy.
+function findNormalizedSpan(articleText: string, sourceExcerpt: string): Span | null {
+  const trimmedExcerpt = sourceExcerpt.trim();
+  if (trimmedExcerpt.length === 0) return null;
+  const articleMap = buildNormalizedIndexMap(articleText);
+  const excerptMap = buildNormalizedIndexMap(trimmedExcerpt);
+  const idx = articleMap.normalized.indexOf(excerptMap.normalized);
+  if (idx === -1) return null;
+  const start = articleMap.origIndex[idx]!;
+  const lastNormalizedIdx = idx + excerptMap.normalized.length - 1;
+  // +1: the last normalized char of a trimmed excerpt is never a collapsed whitespace run (those
+  // only ever produce an INTERNAL single space), so it maps 1:1 to exactly one original char.
+  const end = articleMap.origIndex[lastNormalizedIdx]! + 1;
+  return { start, end };
+}
+
+// Primary locator (D028) — source_excerpt is a verified verbatim substring of the article text
+// (biassemble-core's extract.service.ts already checked text.includes(source_excerpt) before
+// ever setting it, strict and un-normalized), so the common case is a plain, un-normalized
+// indexOf — no coordinate-mapping problem at all. First occurrence wins if the excerpt happens to
+// appear more than once (core doesn't guarantee uniqueness, only asks for it as prompt guidance).
+// Review finding, 2026-08-13: a degenerate excerpt (whitespace/punctuation only) would otherwise
+// trivially indexOf-match almost any paragraph and win Exact tier — the tier the UI treats as
+// fully confirmed, with no "approximate location" disclaimer — so require ≥1 real content word.
+function findSourceExcerptSpan(articleText: string, sourceExcerpt: string | null): TieredSpan | null {
+  if (!sourceExcerpt || tokenize(sourceExcerpt).size === 0) return null;
+  const exact = articleText.indexOf(sourceExcerpt);
+  if (exact !== -1) {
+    return { span: { start: exact, end: exact + sourceExcerpt.length }, tier: MatchTier.Exact };
   }
-  return best;
+  const normalized = findNormalizedSpan(articleText, sourceExcerpt);
+  return normalized ? { span: normalized, tier: MatchTier.Exact } : null;
 }
 
-function findSentenceMatch(articleText: string, claimText: string): TieredSpan | null {
+// Fallback (only reached when source_excerpt is null or unlocatable): whole-sentence Jaccard, no
+// threshold — always returns the best-scoring sentence as long as the article has ≥1 sentence.
+// Structurally incapable of the old degenerate-fragment bug class (a splitSentences() sentence is
+// never a single stray word by construction), but NOT of the heading bug class on its own — a
+// short heading is still a full, eligible sentence, and Jaccard's small-denominator bias lets one
+// that lexically echoes the claim outscore the real, longer sentence (review finding, 2026-08-13).
+// Headings are excluded unless literally nothing else is available, same "degrade only as a last
+// resort" pattern as the ranked-fallback walk below. Ranked, not just the single best, so overlap
+// resolution can walk to the next-best sentence when the top choice is already occupied.
+function findFallbackSentenceSpan(articleText: string, claimText: string): TieredSpan | null {
   const claimTokens = tokenize(claimText);
   const sentences = splitSentences(articleText);
   if (sentences.length === 0) return null;
-
-  // Score every sentence and every clause within it exactly once, up front — the three tiers
-  // below (whole-sentence, clause, no-threshold fallback) all read from these same two lists
-  // instead of each re-tokenizing and re-scoring the identical spans (review finding, 2026-08-12:
-  // the fallback tier used to redo this work a third time after the two tiers above it already
-  // did it, discarding the scores each time because they only checked against JACCARD_THRESHOLD).
-  const sentenceCandidates: Array<{ span: Span; score: number }> = [];
-  const clauseCandidates: Array<{ span: Span; score: number }> = [];
-  // Unfiltered twins of the two lists above — code-review fix, 2026-08-13 (CONFIRMED crash,
-  // reproduced): if isHeadingLike() excludes EVERY sentence in the article (a short heading-only
-  // stub, or any article where nothing survives the filter), sentenceCandidates/clauseCandidates
-  // both end up empty and the fallback tier below had nothing to rank, making `ranked[0]!` an
-  // unchecked `undefined` that crashed matchClaimSpans' overlap-sort comparator. Kept as the true
-  // last resort: the fallback ranking prefers non-heading candidates, but degrades to these when
-  // the filtered lists are empty, so the "every claim gets a real span" guarantee still holds.
-  const allSentenceCandidates: Array<{ span: Span; score: number }> = [];
-  const allClauseCandidates: Array<{ span: Span; score: number }> = [];
-  for (const sentence of sentences) {
-    const sentenceEntry = {
+  const nonHeading = sentences.filter((s) => !isHeadingLike(s.text));
+  const candidates = nonHeading.length > 0 ? nonHeading : sentences;
+  const ranked = candidates
+    .map((sentence) => ({
       span: { start: sentence.start, end: sentence.end },
       score: jaccard(claimTokens, tokenize(sentence.text)),
-    };
-    allSentenceCandidates.push(sentenceEntry);
-    const clauseEntries = splitClauses(sentence).map((clause) => ({
-      span: clause,
-      text: articleText.slice(clause.start, clause.end),
-      score: jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end))),
-    }));
-    allClauseCandidates.push(...clauseEntries);
-    if (isHeadingLike(sentence.text)) continue;
-    sentenceCandidates.push(sentenceEntry);
-    clauseCandidates.push(...clauseEntries.filter((entry) => clauseHasEnoughContent(entry.text)));
-  }
-
-  // Whole-sentence pass first, exactly as before (matchClaimSpans.test.ts's appositive/pronoun/
-  // ellipsis cases all clear the threshold at this stage already — a compound sentence bundling
-  // multiple facts is the only case where nothing here reaches JACCARD_THRESHOLD).
-  const bestSentence = bestScoring(sentenceCandidates);
-  if (bestSentence) return { span: bestSentence.span, tier: MatchTier.Sentence };
-
-  // Clause fallback, only reached when no whole sentence matched anything — splitting on commas
-  // and "and"/"but" gives each fact in a compound sentence its own smaller candidate to match
-  // against, instead of always being diluted by its siblings' tokens.
-  const bestClause = bestScoring(clauseCandidates);
-  if (bestClause) return { span: bestClause.span, tier: MatchTier.Clause };
-
-  // Last resort, no threshold — every claim gets located SOMEWHERE rather than left out of the
-  // article body entirely (user-requested tradeoff, 2026-08-12: "I want all claims highlighted
-  // anyhow"). Candidates include both whole sentences AND their individual clauses, not just
-  // sentences — a short article with many claims densely packs multiple real clause-level matches
-  // into one sentence, so a whole-sentence-only fallback would conflict with virtually every
-  // sentence that already has any real match in it at all, even where most of its characters are
-  // still free. Ranked by score, best first, so matchClaimSpans can walk down to the next-best
-  // candidate when a higher one is already occupied, instead of colliding and losing outright.
-  const rankedFiltered = [...sentenceCandidates, ...clauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
-  const ranked =
-    rankedFiltered.length > 0
-      ? rankedFiltered
-      : [...allSentenceCandidates, ...allClauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
-  return { span: ranked[0]!, tier: MatchTier.Fallback, rankedFallbacks: ranked };
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((c) => c.span);
+  return { span: ranked[0]!, tier: MatchTier.Sentence, rankedFallbacks: ranked };
 }
 
 /**
  * Locates each claim's span in the pasted article, best-effort. Presentation-only — never
- * affects verdict computation (see plan.md's Design Decisions). Runs over every claim regardless
- * of status (pending included, per FR-005). Every claim gets a real span as long as the article
- * has at least one sentence — see findSentenceMatch's no-threshold last resort tier.
+ * affects verdict computation. Runs over every claim regardless of status (pending included).
+ * Every claim gets a real span as long as the article has at least one sentence — see
+ * findFallbackSentenceSpan's no-threshold last resort.
  *
- * Overlap resolution: higher-confidence tiers win first (MatchTier — exact beats sentence beats
- * clause beats the no-threshold fallback), so a real match is never evicted by a lower-confidence
- * claim's span merely because that guess happens to start a few characters earlier (a whole-
- * sentence fallback always starts at or before any clause within it). Within the same tier, the
- * claim whose span starts earliest wins; on an exact tie, the lower claim.id wins. This is
- * independent of claims[] array order on purpose (biassemble-core gives no ordering guarantee
- * across polls) — logs a dev-only console.warn per discarded overlap so collision frequency is
- * observable.
+ * Overlap resolution: Exact (a verified source_excerpt) always wins over Sentence (a fallback
+ * guess), so a real match is never evicted by a lower-confidence claim's guess merely because the
+ * guess's span happens to start a few characters earlier. Within the same tier, the claim whose
+ * span starts earliest wins; on an exact tie, the lower claim.id wins. This is independent of
+ * claims[] array order on purpose (biassemble-core gives no ordering guarantee across polls) —
+ * logs a dev-only console.warn per discarded overlap so collision frequency is observable.
  *
- * Every returned span carries its MatchTier so a renderer can visually distinguish a confirmed
- * match (Exact/Sentence/Clause, all threshold-gated) from a Fallback guess, which by definition
- * never cleared JACCARD_THRESHOLD and can land on text the claim isn't actually about.
+ * Every returned span carries its MatchTier so a renderer can visually distinguish a verified
+ * source_excerpt (Exact) from a Sentence-tier guess, which by definition isn't confirmed to be
+ * about the same text it landed on.
  */
 export function matchClaimSpans(articleText: string, claims: Claim[]): Map<string, Span | null> {
   const candidates = new Map<string, TieredSpan | null>();
   for (const claim of claims) {
     candidates.set(
       claim.id,
-      findExactMatch(articleText, claim.text) ?? findSentenceMatch(articleText, claim.text),
+      findSourceExcerptSpan(articleText, claim.sourceExcerpt) ?? findFallbackSentenceSpan(articleText, claim.text),
     );
   }
 
@@ -314,12 +277,11 @@ export function matchClaimSpans(articleText: string, claims: Claim[]): Map<strin
   const occupied: Array<{ span: Span; claimId: string }> = [];
   for (const claim of matched) {
     const tiered = candidates.get(claim.id)!;
-    // Fallback tier only: don't stop at the top-ranked sentence if something higher-priority
-    // (a real match, or an earlier-processed fallback claim) already occupies it — walk down the
-    // ranked list to the next-best sentence instead of giving up outright (still "some claims
-    // highlighted" beats "all-or-nothing on the single best guess").
+    // Sentence tier only: don't stop at the top-ranked sentence if something higher-priority
+    // (a real excerpt match, or an earlier-processed fallback claim) already occupies it — walk
+    // down the ranked list to the next-best sentence instead of giving up outright.
     const span =
-      tiered.tier === MatchTier.Fallback && tiered.rankedFallbacks
+      tiered.tier === MatchTier.Sentence && tiered.rankedFallbacks
         ? (tiered.rankedFallbacks.find((candidate) => !conflicts(candidate, occupied)) ?? tiered.span)
         : tiered.span;
     const conflict = conflicts(span, occupied);
@@ -375,19 +337,17 @@ export function numberClaims(
 
 /**
  * Which sentence a claim "belongs to," for progress-dot grouping only — independent of whether
- * that claim actually cleared JACCARD_THRESHOLD and got a rendered highlight. Every claim gets
- * an answer (closest sentence by raw score, no threshold), including ones matchClaimSpans
- * couldn't place at all, so the progress row can still group an unmatched claim with its matched
- * siblings from the same sentence instead of losing track of it entirely.
+ * matchClaimSpans actually placed that claim via a verified excerpt. Every claim gets an answer
+ * (closest sentence by raw score, no threshold), including ones matchClaimSpans couldn't place at
+ * all, so the progress row can still group an unmatched claim with its matched siblings from the
+ * same sentence instead of losing track of it entirely.
  */
 export function assignHomeSentence(articleText: string, claims: Claim[]): Map<string, number> {
   const sentences = splitSentences(articleText);
   const sentenceTokens = sentences.map((s) => tokenize(s.text));
-  // Consistency with matchClaimSpans (code-review finding, 2026-08-13): a heading can win here
-  // only if literally nothing else is available. Without this, a claim's progress-dot grouping
-  // could point at a heading (now its own low-token-count sentence since splitSentences also
-  // breaks on bare newlines) that matchClaimSpans itself guarantees can never actually be
-  // highlighted — the dot and the real highlight would visibly disagree about the claim's home.
+  // Consistency with findFallbackSentenceSpan (review finding, 2026-08-13): a heading can win here
+  // only if literally nothing else is available, so a claim's progress-dot grouping never points
+  // at a heading that the article body would never actually highlight it against.
   const isHeading = sentences.map((s) => isHeadingLike(s.text));
   const anyNonHeading = isHeading.some((heading) => !heading);
   const result = new Map<string, number>();

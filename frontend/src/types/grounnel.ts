@@ -53,6 +53,9 @@ export interface Claim {
   reason: string | null;
   sources: ClaimSource[];
   citations: ClaimCitation[];
+  // D028 (biassemble-core) — verified verbatim substring of the article text, or null when
+  // unproduced/unverified; matchClaimSpans.ts uses this as its primary locator.
+  sourceExcerpt: string | null;
 }
 
 export interface Score {

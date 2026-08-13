@@ -207,6 +207,41 @@ test('a comma before a 4-digit count that is not a year still splits into its ow
   assert.equal(article.slice(span!.start, span!.end), '1500 books');
 });
 
+// ─── A section heading must never win a highlight, not even as a last-resort fallback ───
+// Real observed bug, 2026-08-13: a plain-text heading with no ending punctuation ("Family and
+// early years") merged into the next real sentence, and the clause-splitter's own "and" boundary
+// isolated the heading's first word ("Family") as a nonsense 1-word candidate — which then won a
+// fallback match for a claim ("Katharina died in 1956.") having nothing to do with it.
+test('a heading-like line never wins a match, even for a claim with no good sentence match', () => {
+  const article =
+    'Family and early years\nKatharina died in 1956, having outlived her son by several decades.';
+  const c = claim({ id: 'c1', text: 'Katharina died in 1956.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a match');
+  assert.equal(
+    article.slice(span!.start, span!.end).includes('Family'),
+    false,
+    'the heading must never be part of (or the entirety of) the matched span',
+  );
+});
+
+// ─── Heading exclusion must never crash the fallback tier when NOTHING else is available ───
+// Code-review finding, 2026-08-13 (CONFIRMED via live repro): an article whose every sentence is
+// heading-like emptied both candidate lists, and the fallback tier's `ranked[0]!` on an empty
+// array threw `Cannot read properties of undefined (reading 'start')` from the overlap-sort
+// comparator the moment a second claim needed the same fallback path.
+test('a heading-only article still produces real, non-crashing spans for every claim', () => {
+  const article = 'Early life';
+  const a = claim({ id: 'a', text: 'Something totally unrelated one.' });
+  const b = claim({ id: 'b', text: 'Something totally unrelated two.' });
+  const result = matchClaimSpans(article, [a, b]);
+  const spanA = result.get('a');
+  assert.ok(spanA, 'the winning claim should still get a real span');
+  assert.equal(article.slice(spanA!.start, spanA!.end), 'Early life');
+  assert.equal(result.has('b'), true, 'the overlap loser must still have a map entry (null)');
+});
+
 // ─── Tier is exposed on the returned span, so a renderer can flag low-confidence guesses ───
 // Added 2026-08-12 alongside HighlightedArticle's fallback-tier dotted-underline treatment — the
 // tier has to survive onto the span the caller actually receives, not just live inside this
@@ -242,6 +277,35 @@ test('assignHomeSentence still groups a real match to its actual sentence index'
   const c = claim({ id: 'c', text: 'A dog ran in the park.' });
   const result = assignHomeSentence(article, [c]);
   assert.equal(result.get('c'), 1);
+});
+
+// ─── assignHomeSentence must never prefer a heading over a real sentence ───
+// Code-review finding, 2026-08-13: matchClaimSpans excludes headings from ever winning a
+// highlight, but assignHomeSentence (used only for progress-dot grouping) shared the same
+// splitSentences() output with no such filter — a claim could get grouped under a heading
+// index that the article body would never actually highlight it against.
+test('assignHomeSentence never groups a claim under a heading when a real sentence is available', () => {
+  const article = 'Family and early years\nKatharina died in 1956, having outlived her son by decades.';
+  const c = claim({ id: 'c1', text: 'Katharina died in 1956.' });
+  const result = assignHomeSentence(article, [c]);
+  assert.equal(result.get('c1'), 1, 'should group under the real sentence (index 1), not the heading (index 0)');
+});
+
+// ─── isHeadingLike must count CONTENT words, agreeing with this file's own tokenize() ───
+// Code-review finding, 2026-08-13: a raw whitespace split disagreed with tokenize()'s stopword-
+// aware definition of "word" used everywhere else in this file — a stopword-heavy title read as
+// too long to be heading-like by the raw count, even though its real content-word count was short.
+test('a stopword-heavy heading is still recognized as heading-like by content-word count', () => {
+  const article = 'The Rise And Fall Of The Empire\nBukowski wrote hundreds of short stories.';
+  const c = claim({ id: 'c1', text: 'Bukowski wrote hundreds of short stories.' });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a match');
+  assert.equal(
+    article.slice(span!.start, span!.end).includes('Rise'),
+    false,
+    'the 7-raw-word/3-content-word heading must still be excluded from matching',
+  );
 });
 
 console.log(`\n${passed} tests passed`);

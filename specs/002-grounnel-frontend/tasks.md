@@ -144,6 +144,34 @@
 
 **Checkpoint**: `tsc -b` clean, `eslint` clean.
 
+---
+
+## Phase 11: Bare-domain titles, reference-count inflation, unconfirmed-source clarity, heading highlights
+
+**Goal**: four more real-run findings, none touching prior task scope.
+
+- [x] T044 `sourceLabel.ts` suppresses a "title" that's just the domain restated — upstream title extraction frequently fails and falls back to something domain-derived ("wikipedia.org" for `en.wikipedia.org`, "sobrief.com" for `sobrief.com`), which T041's `domain - title` format then showed as a redundant `domain - domain`. New `isBareDomainRestated()` catches an exact match and the bare-registrable-domain-of-a-subdomain case, falling back to domain-only for that entry instead.
+- [x] T045 `numberCitations.ts` dedups References by normalized URL, not exact string — a 14-entry list for an article visibly citing far fewer distinct sources, because each claim's independent evidence search can surface the same real page under a different query string/fragment/trailing slash. Dedup key is now `origin + pathname`; the stored/linked `url` per reference is still the original, unnormalized one.
+- [x] T046 Tooltip clarifies unconfirmed sources — `citedSources()` falls back to `claim.sources` (every attempted, not-necessarily-relevant page) whenever a claim has no real citation, which is exactly the `unsupported`/`unverifiable` case; those source links now get a "Searched, found nothing that confirms this:" prefix in `HighlightedArticle.tsx` instead of reading as if they back the claim.
+- [x] T047 Section headings excluded from all non-exact match tiers — real observed bug: a plain-text heading with no ending punctuation ("Family and early years") merged into the next real sentence in `splitSentences()`, and `splitClauses()`'s own "and"/"but" boundary then isolated the heading's first word as a nonsense candidate, which won a fallback match for an unrelated claim. `splitSentences()` now also breaks on a bare newline run (not just punctuation+whitespace), and a new `isHeadingLike()` (no sentence-ending punctuation, ≤6 words) excludes a heading from `sentenceCandidates`/`clauseCandidates` entirely — Exact-tier matches are untouched, since those are correct by construction regardless of context. New regression test in `matchClaimSpans.test.ts`.
+
+**Checkpoint**: `tsc -b` clean, `eslint` clean, `matchClaimSpans.test.ts` 19/19 passing.
+
+---
+
+## Phase 12: `/code-review high` fixes for T047's heading exclusion
+
+**Goal**: `/code-review high` against T047's diff found a **confirmed, reproduced crash** plus several real precision/consistency issues in the same change; all but two lower-priority/deferred ones fixed here.
+
+- [x] T048 Fixed the confirmed crash — when `isHeadingLike()` excluded EVERY sentence in an article (a short heading-only stub, or any article where nothing survives the filter), `sentenceCandidates`/`clauseCandidates` were both empty and the fallback tier's `ranked[0]!` was an unchecked `undefined`, throwing `Cannot read properties of undefined (reading 'start')` out of the overlap-sort comparator the moment a second claim needed the same fallback path — reproduced live before fixing. `findSentenceMatch()` now also builds unfiltered `allSentenceCandidates`/`allClauseCandidates` twins and degrades to them only when the filtered (non-heading) lists are empty, so "every claim gets a real span" holds even for a heading-only article. New regression test.
+- [x] T049 `assignHomeSentence()` now applies the same heading-avoidance as `matchClaimSpans()` (degrading to headings only when literally nothing else is available) — previously it shared `splitSentences()`'s output with no filter at all, so a claim's progress-dot grouping could point at a heading that the article body would never actually highlight it against. New regression test.
+- [x] T050 `isHeadingLike()` now counts CONTENT words via this file's own `tokenize()` instead of a raw whitespace split, which disagreed with it — a stopword-heavy title ("The Rise And Fall Of The Empire", 7 raw words) was NOT recognized as heading-like even though its real content-word count (3) clearly is. New regression test.
+- [x] T051 `splitSentences()`'s newline boundary is now `\r?\n+`, not just `\n+` — a CRLF-ended line was leaving a stray trailing `\r` attached to the preceding sentence's text (harmless today since `trim()` runs before classification/comparison, but a latent landmine).
+- [x] T052 Named the `6`-word heading threshold as `HEADING_MAX_CONTENT_WORDS` with the same "not tuned by measurement, revisit if wrong" disclaimer this file already uses for `JACCARD_THRESHOLD` — was an untuned magic number with no such flag.
+- Deferred, not fixed: (1) `isHeadingLike` still won't catch a heading containing internal punctuation (an abbreviation or quoted exclamation) — hard to distinguish cheaply from real mid-sentence punctuation without over-fitting; (2) `splitClauses()`'s "and"/"but" boundary can still carve a degenerate 1-word fragment out of ordinary body prose containing those words (e.g. "Salt and pepper..."), not just headings — the deeper, more general fix (a minimum-content-word guard on any Sentence/Clause/Fallback candidate) risks breaking existing legitimate short matches (e.g. the "six novels" clause test) without careful separate tuning; (3) `isHeadingLike`/`tokenize` still gets recomputed once per claim instead of once per article — real but negligible at realistic claim counts (~30 claims × ~150 sentences is sub-millisecond), pre-existing pattern this diff added one more instance of rather than introduced.
+
+**Checkpoint**: `tsc -b` clean, `eslint` clean, `matchClaimSpans.test.ts` 22/22 passing.
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Foundational)** blocks every user story — nothing in Phase 2–4 should start first. Routing (T010) is intentionally in Phase 2, not here — see T010's own note.

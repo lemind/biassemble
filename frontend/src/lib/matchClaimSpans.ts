@@ -84,20 +84,48 @@ interface Sentence extends Span {
 
 // Naive splitter — known failure modes (abbreviations, decimal-adjacent punctuation, ellipses)
 // are accepted for v1: a bad split can only ever cause a *missed* highlight, never a wrong color.
+// Also breaks on a bare newline run, not just punctuation+whitespace — real observed bug,
+// 2026-08-13: a plain-text section heading with no ending punctuation ("Family and early years")
+// was merging straight into the next real sentence, and splitClauses' "and"/"but" boundary then
+// isolated the heading's own "and" as a fake clause break, producing a nonsense 1-word "Family"
+// candidate that won a fallback match for an unrelated claim.
 function splitSentences(articleText: string): Sentence[] {
   const sentences: Sentence[] = [];
-  const boundary = /[.?!]+\s+/g;
+  // \r? before \n+ — code-review finding, 2026-08-13: without it, a CRLF-ended line left a
+  // stray trailing \r attached to the end of the preceding sentence's text (harmless today
+  // since trim() runs before classification/comparison, but a latent landmine otherwise).
+  const boundary = /[.?!]+\s+|\r?\n+/g;
   let start = 0;
   let match: RegExpExecArray | null;
   while ((match = boundary.exec(articleText)) !== null) {
     const end = match.index + match[0].length;
-    sentences.push({ start, end, text: articleText.slice(start, end) });
+    const text = articleText.slice(start, end);
+    if (text.trim().length > 0) sentences.push({ start, end, text });
     start = end;
   }
   if (start < articleText.length) {
     sentences.push({ start, end: articleText.length, text: articleText.slice(start) });
   }
   return sentences;
+}
+
+// Starting point, not tuned by measurement yet — same caveat as JACCARD_THRESHOLD above.
+// Revisit if real usage shows it's wrong (code-review finding, 2026-08-13).
+const HEADING_MAX_CONTENT_WORDS = 6;
+
+// A heading has no sentence-ending punctuation and is short — "Family and early years", not
+// "He wrote thousands of poems." Excluded from every non-exact match tier (Sentence/Clause/
+// Fallback) so a section heading can never win a highlight for a claim it has nothing to do
+// with; exact-substring matches are untouched since those are correct by construction regardless
+// of what kind of text they land in. Counts CONTENT words via tokenize() (code-review finding,
+// 2026-08-13), not a raw whitespace split — a raw split disagreed with this file's own word-
+// significance definition elsewhere, e.g. misjudging a stopword-heavy title like "The Rise And
+// Fall Of The Empire" (7 raw words, so NOT flagged as a heading) even though its content-word
+// count ("rise", "fall", "empire") is clearly heading-length by every other measure in this file.
+function isHeadingLike(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0 || /[.?!]/.test(trimmed)) return false;
+  return tokenize(trimmed).size <= HEADING_MAX_CONTENT_WORDS;
 }
 
 // Confidence tier, lowest wins an overlap conflict — a real, threshold-clearing match must never
@@ -175,17 +203,29 @@ function findSentenceMatch(articleText: string, claimText: string): TieredSpan |
   // did it, discarding the scores each time because they only checked against JACCARD_THRESHOLD).
   const sentenceCandidates: Array<{ span: Span; score: number }> = [];
   const clauseCandidates: Array<{ span: Span; score: number }> = [];
+  // Unfiltered twins of the two lists above — code-review fix, 2026-08-13 (CONFIRMED crash,
+  // reproduced): if isHeadingLike() excludes EVERY sentence in the article (a short heading-only
+  // stub, or any article where nothing survives the filter), sentenceCandidates/clauseCandidates
+  // both end up empty and the fallback tier below had nothing to rank, making `ranked[0]!` an
+  // unchecked `undefined` that crashed matchClaimSpans' overlap-sort comparator. Kept as the true
+  // last resort: the fallback ranking prefers non-heading candidates, but degrades to these when
+  // the filtered lists are empty, so the "every claim gets a real span" guarantee still holds.
+  const allSentenceCandidates: Array<{ span: Span; score: number }> = [];
+  const allClauseCandidates: Array<{ span: Span; score: number }> = [];
   for (const sentence of sentences) {
-    sentenceCandidates.push({
+    const sentenceEntry = {
       span: { start: sentence.start, end: sentence.end },
       score: jaccard(claimTokens, tokenize(sentence.text)),
-    });
-    for (const clause of splitClauses(sentence)) {
-      clauseCandidates.push({
-        span: clause,
-        score: jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end))),
-      });
-    }
+    };
+    allSentenceCandidates.push(sentenceEntry);
+    const clauseEntries = splitClauses(sentence).map((clause) => ({
+      span: clause,
+      score: jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end))),
+    }));
+    allClauseCandidates.push(...clauseEntries);
+    if (isHeadingLike(sentence.text)) continue;
+    sentenceCandidates.push(sentenceEntry);
+    clauseCandidates.push(...clauseEntries);
   }
 
   // Whole-sentence pass first, exactly as before (matchClaimSpans.test.ts's appositive/pronoun/
@@ -208,7 +248,11 @@ function findSentenceMatch(articleText: string, claimText: string): TieredSpan |
   // sentence that already has any real match in it at all, even where most of its characters are
   // still free. Ranked by score, best first, so matchClaimSpans can walk down to the next-best
   // candidate when a higher one is already occupied, instead of colliding and losing outright.
-  const ranked = [...sentenceCandidates, ...clauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
+  const rankedFiltered = [...sentenceCandidates, ...clauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
+  const ranked =
+    rankedFiltered.length > 0
+      ? rankedFiltered
+      : [...allSentenceCandidates, ...allClauseCandidates].sort((a, b) => b.score - a.score).map((c) => c.span);
   return { span: ranked[0]!, tier: MatchTier.Fallback, rankedFallbacks: ranked };
 }
 
@@ -326,6 +370,13 @@ export function numberClaims(
 export function assignHomeSentence(articleText: string, claims: Claim[]): Map<string, number> {
   const sentences = splitSentences(articleText);
   const sentenceTokens = sentences.map((s) => tokenize(s.text));
+  // Consistency with matchClaimSpans (code-review finding, 2026-08-13): a heading can win here
+  // only if literally nothing else is available. Without this, a claim's progress-dot grouping
+  // could point at a heading (now its own low-token-count sentence since splitSentences also
+  // breaks on bare newlines) that matchClaimSpans itself guarantees can never actually be
+  // highlighted — the dot and the real highlight would visibly disagree about the claim's home.
+  const isHeading = sentences.map((s) => isHeadingLike(s.text));
+  const anyNonHeading = isHeading.some((heading) => !heading);
   const result = new Map<string, number>();
   // Negative, strictly-decreasing counter for claims with zero real overlap against every
   // sentence — each gets its own unique group instead of all silently defaulting to sentence 0,
@@ -336,6 +387,7 @@ export function assignHomeSentence(articleText: string, claims: Claim[]): Map<st
     let bestIndex = -1;
     let bestScore = 0;
     sentenceTokens.forEach((tokens, index) => {
+      if (anyNonHeading && isHeading[index]) return;
       const score = jaccard(claimTokens, tokens);
       if (score > bestScore) {
         bestScore = score;

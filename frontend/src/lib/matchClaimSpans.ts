@@ -128,6 +128,18 @@ function isHeadingLike(text: string): boolean {
   return tokenize(trimmed).size <= HEADING_MAX_CONTENT_WORDS;
 }
 
+// Real observed bug, 2026-08-13: isHeadingLike alone assumes a heading is newline-separated from
+// the next sentence, so it can be isolated as its own Sentence unit — real extracted article text
+// doesn't guarantee that ("Family and early years" ran straight into the next sentence with no
+// newline, so it never became its own Sentence and isHeadingLike never saw it in isolation).
+// splitClauses' "and"/"but" boundary still carved the bare word "Family" out as a 1-content-word
+// clause, which then won a fallback match for an unrelated claim. This is the deeper, newline-
+// independent fix: a clause with fewer than 2 real content words (after stopword removal) is
+// never a legitimate atomic fact on its own, heading or not.
+function clauseHasEnoughContent(text: string): boolean {
+  return tokenize(text).size >= 2;
+}
+
 // Confidence tier, lowest wins an overlap conflict — a real, threshold-clearing match must never
 // lose its highlight to a lower-confidence claim's desperate best-effort guess just because the
 // guess's span happens to start a few characters earlier (e.g. a whole-sentence fallback always
@@ -220,12 +232,13 @@ function findSentenceMatch(articleText: string, claimText: string): TieredSpan |
     allSentenceCandidates.push(sentenceEntry);
     const clauseEntries = splitClauses(sentence).map((clause) => ({
       span: clause,
+      text: articleText.slice(clause.start, clause.end),
       score: jaccard(claimTokens, tokenize(articleText.slice(clause.start, clause.end))),
     }));
     allClauseCandidates.push(...clauseEntries);
     if (isHeadingLike(sentence.text)) continue;
     sentenceCandidates.push(sentenceEntry);
-    clauseCandidates.push(...clauseEntries);
+    clauseCandidates.push(...clauseEntries.filter((entry) => clauseHasEnoughContent(entry.text)));
   }
 
   // Whole-sentence pass first, exactly as before (matchClaimSpans.test.ts's appositive/pronoun/

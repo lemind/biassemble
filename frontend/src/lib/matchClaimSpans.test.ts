@@ -226,6 +226,28 @@ test('a heading-like line never wins a match, even for a claim with no good sent
   );
 });
 
+// ─── A degenerate 1-content-word clause must never win, heading or not ───
+// Real observed bug, 2026-08-13, found in a live run AFTER the newline-based heading fix above:
+// the real article's heading ran straight into the next sentence with NO newline at all
+// ("Family and early years Bukowski's birthplace...") — isHeadingLike never saw the heading in
+// isolation, so the fix above didn't help. splitClauses' "and" boundary still carved "Family" out
+// as its own clause, which still won a fallback match. This is the deeper, newline-independent
+// fix: a clause with fewer than 2 real content words is never a match candidate, regardless of
+// whether a newline ever separated it from a heading.
+test('a bare-word clause carved out of a heading merged with body text never wins a match', () => {
+  const article =
+    "Family and early years Bukowski's birthplace as noted was Andernach. His father was a sergeant in the United States Army.";
+  const c = claim({ id: 'c1', text: "Bukowski's father was a sergeant in the United States Army." });
+  const result = matchClaimSpans(article, [c]);
+  const span = result.get('c1');
+  assert.ok(span, 'expected a match');
+  assert.equal(
+    article.slice(span!.start, span!.end),
+    'His father was a sergeant in the United States Army.',
+    'must match the real sentence, not the bare word "Family"',
+  );
+});
+
 // ─── Heading exclusion must never crash the fallback tier when NOTHING else is available ───
 // Code-review finding, 2026-08-13 (CONFIRMED via live repro): an article whose every sentence is
 // heading-like emptied both candidate lists, and the fallback tier's `ranked[0]!` on an empty

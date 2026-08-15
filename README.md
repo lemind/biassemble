@@ -10,12 +10,15 @@ Biassemble guides users through a reflective process: write a personal situation
 
 The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
 
+A second consumer product, **Grounnel**, fact-checks arbitrary text against the open web — no source documents required. See `specs/002-grounnel-frontend/` and `specs/003-grounnel-backend/`.
+
 ## Key Features
 
 - **Conversational Flow** – Step-by-step reflection with AI-generated questions
 - **Bias Detection** – Identifies cognitive biases in personal reasoning
 - **Contextual Feedback** – Explanations tied directly to your story
 - **Alternative Perspectives** – Offers different ways to view the situation
+- **Grounnel** – Fact-check any article against the open web (backed by biassemble-core's grounnel pipeline)
 - **Production-Ready Architecture** – Built with modern, scalable patterns
 
 ## Tech Stack
@@ -36,11 +39,10 @@ The AI pipeline uses structured reasoning (story analysis → interpretations �
 biassemble/
 ├── frontend/               # Vite + React SPA — deployed (full reflection flow)
 ├── backend/                # Next.js API server + Inngest jobs — deployed
-├── specs/001-reflection-flow/
-│   └── architecture.md     # public backend vs private AI Core
-├── docs/
-│   └── specs/
-│       └── phase4-contracts-e2e.md
+├── specs/001-reflection-flow/   # Reflection architecture + contracts
+├── specs/002-grounnel-frontend/ # Grounnel frontend spec
+├── specs/003-grounnel-backend/  # Grounnel backend spec
+├── docs/specs/phase4-contracts-e2e.md
 ├── DEPLOYMENT.md
 ├── TYPE_GENERATION.md
 └── AGENTS.md
@@ -50,7 +52,7 @@ biassemble/
 
 This app is the frontend/backend half of a 3-repo system. The AI logic lives in two sibling repos, each independently deployed:
 
-- **[biassemble-core](../biassemble-core/README.md)** (private) — Gemini-powered reflection engine. Structured reasoning traces (story analysis → interpretations → bias hypotheses → evidence mapping), field-level parse recovery, evidence validation, CI-gated evaluation. Prompt v1.1.0 / Schema v1.0.0. Deployed. ([API.md](../biassemble-core/API.md))
+- **[biassemble-core](../biassemble-core/README.md)** (private) — Gemini-powered reasoning engine hosting **three product pipelines**: reflection (bias detection), B2B audit (groundedness check of AI output against source docs), and Grounnel (fact-check against the open web). Structured reasoning traces, evidence binding, field-level parse recovery, CI-gated evaluation. Deployed. ([API.md](../biassemble-core/API.md))
 - **[biassemble-engine](../biassemble-engine/README.md)** — RAG sidecar called by biassemble-core, never by this repo directly. Retrieves candidate biases for a story from a curated knowledge base and hands them to core as extra context, rather than relying on the LLM's own recall alone.
   - **RAG**: vector search (pgvector + sentence-transformers) over a bias-catalog knowledge base, unioned with a second pass from a small local LLM that catches biases the vector index misses in unfamiliar domains.
   - **Fine-tuning**: that local LLM (Gemma-3-4B) is being LoRA fine-tuned on weak-supervision pairs mined from real eval runs, to close blind spots the base model has on certain bias types — tracked as a candidate build, gated by the same CI eval suite before promotion.
@@ -73,9 +75,9 @@ pnpm build      # production build
 | Frontend (React + Vite) | Deployed — full reflection flow (story → questions → assessment → results) |
 | Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
 | Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables (RLS-enabled) |
-| Private AI Core | Prompt v1.1.0 / Schema v1.0.0 — Deployed (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging) |
+| Private AI Core | Deployed — hosts reflection, B2B audit, and Grounnel pipelines (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging) |
+| Grounnel | In development — frontend (002) + backend (003) specs in progress |
 
-**Next**: Stage 003 planning.
 ## License
 
 Proprietary — All rights reserved.

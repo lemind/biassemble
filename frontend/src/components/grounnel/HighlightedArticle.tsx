@@ -97,14 +97,17 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
           return <span key={index}>{segment.text}</span>;
         }
 
-        // Tooltip only when there's something to show it (FR-008, spec.md's zero-source edge
-        // case) — a claim with neither sources nor citations keeps its verdict color/icon but
-        // never gets an (empty) tooltip. Citations checked separately: they're independently
-        // defaulted arrays (D027) — a claim can have citations with an empty `sources` list.
-        // isFallback also forces a tooltip even with zero sources, since it's the only place the
-        // "approximate location" disclaimer below can be shown.
+        // Tooltip shown whenever there's something to say (FR-008): real sources, citations, an
+        // approximate-location disclaimer (isFallback), or — for a zero-evidence verdict with
+        // nothing at all found — an explicit "no sources found" note (`noSourcesFound` below,
+        // 2026-08-16; supersedes spec.md's earlier "no tooltip on zero sources" note, see spec.md
+        // update in this same change) instead of a bare, unexplained "?" icon.
         const sources = citedSources(claim, 2);
-        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback;
+        const noSourcesFound =
+          (claim.verdict === 'unsupported' || claim.verdict === 'unverifiable') &&
+          sources.length === 0 &&
+          claim.citations.length === 0;
+        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback || noSourcesFound;
         // citedSources() falls back to claim.sources — every page the pipeline attempted,
         // paywalled/unreachable/irrelevant included — whenever there's no real citation to
         // resolve against (real observed confusion, 2026-08-12: an `unsupported` claim showed
@@ -195,6 +198,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                     ))}
                     {sourcesAreUnconfirmed && (
                       <span className="text-base-content/60">Searched, found nothing that confirms this:</span>
+                    )}
+                    {noSourcesFound && (
+                      <span className="text-base-content/60">No sources were found to check this claim.</span>
                     )}
                     {sources
                       .filter((source) => source.kind !== 'web' || !shownCitationUrls.has(source.url))

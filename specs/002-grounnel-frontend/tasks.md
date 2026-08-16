@@ -187,6 +187,17 @@
 
 **Checkpoint**: `tsc -b` clean (both `frontend` and `backend`), `matchClaimSpans.test.ts` 15/15 passing, `vite build` succeeds. `backend`'s `next lint` has no ESLint config in this environment (first-run interactive setup, not attempted) — `tsc --noEmit` is this repo's applicable bar for the proxy change.
 
+---
+
+## Phase 14 — Progress-dot UX pass (real user feedback, 2026-08-16)
+
+**Goal**: three real, user-reported UX gaps in `GrounnelProgress.tsx`/`HighlightedArticle.tsx`: (1) no visibility into how long a run has been checking, (2) the dashed "unconfirmed/failed" dot style read as "no info" at a glance, (3) an `unsupported` claim with zero sources at all rendered a bare, unexplained icon.
+
+- [x] T058 `GrounnelProgress.tsx`: added an `elapsed_seconds` display next to the checked/total count. Merged `PendingDot`/`UnconfirmedDot`/`FailedDot`/`ConfirmedDot` into `PendingDot`/`ResultDot` — every resolved claim now renders a solid, verdict-colored dot (no more dashed/solid split) and every dot type is a clickable link to its claim (`#claim-mark-<id>` when spanned, else its first citation's `#ref-<n>`). `HighlightedArticle.tsx`: added a `noSourcesFound` tooltip case (an `unsupported`/`unverifiable` claim with zero sources and zero citations now shows "No sources were found to check this claim." instead of a bare, tooltip-less icon) — `spec.md`'s zero-source note updated in the same change per AGENTS.md's spec-sync rule.
+  Code-reviewed (high effort) before commit; fixed: a spanned+unspanned claim sharing a verdict were silently collapsing into one dot (dropping the unspanned one from view) — now deduped per spanned/unspanned bucket separately; a verdict group's link could point at a non-earliest claim (re-filtered from the wrong, unsorted array); `unverifiable` was missing from the `noSourcesFound` fix; the failed/no-verdict classification ternary was duplicated inline — factored into `verdictKeyOf()`; clickable dots had only a bare verdict word as their accessible name — added a "— click to view" suffix.
+
+**Checkpoint**: `tsc -b` clean, `eslint` clean on both changed files.
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Foundational)** blocks every user story — nothing in Phase 2–4 should start first. Routing (T010) is intentionally in Phase 2, not here — see T010's own note.

@@ -49,3 +49,92 @@ export const assessmentOutputSchema = z.object({
 });
 
 export type AssessmentOutput = z.infer<typeof assessmentOutputSchema>;
+
+// ── Grounnel (ADR-001, ADR-003) — mirrors biassemble-core's own grounnel.schemas.ts field-for-field. ──
+
+export interface ExtractClaimsRequest {
+  sessionId: string;
+  text: string;
+  /** Real end-user IP (ADR-001 §4) — forwarded as X-Grounnel-Client-IP so Core's per-IP rate
+   * limiter sees the actual user, not this server's own egress IP. Optional so a caller without
+   * one (e.g. a background job) still works; Core falls back to its own request.ip. */
+  clientIp?: string;
+}
+
+export const extractClaimsOutputSchema = z.object({
+  id: z.string(),
+});
+
+export type ExtractClaimsOutput = z.infer<typeof extractClaimsOutputSchema>;
+
+const grounnelSourceStatusSchema = z.enum(["ok", "paywalled", "unreachable", "blocked", "rate_limited"]);
+
+const grounnelClaimSourceSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("web"),
+    title: z.string(),
+    domain: z.string(),
+    url: z.string(),
+    status: grounnelSourceStatusSchema,
+    // Added to biassemble-core's response after this schema was first written — was being
+    // silently stripped by Zod's default parse. Optional since "attached" sources never have it.
+    retrievalMethod: z.enum(["diy_fetch", "tavily_fallback"]).optional(),
+  }),
+  z.object({
+    kind: z.literal("attached"),
+    title: z.string(),
+    documentId: z.string(),
+  }),
+]);
+
+// D027 (biassemble-core) — one entry per VERIFY citation, in citation order, never merged by
+// source; `url` is already the real resolved source URL, not the internal `source` label.
+const grounnelClaimCitationSchema = z.object({
+  source: z.string(),
+  sentence: z.number(),
+  url: z.string(),
+  text: z.string(),
+});
+
+const grounnelClaimSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  status: z.enum(["pending", "done", "failed"]),
+  verdict: z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable"]).nullable(),
+  evidence: z.string().nullable(),
+  confidence: z.number().nullable(),
+  reason: z.string().nullable(),
+  sources: z.array(grounnelClaimSourceSchema),
+  // Additive (D027) — defaulted so a claim from before this field existed still parses instead
+  // of being silently stripped, same rationale as retrievalMethod/started_at above.
+  citations: z.array(grounnelClaimCitationSchema).default([]),
+  // Additive (D028, biassemble-core) — verified verbatim source-text substring, or null;
+  // defaulted for the same reason as citations above.
+  sourceExcerpt: z.string().nullable().default(null),
+});
+
+export const grounnelStatusResponseSchema = z.object({
+  id: z.string(),
+  status: z.enum(["extracting", "verifying", "done", "failed"]),
+  progress: z.object({
+    checked: z.number(),
+    total: z.number(),
+  }),
+  claims: z.array(grounnelClaimSchema),
+  score: z.object({
+    grounded_pct: z.number(),
+    grounded_n: z.number(),
+    unclear_n: z.number(),
+    no_evidence_n: z.number(),
+    contradicted_n: z.number(),
+    not_checked_n: z.number(),
+    eligible: z.number(),
+  }),
+  caps_hit: z.boolean(),
+  // Added to biassemble-core's response after this schema was first written — was being
+  // silently stripped by Zod's default parse. Lets a future poller show elapsed time/ETA.
+  started_at: z.string().datetime().nullable(),
+  elapsed_seconds: z.number().int().nonnegative().nullable(),
+});
+
+export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;

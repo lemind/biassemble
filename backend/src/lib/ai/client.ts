@@ -1,7 +1,10 @@
 import type {
   AssessmentOutput,
+  ExtractClaimsRequest,
+  ExtractClaimsOutput,
   GenerateAssessmentRequest,
   GenerateQuestionRequest,
+  GrounnelStatusOutput,
   QuestionOutput,
 } from "./contracts";
 
@@ -15,4 +18,6 @@ export interface AiClient {
   readonly mode: AiClientMode;
   generateQuestion(input: GenerateQuestionRequest): Promise<QuestionOutput>;
   generateAssessment(input: GenerateAssessmentRequest): Promise<AssessmentOutput>;
+  extractClaims(input: ExtractClaimsRequest): Promise<ExtractClaimsOutput>;
+  getGrounnelStatus(id: string): Promise<GrounnelStatusOutput>;
 }

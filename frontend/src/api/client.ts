@@ -34,4 +34,14 @@ export async function getSession(sessionId: string) {
   return response.data;
 }
 
+export async function submitGrounnelText(text: string) {
+  const response = await apiClient.post("/api/grounnel/extract", { text });
+  return response.data;
+}
+
+export async function getGrounnelStatus(id: string) {
+  const response = await apiClient.get(`/api/grounnel/status/${id}`);
+  return response.data;
+}
+
 export default apiClient;

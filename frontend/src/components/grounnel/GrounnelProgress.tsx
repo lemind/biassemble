@@ -51,7 +51,7 @@ function verdictKeyOf(claim: Claim): VerdictKey {
 // matchClaimSpans could locate the claim in the article text. A dashed/outlined variant used to
 // mark the "not located" case, but it read as "no info" at a glance (real user feedback,
 // 2026-08-16) — every resolved claim now gets its verdict's real color; only where the dot links
-// to varies (see `firstSpannedHref`/`unconfirmedHref`).
+// to varies (see `firstSpannedHref`/`unconfirmedRefNumbers`).
 function ResultDot({ verdictKey, href }: { verdictKey: VerdictKey; href?: string }) {
   const label = verdictKey === 'failed' ? 'Verification failed' : verdictKey;
   const title = href ? `${label} — click to view` : label;
@@ -64,15 +64,18 @@ function ResultDot({ verdictKey, href }: { verdictKey: VerdictKey; href?: string
   );
 }
 
-// Where an unspanned verdict-key group's dot should send a click: its first cited source's
-// reference entry, if any claim in the group has one. A group with no citation either has nowhere
-// valid to link to and renders as a plain, non-interactive dot.
-function unconfirmedHref(claims: Claim[], claimNumbers: Map<string, number[]>): string | undefined {
+// Every distinct reference number cited by this verdict-key group's unspanned claims. The dot
+// alone used to link only to the FIRST claim's first number (see git history) — any other
+// reference number in the group had no click path AND no visible number anywhere on the page,
+// silently orphaning it from the numbered References list below (review finding, 2026-08-18: a
+// live run's References list had entries with no inline marker traceable anywhere in the article
+// body or the progress row). Every number this group owns is now rendered, not just implied by title.
+function unconfirmedRefNumbers(claims: Claim[], claimNumbers: Map<string, number[]>): number[] {
+  const numbers = new Set<number>();
   for (const claim of claims) {
-    const numbers = claimNumbers.get(claim.id) ?? [];
-    if (numbers.length > 0) return `#ref-${numbers[0]}`;
+    for (const n of claimNumbers.get(claim.id) ?? []) numbers.add(n);
   }
-  return undefined;
+  return [...numbers].sort((a, b) => a - b);
 }
 
 // One "how much of the article is checked" row, grouped by which sentence a claim belongs to —
@@ -134,9 +137,19 @@ function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: stri
       if (seenUnspanned.has(verdictKey)) continue;
       seenUnspanned.add(verdictKey);
       const groupClaimsForKey = unspanned.filter((x) => verdictKeyOf(x) === verdictKey);
+      const refNumbers = unconfirmedRefNumbers(groupClaimsForKey, claimNumbers);
       groups.push({
         key: `${sentenceIndex}-unspanned-${verdictKey}`,
-        node: <ResultDot verdictKey={verdictKey} href={unconfirmedHref(groupClaimsForKey, claimNumbers)} />,
+        node: (
+          <span className="inline-flex flex-wrap items-center gap-y-0.5">
+            <ResultDot verdictKey={verdictKey} href={refNumbers.length > 0 ? `#ref-${refNumbers[0]}` : undefined} />
+            {refNumbers.map((n) => (
+              <a key={n} href={`#ref-${n}`} className="ml-0.5 text-xs text-info hover:underline">
+                [{n}]
+              </a>
+            ))}
+          </span>
+        ),
       });
     }
   }

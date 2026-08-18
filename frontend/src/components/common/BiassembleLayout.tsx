@@ -5,23 +5,45 @@ interface BiassembleLayoutProps {
   children: ReactNode;
 }
 
+interface NavLinkProps {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}
+
+// Plain <a>, always full-reload (ADR-002 §3) — no client-side router for two destinations.
+function NavLink({ href, active, children }: NavLinkProps) {
+  return (
+    <a
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={active ? 'font-semibold text-primary' : 'link link-hover text-base-content/70'}
+    >
+      {children}
+    </a>
+  );
+}
+
 export default function BiassembleLayout({ children }: BiassembleLayoutProps) {
+  const onGrounnel = isGrounnelRoute();
   return (
     <div className="relative">
-      <div className="absolute top-0 left-0 z-10">
-        <img src="/logo.svg" alt="Biassemble" className="w-32 h-32" />
-      </div>
-      <div className="absolute top-4 right-4 z-10">
-        {isGrounnelRoute() ? (
-          <a href="/" className="link link-hover text-sm text-base-content/70">
-            ← Back to Biassemble
+      <nav className="navbar px-4 sm:px-6">
+        <div className="navbar-start">
+          <a href="/">
+            <img src="/logo.svg" alt="Biassemble" className="w-20 h-20" />
           </a>
-        ) : (
-          <a href="/grounnel" className="link link-hover text-sm text-base-content/70">
-            Try Grounnel →
-          </a>
-        )}
-      </div>
+        </div>
+        <div className="navbar-center flex items-center gap-6 text-sm">
+          <NavLink href="/" active={!onGrounnel}>
+            Biassemble
+          </NavLink>
+          <NavLink href="/grounnel" active={onGrounnel}>
+            Grounnel
+          </NavLink>
+        </div>
+        <div className="navbar-end" />
+      </nav>
       {children}
     </div>
   );

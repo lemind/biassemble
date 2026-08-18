@@ -28,13 +28,11 @@ export default function BiassembleLayout({ children }: BiassembleLayoutProps) {
   const onGrounnel = isGrounnelRoute();
   return (
     <div className="relative">
-      <nav className="navbar px-4 sm:px-6">
-        <div className="navbar-start">
-          <a href="/">
-            <img src="/logo.svg" alt="Biassemble" className="w-20 h-20" />
-          </a>
-        </div>
-        <div className="navbar-center flex items-center gap-6 text-sm">
+      <nav className="grid grid-cols-[1fr_auto_1fr] items-start bg-base-200 px-4">
+        <a href="/" className="justify-self-start">
+          <img src="/logo.svg" alt="Biassemble" className="w-32 h-32" />
+        </a>
+        <div className="flex justify-self-center gap-6 pt-2.5 text-sm">
           <NavLink href="/" active={!onGrounnel}>
             Biassemble
           </NavLink>
@@ -42,7 +40,6 @@ export default function BiassembleLayout({ children }: BiassembleLayoutProps) {
             Grounnel
           </NavLink>
         </div>
-        <div className="navbar-end" />
       </nav>
       {children}
     </div>

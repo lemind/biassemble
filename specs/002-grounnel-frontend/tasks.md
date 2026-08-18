@@ -198,6 +198,15 @@
 
 **Checkpoint**: `tsc -b` clean, `eslint` clean on both changed files.
 
+## Phase 15 — Top nav + citation-traceability fix (2026-08-18)
+
+**Goal**: no persistent way to navigate between Biassemble and Grounnel from either page (only a single contextual "Try Grounnel →"/"← Back to Biassemble" link); separately, a real citation-traceability gap found via a live run — `numberCitations()` assigns Wikipedia-style reference numbers across ALL claims (including claims `matchClaimSpans` couldn't locate in the article body), but `HighlightedArticle.tsx` only renders inline `[N]` markers for claims that DO get a body location, so an unspanned claim's reference numbers could end up in the footer References list with no visible marker anywhere on the page.
+
+- [x] T059 `BiassembleLayout.tsx`: persistent top nav with both "Biassemble"/"Grounnel" links always visible (active one bolded), instead of one route-contextual link. Iterated through several layout passes on live feedback (logo size, menu centering, top-margin, background color matching the page's `bg-base-200` instead of showing white) before landing on: original 128px logo left-aligned, menu items truly centered (3-column grid) and top-aligned with a small `pt-2.5` gap instead of vertically centered against the tall logo. Removed `GrounnelApp.tsx`'s `pt-36` (only existed to clear the old absolutely-positioned logo).
+- [x] T060 `GrounnelProgress.tsx`: `unconfirmedHref` (returned only the first claim's first reference number as one dot's click target) replaced with `unconfirmedRefNumbers` (returns every distinct reference number for an unspanned verdict-key group) — each number now renders its own visible, clickable `[N]` link next to the dot, so every entry in the References list has a traceable path back into the page, even for claims with no inline body marker. Code-reviewed (high effort); fixed a stale comment reference and a missing `flex-wrap` on the new inline number group (could overflow on narrow viewports with many citations).
+
+**Checkpoint**: `tsc -b` clean. No test infra exists for these components (1 stray test file total in the whole frontend, no vitest config) — verified via Playwright screenshots at desktop (1280px) and mobile (390px) widths on both `/` and `/grounnel`.
+
 ## Dependencies & Execution Order
 
 - **Phase 1 (Foundational)** blocks every user story — nothing in Phase 2–4 should start first. Routing (T010) is intentionally in Phase 2, not here — see T010's own note.

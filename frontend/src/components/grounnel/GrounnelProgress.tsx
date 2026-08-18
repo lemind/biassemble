@@ -52,9 +52,15 @@ function verdictKeyOf(claim: Claim): VerdictKey {
 // mark the "not located" case, but it read as "no info" at a glance (real user feedback,
 // 2026-08-16) — every resolved claim now gets its verdict's real color; only where the dot links
 // to varies (see `firstSpannedHref`/`unconfirmedRefNumbers`).
-function ResultDot({ verdictKey, href }: { verdictKey: VerdictKey; href?: string }) {
+// `refNumbers`, when given, lists every reference this dot's group owns in the title tooltip —
+// real user feedback, 2026-08-18: rendering each number as its own visible `[N]` link (previous
+// version) turned a run with several unspanned claims into a wall of brackets instead of clean
+// dots. Traded back to dot-only + tooltip; the dot's own href still goes to the first (smallest)
+// number, so at least one path into the References list stays a real visible click, not just hover.
+function ResultDot({ verdictKey, href, refNumbers }: { verdictKey: VerdictKey; href?: string; refNumbers?: number[] }) {
   const label = verdictKey === 'failed' ? 'Verification failed' : verdictKey;
-  const title = href ? `${label} — click to view` : label;
+  const refSuffix = refNumbers && refNumbers.length > 0 ? ` (ref ${refNumbers.join(', ')})` : '';
+  const title = href ? `${label} — click to view${refSuffix}` : label;
   const colorClass = verdictKey === 'failed' ? FAILED_DOT_CLASS : VERDICT_DOT_CLASS[verdictKey];
   const className = `inline-block h-2.5 w-2.5 rounded-full ${colorClass}` + (href ? ' cursor-pointer' : '');
   return href ? (
@@ -141,14 +147,11 @@ function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: stri
       groups.push({
         key: `${sentenceIndex}-unspanned-${verdictKey}`,
         node: (
-          <span className="inline-flex flex-wrap items-center gap-y-0.5">
-            <ResultDot verdictKey={verdictKey} href={refNumbers.length > 0 ? `#ref-${refNumbers[0]}` : undefined} />
-            {refNumbers.map((n) => (
-              <a key={n} href={`#ref-${n}`} className="ml-0.5 text-xs text-info hover:underline">
-                [{n}]
-              </a>
-            ))}
-          </span>
+          <ResultDot
+            verdictKey={verdictKey}
+            href={refNumbers.length > 0 ? `#ref-${refNumbers[0]}` : undefined}
+            refNumbers={refNumbers}
+          />
         ),
       });
     }

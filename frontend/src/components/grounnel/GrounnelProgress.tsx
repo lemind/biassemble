@@ -201,7 +201,7 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
         <p className="text-warning">Results are partial — the claim limit for this run was reached.</p>
       )}
       {isStalled && (
-        <p className="text-base-content/60">This is taking longer than usual…</p>
+        <p className="text-base-content/60">Widening the search for the trickier claims…</p>
       )}
     </div>
   );

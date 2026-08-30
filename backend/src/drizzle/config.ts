@@ -14,7 +14,13 @@ export function getDb() {
     if (!connectionString) {
       throw new Error("DATABASE_URL environment variable is not set");
     }
-    const queryClient = postgres(connectionString);
+    // Port 6543 is Supavisor's TRANSACTION pooler. Both options are required there (ADR-004):
+    // prepared statements don't survive connection reuse, and search_path must be a startup
+    // parameter so unqualified tables (`sessions`) resolve without a session-level SET.
+    const queryClient = postgres(connectionString, {
+      prepare: false,
+      connection: { search_path: "public" },
+    });
     _db = drizzle(queryClient, { schema });
   }
   return _db;

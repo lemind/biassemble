@@ -159,8 +159,10 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
               ))}
               {hasTooltip && (
                 <span
-                  className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs
-                    opacity-0 transition-opacity group-hover:pointer-events-auto
+                  // Centred on the badge, not left-anchored: left-anchoring pushed a tooltip on a
+                  // right-edge claim ~100px past the viewport, where the layout now clips it.
+                  className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 w-max max-w-xs
+                    -translate-x-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto
                     group-hover:opacity-100 group-focus-within:pointer-events-auto
                     group-focus-within:opacity-100"
                 >

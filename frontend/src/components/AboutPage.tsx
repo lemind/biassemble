@@ -26,9 +26,9 @@ export default function AboutPage({ brand }: { brand: Brand }) {
 
       <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">How it works</h2>
       {/* Horizontal on desktop, stacked on mobile. The number is the only numeral — no "1. 1".
-          Breaks out of the 40rem measure on wide screens: five columns inside it wrapped every
-          step's one line onto four. */}
-      <ol className="mt-5 grid gap-5 sm:-mx-16 sm:grid-cols-5 sm:gap-6">
+          Breaks out of the 40rem measure, but only at lg: five columns inside the measure wrapped
+          every step's one line onto four, and the -mx-16 break-out overflows below ~1024px. */}
+      <ol className="mt-5 grid gap-5 lg:-mx-16 lg:grid-cols-5 lg:gap-6">
         {STEPS.map((step, i) => (
           <li key={step.title}>
             <div className="font-mono text-xs text-base-content/40">{i + 1}</div>

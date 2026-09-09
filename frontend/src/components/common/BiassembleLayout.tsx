@@ -32,10 +32,13 @@ function NavLink({ href, active, children }: NavLinkProps) {
 }
 
 export default function BiassembleLayout({ brand, activePath, children }: BiassembleLayoutProps) {
+  // overflow-x-clip, not hidden: a claim tooltip is `absolute w-max` and stays in layout even at
+  // opacity-0, so one near the right edge widened the page into a horizontal scrollbar. `clip`
+  // leaves the vertical axis visible, so tooltips still hang below their claim.
   const sibling = siblingBrand(brand);
   const active = normalizePath(activePath);
   return (
-    <div className="relative flex min-h-screen flex-col bg-base-200">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-base-200">
       {/* Height governs, width follows — a fixed w-x h-x box squashes both files, which have
           different aspect ratios. The wordmark is text only when the logo doesn't already carry it. */}
       {/* items-start, not items-center: centring the row against a tall logo pushed the menu far

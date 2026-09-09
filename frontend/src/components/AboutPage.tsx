@@ -49,6 +49,10 @@ export default function AboutPage({ brand }: { brand: Brand }) {
         verdicts would be easier to read. It would also be worth less.
       </p>
 
+      <div className="mt-14">
+        <WorkedExample />
+      </div>
+
       <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">Related</h2>
       <p className="mt-4 leading-relaxed text-base-content/80">
         <a className="link font-medium" href={biassemble.origin} rel="noopener">
@@ -58,10 +62,6 @@ export default function AboutPage({ brand }: { brand: Brand }) {
         not share a pipeline. Running both on the same document is planned; nothing about that has
         shipped.
       </p>
-
-      <div className="mt-14">
-        <WorkedExample />
-      </div>
 
       <nav className="mt-14 border-t border-base-300 pt-6 text-sm">
         <a className="link" href={grounnel.id === brand.id ? '/' : grounnel.origin}>

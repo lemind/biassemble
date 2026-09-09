@@ -277,6 +277,22 @@ verdict above them) in the same block. Line numbers below are **post-rebase**.
 
 ---
 
+## Same-origin API proxy
+
+`frontend/vercel.json` rewrites `/api/:path*` to the backend, **above** the SPA catch-all. Two
+constraints that are easy to break:
+
+- Order. Catch-all first swallows `/api/*` and answers HTML at 200 — the T016 failure again.
+- **No comments in that file.** Vercel's schema sets `additionalProperties: false` on a rewrite
+  entry, so a `"comment"` key fails the build outright. The rationale lives in `src/api/client.ts`.
+
+Why it exists: the deployed backend sends no CORS headers, so the deployed site could never call it
+from a browser — every request failed with `No 'Access-Control-Allow-Origin' header`. All working
+runs to date came from local dev, where Vite's proxy already made `/api/*` same-origin. A CORS
+allowlist was added too (`backend/src/middleware.ts`), but the proxy is what removes the
+cross-origin call. Neither is an access control: the backend stays directly reachable and CORS is
+enforced by browsers only, so T017's budget cap remains the real ceiling.
+
 ## Pre-launch guardrail
 
 - [ ] T017 Google Cloud budget alert on the Gemini project + Tavily usage cap, **before DNS

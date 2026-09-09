@@ -1,8 +1,12 @@
 import axios from "axios";
 
 // Relative by default, in every environment: vercel.json proxies /api/* to the backend in
-// production and vite.config.ts proxies it in dev, so the browser is always same-origin. An
-// absolute URL here means a cross-origin call to a backend that sends no CORS headers at all.
+// production and vite.config.ts proxies it in dev, so the browser is always same-origin.
+//
+// vercel.json's /api rewrite MUST stay above its SPA catch-all, or /api/* is answered with
+// index.html at 200 and axios parses HTML as a response (the T016 failure). That file cannot carry
+// the warning itself — Vercel's schema sets additionalProperties:false on a rewrite entry, so a
+// "comment" key fails the build.
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "",
   headers: {

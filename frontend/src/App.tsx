@@ -5,6 +5,7 @@ import BiassembleLayout from './components/common/BiassembleLayout';
 import useReflectionFlow from './hooks/useReflectionFlow';
 import { resolveBrand } from './lib/brand';
 import { currentRoute } from './lib/routes';
+import { applyPageMeta } from './lib/seo';
 
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const QAFlow = lazy(() => import('./components/QAFlow'));
@@ -34,20 +35,11 @@ export default function App() {
   const brand = resolveBrand();
   const route = currentRoute(brand.id);
 
+  // T042 — the static head is Grounnel's homepage on every URL of both domains. Rewrite it to
+  // this route and brand, including the canonical that was consolidating every page into `/`.
   useEffect(() => {
-    document.title = `${brand.name} — ${brand.tagline}`;
-  }, [brand]);
-
-  // T031 — belt-and-braces only. One index.html means no per-route static meta, so the real
-  // controls are robots.txt's Disallow and core 019's X-Robots-Tag on the API response.
-  useEffect(() => {
-    if (route.page !== 'check') return;
-    const tag = document.createElement('meta');
-    tag.name = 'robots';
-    tag.content = 'noindex, nofollow';
-    document.head.appendChild(tag);
-    return () => tag.remove();
-  }, [route.page]);
+    applyPageMeta(brand, route.page);
+  }, [brand, route.page]);
 
   // `/grounnel` on the Grounnel host is the same page as `/`; normalise the URL without a flash,
   // since the branch below already renders the tool either way.

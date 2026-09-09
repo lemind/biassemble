@@ -1,6 +1,14 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://biassemble-backend.vercel.app/api/:path*" },
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/stats", "destination": "/stats.html" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/check/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
   ]
 }

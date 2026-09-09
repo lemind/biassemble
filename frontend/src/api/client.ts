@@ -1,4 +1,9 @@
 import axios from "axios";
+import type {
+  ExtractGrounnelResponse,
+  GrounnelStatusOutput,
+  SharedAssessment,
+} from "../types/grounnel";
 
 // Relative by default, in every environment: vercel.json proxies /api/* to the backend in
 // production and vite.config.ts proxies it in dev, so the browser is always same-origin.
@@ -41,18 +46,18 @@ export async function getSession(sessionId: string) {
   return response.data;
 }
 
-export async function submitGrounnelText(text: string) {
-  const response = await apiClient.post("/api/grounnel/extract", { text });
+export async function submitGrounnelText(text: string): Promise<ExtractGrounnelResponse> {
+  const response = await apiClient.post<ExtractGrounnelResponse>("/api/grounnel/extract", { text });
   return response.data;
 }
 
-export async function getGrounnelStatus(id: string) {
-  const response = await apiClient.get(`/api/grounnel/status/${id}`);
+export async function getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
+  const response = await apiClient.get<GrounnelStatusOutput>(`/api/grounnel/status/${id}`);
   return response.data;
 }
 
-export async function getSharedAssessment(token: string) {
-  const response = await apiClient.get(
+export async function getSharedAssessment(token: string): Promise<SharedAssessment> {
+  const response = await apiClient.get<SharedAssessment>(
     `/api/grounnel/assessment/${encodeURIComponent(token)}`,
   );
   return response.data;

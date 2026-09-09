@@ -6,6 +6,9 @@
 
 export interface ExtractGrounnelResponse {
   id: string;
+  // Required, matching core and backend. The run's PUBLIC address; `id` is internal and must
+  // never reach a URL. Callers still guard at runtime — axios does not validate the body.
+  shareToken: string;
 }
 
 export type GrounnelSourceStatus = 'ok' | 'paywalled' | 'unreachable' | 'blocked' | 'rate_limited';

@@ -82,6 +82,16 @@ export interface SharedAssessment {
   completedAt: string | null;
 }
 
+/** The subset of a run's state the progress row renders. `GrounnelStatusOutput` satisfies it, and
+ *  so does a shared assessment adapted for it — which carries no Score. */
+export interface RunProgress {
+  status: GrounnelRunStatus;
+  progress: { checked: number; total: number };
+  claims: Claim[];
+  caps_hit: boolean;
+  elapsed_seconds: number | null;
+}
+
 export interface Score {
   grounded_pct: number;
   grounded_n: number;

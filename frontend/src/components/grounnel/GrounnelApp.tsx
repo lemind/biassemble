@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import ArticleInput from './ArticleInput';
-import ClaimSourceList from './ClaimSourceList';
-import GrounnelProgress from './GrounnelProgress';
-import HighlightedArticle from './HighlightedArticle';
-import ShareLink from './ShareLink';
+import RunView from './RunView';
 import { loadRun, saveRun } from '../../lib/runStorage';
 
 export default function GrounnelApp() {
@@ -22,6 +19,14 @@ export default function GrounnelApp() {
   useEffect(() => {
     if (runId && articleText) saveRun(runId, shareToken, articleText);
   }, [runId, shareToken, articleText]);
+
+  // The address bar IS the share link. replaceState, not push: the pre-run page is not a place to
+  // go back to, and the token exists from creation, so this lands as soon as the run starts.
+  useEffect(() => {
+    if (!shareToken) return;
+    const url = `/check/${shareToken}`;
+    if (window.location.pathname !== url) window.history.replaceState(null, '', url);
+  }, [shareToken]);
 
   const handleSubmit = (text: string) => {
     setArticleText(text);
@@ -57,7 +62,11 @@ export default function GrounnelApp() {
           </div>
         </div>
 
-        <ArticleInput onSubmit={handleSubmit} disabled={isRunInFlight} />
+        <ArticleInput
+          onSubmit={handleSubmit}
+          disabled={isRunInFlight}
+          initialText={restored?.articleText ?? ''}
+        />
 
         {error && (
           <div className="alert alert-error text-sm py-2">
@@ -68,19 +77,7 @@ export default function GrounnelApp() {
           </div>
         )}
 
-        {shareToken && <ShareLink token={shareToken} />}
-
-        {runId && <GrounnelProgress status={status} articleText={articleText} />}
-
-        {runId && (
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <HighlightedArticle articleText={articleText} claims={status?.claims ?? []} />
-            </div>
-          </div>
-        )}
-
-        {runId && <ClaimSourceList articleText={articleText} claims={status?.claims ?? []} />}
+        {runId && <RunView articleText={articleText} status={status} />}
       </div>
     </div>
   );

@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import { assignHomeSentence, matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
 import { VERDICT_DOT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
-import type { Claim, ClaimVerdict, GrounnelStatusOutput } from '../../types/grounnel';
+import type { Claim, ClaimVerdict, RunProgress } from '../../types/grounnel';
 
 interface GrounnelProgressProps {
-  status: GrounnelStatusOutput | null;
+  status: RunProgress | null;
   articleText: string;
 }
 

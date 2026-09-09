@@ -1,21 +1,23 @@
-import { useEffect, useState } from 'react';
-import HighlightedArticle from './HighlightedArticle';
-import ClaimSourceList from './ClaimSourceList';
+import { useEffect, useRef, useState } from 'react';
+import ArticleInput from './ArticleInput';
+import RunView from './RunView';
 import { getSharedAssessment } from '../../api/client';
-import type { Claim, SharedAssessment, SharedClaim } from '../../types/grounnel';
+import type { Claim, RunProgress, SharedAssessment, SharedClaim } from '../../types/grounnel';
+
+// Same interval as usePollGrounnelStatus — a shared link opened mid-run is the same run, so it
+// should advance at the same rate rather than sitting still until someone reloads.
+const POLL_INTERVAL_MS = 5000;
 
 // A shared claim carries no id (core 019 FR-009 keeps internal identifiers out) and no citations
-// (core never persisted them), so both are synthesised here. Position is a stable key for a frozen
-// assessment; a shared page shows no inline citation numbers where a live run does.
-//
-// Claim status comes from the RUN's status, not from the verdict alone: on a run still verifying,
-// a claim with no verdict is pending, not failed. Reading it off the verdict would label every
-// unfinished claim "Verification failed".
+// (core never persisted them), so both are synthesised. Position is a stable key for one
+// assessment; a shared page therefore shows no inline citation numbers where a live run does.
 function toClaim(claim: SharedClaim, index: number, runStatus: SharedAssessment['status']): Claim {
   const unfinished = runStatus === 'extracting' || runStatus === 'verifying';
   return {
     id: `shared-${index}`,
     text: claim.text,
+    // From the RUN's status, not the verdict: on a run still verifying, a claim with no verdict is
+    // pending, not failed.
     status: claim.verdict !== null ? 'done' : unfinished ? 'pending' : 'failed',
     verdict: claim.verdict,
     evidence: claim.evidence,
@@ -27,37 +29,60 @@ function toClaim(claim: SharedClaim, index: number, runStatus: SharedAssessment[
   };
 }
 
-const STATUS_NOTE: Record<SharedAssessment['status'], string | null> = {
-  done: null,
-  extracting: 'This check is still running — claims are still being pulled out of the text. This page does not update on its own; reload to see progress.',
-  verifying: 'This check is still running — some claims have no verdict yet. This page does not update on its own; reload to see progress.',
-  failed: 'This check did not finish. What it had reached is shown below; the rest was never checked.',
-};
+function toRunProgress(assessment: SharedAssessment): RunProgress {
+  const claims = assessment.claims.map((c, i) => toClaim(c, i, assessment.status));
+  const ended = assessment.completedAt ? Date.parse(assessment.completedAt) : Date.now();
+  const started = Date.parse(assessment.createdAt);
+  return {
+    status: assessment.status,
+    claims,
+    progress: { checked: claims.filter((c) => c.status !== 'pending').length, total: claims.length },
+    // Not carried by the shared shape, so a shared view of a capped run omits that warning.
+    caps_hit: false,
+    elapsed_seconds: Number.isNaN(started) ? null : Math.round((ended - started) / 1000),
+  };
+}
 
 export default function SharedAssessmentPage({ token }: { token: string }) {
   const [assessment, setAssessment] = useState<SharedAssessment | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  // Mirrors usePollGrounnelStatus: interval first, then an immediate poll, so a run that is
+  // already finished can stop the timer from inside that first call.
+  const loaded = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
     // try/catch, never `await ….catch()` (AGENTS.md Rule 11).
     const load = async () => {
       try {
-        const data = await getSharedAssessment(token);
-        if (!cancelled) setAssessment(data);
+        const data: SharedAssessment = await getSharedAssessment(token);
+        if (cancelled) return;
+        loaded.current = true;
+        setAssessment(data);
+        if (data.status === 'done' || data.status === 'failed') stop();
       } catch {
-        // A wrong token, a withdrawn run and a transport failure are indistinguishable by design
-        // (019 FR-010), so the message must not claim to know which one happened.
-        if (!cancelled) setError('This link could not be opened.');
+        // Only a first load can report failure. A transient error mid-poll must not replace a
+        // result already on screen with an error page.
+        if (!cancelled && !loaded.current) setFailed(true);
       }
     };
+
+    timer = setInterval(load, POLL_INTERVAL_MS);
     void load();
     return () => {
       cancelled = true;
+      stop();
     };
   }, [token]);
 
-  if (error) {
+  if (failed && !assessment) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-24 text-center">
         <h1 className="text-2xl font-semibold">This link could not be opened</h1>
@@ -73,40 +98,24 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
   }
 
   if (!assessment) {
-    return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-base-content/60">Loading…</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-24 text-center text-base-content/60">Loading…</div>
+    );
   }
 
-  const claims = assessment.claims.map((claim, i) => toClaim(claim, i, assessment.status));
-  // Keyed on the RUN's status, not on a null verdict — different states (core 019 FR-011); the
-  // per-claim case is what sourceNote handles.
-  const note = STATUS_NOTE[assessment.status];
-
   return (
-    <div className="bg-base-200 px-4 py-12">
+    <div className="px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">A shared check</h1>
-          <p className="text-sm text-base-content/60">
-            Run on {assessment.createdAt.slice(0, 10)} · {claims.length} claims. Anyone with this
-            link can read it.
+          <h1 className="text-3xl font-bold">Grounnel</h1>
+          <p className="text-base-content/70">
+            Paste text below to check its claims against the open web.
           </p>
         </div>
 
-        {note && <div className="alert alert-warning text-sm py-2">{note}</div>}
+        <ArticleInput onSubmit={() => {}} disabled initialText={assessment.text} readOnly />
 
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <HighlightedArticle articleText={assessment.text} claims={claims} />
-          </div>
-        </div>
-
-        <ClaimSourceList articleText={assessment.text} claims={claims} />
-
-        <p className="text-sm">
-          <a className="link" href="/">
-            Check a text of your own
-          </a>
-        </p>
+        <RunView articleText={assessment.text} status={toRunProgress(assessment)} />
       </div>
     </div>
   );

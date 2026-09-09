@@ -3,10 +3,19 @@ import { useState } from 'react';
 interface ArticleInputProps {
   onSubmit: (text: string) => void;
   disabled: boolean;
+  /** Pre-fills the box — a restored run, or the text behind a shared link. */
+  initialText?: string;
+  /** A finished run someone else is reading: the text is shown, never edited, and cannot be sent. */
+  readOnly?: boolean;
 }
 
-export default function ArticleInput({ onSubmit, disabled }: ArticleInputProps) {
-  const [text, setText] = useState('');
+export default function ArticleInput({
+  onSubmit,
+  disabled,
+  initialText = '',
+  readOnly = false,
+}: ArticleInputProps) {
+  const [text, setText] = useState(initialText);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,9 +39,10 @@ export default function ArticleInput({ onSubmit, disabled }: ArticleInputProps) 
           setText(e.target.value);
           if (error) setError(null);
         }}
-        disabled={disabled}
+        disabled={disabled || readOnly}
       />
       {error && <div className="alert alert-error text-sm py-2">{error}</div>}
+      {!readOnly && (
       <button type="submit" className="btn btn-primary w-full" disabled={disabled}>
         {disabled ? (
           <>
@@ -43,6 +53,7 @@ export default function ArticleInput({ onSubmit, disabled }: ArticleInputProps) 
           'Run fact-check'
         )}
       </button>
+      )}
     </form>
   );
 }

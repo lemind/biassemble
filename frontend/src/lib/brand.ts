@@ -53,7 +53,7 @@ const BIASSEMBLE: Brand = {
   logo: '/logo.svg',
   tagline: 'Identify cognitive biases in text',
   origin: `https://${BIASSEMBLE_HOSTS[0]}`,
-  logoHeightClass: 'h-16',
+  logoHeightClass: 'h-32',
   logoIncludesName: true,
   nav: [
     { href: '/', label: 'Biassemble' },
@@ -107,12 +107,38 @@ export function siblingBrand(brand: Brand): Brand {
 // not configured. A console line is the whole mitigation; T001's six-case check is the real one.
 let announced = false;
 
+const OVERRIDE_KEY = 'grounnel.devBrand';
+
+/**
+ * Development-only brand switch: `?brand=grounnel` once, and it sticks for the tab.
+ *
+ * The hostname conventions above both need DNS to cooperate — `grounnel.localhost` fails outright
+ * behind an HTTP proxy that only exempts bare `localhost`, and the real host cannot be pointed at
+ * a dev server because browsers HSTS-preload `*.vercel.app`. This path needs neither. It is read
+ * ONLY on a development host, so production branding still comes from the hostname alone.
+ */
+function devBrandOverride(kind: HostKind): Brand | null {
+  if (kind !== 'development') return null;
+  try {
+    const requested = new URLSearchParams(window.location.search).get('brand');
+    if (requested) sessionStorage.setItem(OVERRIDE_KEY, requested);
+    const id = requested ?? sessionStorage.getItem(OVERRIDE_KEY);
+    return id === 'grounnel' || id === 'biassemble' ? BRANDS[id] : null;
+  } catch {
+    // Storage blocked, or no window.location.search — the hostname rules still apply.
+    return null;
+  }
+}
+
 export function resolveBrand(hostname = window.location.hostname): Brand {
   const kind = classifyHost(hostname);
-  const brand = brandForHost(hostname);
+  const override = devBrandOverride(kind);
+  const brand = override ?? brandForHost(hostname);
   if (!announced) {
     announced = true;
-    if (kind === 'development') {
+    if (override) {
+      console.info(`[brand] ?brand= override active — rendering ${brand.name}. Clear it with ?brand=biassemble`);
+    } else if (kind === 'development') {
       console.info(`[brand] ${hostname} is a development host — rendering ${brand.name}`);
     } else if (kind === 'unknown') {
       console.warn(`[brand] ${hostname} is not a configured host — falling back to ${brand.name}`);

@@ -35,12 +35,17 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
   const sibling = siblingBrand(brand);
   const active = normalizePath(activePath);
   return (
-    <div className="relative flex min-h-screen flex-col">
-      <nav className="grid grid-cols-[1fr_auto_1fr] items-start bg-base-200 px-4">
-        <a href="/" className="justify-self-start" aria-label={brand.name}>
-          <img src={brand.logo} alt={brand.name} className="w-32 h-32" />
+    <div className="relative flex min-h-screen flex-col bg-base-200">
+      {/* Height governs, width follows — a fixed w-x h-x box squashes both files, which have
+          different aspect ratios. The wordmark is text only when the logo doesn't already carry it. */}
+      <nav className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-base-300 px-6 py-3">
+        <a href="/" className="flex items-center gap-2 justify-self-start" aria-label={brand.name}>
+          <img src={brand.logo} alt="" className={`${brand.logoHeightClass} w-auto`} />
+          {!brand.logoIncludesName && (
+            <span className="text-lg font-semibold tracking-tight">{brand.name}</span>
+          )}
         </a>
-        <div className="flex justify-self-center gap-6 pt-2.5 text-sm">
+        <div className="flex justify-self-center gap-6 text-sm">
           {brand.nav.map((item) => (
             <NavLink key={item.href} href={item.href} active={item.href === active}>
               {item.label}

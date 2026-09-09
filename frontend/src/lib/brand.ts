@@ -19,6 +19,11 @@ export interface Brand {
   tagline: string;
   /** Canonical public origin — the one place a URL for this brand is written. */
   origin: string;
+  /** Height class for the mark. The two files are not interchangeable: Biassemble's is a full
+   *  lockup (square, wordmark baked in) and needs room to read; Grounnel's is a bare glyph. */
+  logoHeightClass: string;
+  /** True when the file already contains the brand name, so the layout must not repeat it. */
+  logoIncludesName: boolean;
   nav: NavItem[];
 }
 
@@ -33,6 +38,8 @@ const GROUNNEL: Brand = {
   logo: '/grn-logo.svg',
   tagline: 'Verify the claims in any text',
   origin: `https://${GROUNNEL_HOSTS[0]}`,
+  logoHeightClass: 'h-8',
+  logoIncludesName: false,
   nav: [
     { href: '/', label: 'Check' },
     { href: '/about', label: 'About' },
@@ -46,6 +53,8 @@ const BIASSEMBLE: Brand = {
   logo: '/logo.svg',
   tagline: 'Identify cognitive biases in text',
   origin: `https://${BIASSEMBLE_HOSTS[0]}`,
+  logoHeightClass: 'h-12',
+  logoIncludesName: true,
   nav: [
     { href: '/', label: 'Biassemble' },
     { href: '/grounnel', label: 'Grounnel' },

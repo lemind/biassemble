@@ -51,7 +51,7 @@ test('host matching is case-insensitive', () => {
 
 test('brand carries identity only — no component reference', () => {
   const keys = Object.keys(brandForHost('grounnel.vercel.app')).sort();
-  assert.deepEqual(keys, ['id', 'logo', 'name', 'nav', 'origin', 'tagline']);
+  assert.deepEqual(keys, ['id', 'logo', 'logoHeightClass', 'logoIncludesName', 'name', 'nav', 'origin', 'tagline']);
 });
 
 // The footer links to the sibling by origin so no hostname is written outside the lists above.

@@ -30,7 +30,7 @@ export default function GrounnelApp() {
   };
 
   return (
-    <div className="h-full bg-base-200 px-4 py-12">
+    <div className="px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold">Grounnel</h1>

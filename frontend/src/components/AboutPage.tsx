@@ -1,26 +1,12 @@
 import { siblingBrand, type Brand } from '../lib/brand';
 
-const PIPELINE = [
-  { label: 'Your text', detail: 'Paste an article, a post, an essay — anything written.' },
-  { label: 'Claims', detail: 'The statements of fact are pulled out. Opinions are left alone.' },
-  { label: 'Evidence', detail: 'Each claim is searched for on the open web.' },
-  { label: 'Ranked sources', detail: 'Pages are fetched and ranked; the useful passages are kept.' },
-  { label: 'Verdicts', detail: 'Each claim gets a verdict, the passage behind it, and its source.' },
+const STEPS = [
+  { title: 'Text', line: 'An article, a post, an essay — anything written.' },
+  { title: 'Claims', line: 'Statements of fact are extracted. Opinions are left alone.' },
+  { title: 'Evidence', line: 'Each claim is searched on the open web.' },
+  { title: 'Sources', line: 'Pages are fetched and ranked. Only useful passages are kept.' },
+  { title: 'Verdicts', line: 'Every claim gets a verdict, the passage behind it, and a link.' },
 ];
-
-function Pipeline() {
-  return (
-    <ol className="grid gap-3 sm:grid-cols-5">
-      {PIPELINE.map((step, i) => (
-        <li key={step.label} className="rounded-lg border border-base-300 bg-base-100 p-3">
-          <div className="text-xs font-mono text-base-content/50">{i + 1}</div>
-          <div className="font-semibold">{step.label}</div>
-          <p className="mt-1 text-sm text-base-content/70">{step.detail}</p>
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 export default function AboutPage({ brand }: { brand: Brand }) {
   const sibling = siblingBrand(brand);
@@ -28,50 +14,59 @@ export default function AboutPage({ brand }: { brand: Brand }) {
   const biassemble = brand.id === 'grounnel' ? sibling : brand;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-semibold">About Grounnel</h1>
-
-      <p className="mt-4 text-base-content/80">
-        Grounnel reads a piece of writing, pulls out the statements of fact it makes, and checks each
-        one against the open web. You get back your own text with every checked claim marked in
-        place — what the evidence says, the passage it came from, and a link to where it was found.
-        It is a tool for reading something carefully, not a truth score.
+    <article className="mx-auto max-w-[40rem] px-6 py-16">
+      <p className="text-xs uppercase tracking-widest text-base-content/50">Claim checking</p>
+      <h1 className="mt-2 text-4xl font-semibold tracking-tight">Grounnel</h1>
+      <p className="mt-5 text-lg leading-relaxed text-base-content/80">
+        Paste a piece of writing. Grounnel finds the factual claims, checks each one against the
+        open web, and marks them in your text — verdict, passage, and source. It is a reading tool,
+        not a truth score.
       </p>
 
-      <h2 className="mt-10 text-xl font-semibold">How it works</h2>
-      <div className="mt-4">
-        <Pipeline />
-      </div>
+      <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">How it works</h2>
+      {/* Horizontal on desktop, stacked on mobile. The number is the only numeral — no "1. 1".
+          Breaks out of the 40rem measure on wide screens: five columns inside it wrapped every
+          step's one line onto four. */}
+      <ol className="mt-5 grid gap-5 sm:-mx-16 sm:grid-cols-5 sm:gap-6">
+        {STEPS.map((step, i) => (
+          <li key={step.title}>
+            <div className="font-mono text-xs text-base-content/40">{i + 1}</div>
+            <div className="mt-1 font-medium">{step.title}</div>
+            <p className="mt-1 text-sm leading-snug text-base-content/70">{step.line}</p>
+          </li>
+        ))}
+      </ol>
 
-      <h2 className="mt-10 text-xl font-semibold">A false accusation is worse than a missed detection</h2>
-      <p className="mt-4 text-base-content/80">
-        This is the rule the whole system is built around. Calling something false when it is not
-        does more damage than quietly failing to catch something that is — so when the evidence is
-        weak, Grounnel says <em>not verified</em> rather than calling a claim false. Claims it
-        declines to judge are marked as such and counted openly. A page of confident verdicts would
-        be easier to read and worth much less.
+      <hr className="mt-14 border-base-300" />
+      <p className="mt-6 text-xl italic leading-snug">
+        A false accusation is worse than a missed detection.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        Calling a true claim false does more harm than missing a lie. When the evidence is weak,
+        Grounnel says <strong className="font-medium">not verified</strong> instead of calling the
+        claim false. Claims it declines to judge are marked and counted. A page of confident
+        verdicts would be easier to read. It would also be worth less.
       </p>
 
-      <h2 className="mt-10 text-xl font-semibold">{biassemble.name}</h2>
-      <p className="mt-4 text-base-content/80">
-        {biassemble.name} is a separate project from the same work — it analyzes a text for cognitive
-        biases rather than checking its facts, and it lives at{' '}
-        <a className="link" href={biassemble.origin} rel="noopener">
-          its own address
-        </a>
-        . The two are not connected today. Running both over the same text is a direction we mean to
-        take, but nothing about it has shipped, and neither tool depends on the other.
+      <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">Related</h2>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <a className="link font-medium" href={biassemble.origin} rel="noopener">
+          {biassemble.name}
+        </a>{' '}
+        looks for cognitive biases in text. It is a separate project at its own address. The two do
+        not share a pipeline. Running both on the same document is planned; nothing about that has
+        shipped.
       </p>
 
-      <p className="mt-10 text-sm text-base-content/60">
+      <nav className="mt-14 border-t border-base-300 pt-6 text-sm">
         <a className="link" href={grounnel.id === brand.id ? '/' : grounnel.origin}>
           Check a text
-        </a>{' '}
-        ·{' '}
+        </a>
+        <span className="px-2 text-base-content/30">·</span>
         <a className="link" href="/stats">
           What we have measured
         </a>
-      </p>
-    </div>
+      </nav>
+    </article>
   );
 }

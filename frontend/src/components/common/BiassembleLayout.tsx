@@ -63,8 +63,14 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
       <main className="flex-1">{children}</main>
       <footer className="mt-16 border-t border-base-300 px-6 py-6 text-sm text-base-content/60">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 sm:flex-row sm:justify-between">
-          <p>
-            &copy; {new Date().getFullYear()} {brand.name}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>
+              &copy; {new Date().getFullYear()} {brand.name}
+            </span>
+            <span aria-hidden="true">&middot;</span>
+            <a href="mailto:grounnel@gmail.com" className="link link-hover">
+              grounnel@gmail.com
+            </a>
           </p>
           <nav className="flex gap-5">
             {brand.nav

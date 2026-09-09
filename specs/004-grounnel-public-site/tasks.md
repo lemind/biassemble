@@ -98,12 +98,12 @@ things; permalinks moved from the former to the latter.
 - [x] T009 The philosophy, stated plainly: **a false accusation is worse than a missed detection.**
   When evidence is weak Grounnel says "not verified" rather than calling something false.
   **Done 2026-09-09.** Its own section, and it names the declined-verdict counts as the visible proof.
-- [ ] T010 One short paragraph on Biassemble as a **related project**, not a parent — what it does
+- [x] T010 One short paragraph on Biassemble as a **related project**, not a parent — what it does
   (cognitive-bias analysis of text), that it lives at its own URL, and that combining the two
   analyses over the same text is a deliberate future direction, not shipped.
 
   **Done 2026-09-09.** Section reads from `siblingBrand()`, so it is symmetric on both hosts.
-- [ ] T010a **Worked example on the landing page** — one real check shown end to end: pasted text →
+- [x] T010a **Worked example on the landing page** — one real check shown end to end: pasted text →
   extracted claims → one `contradicted` with its passage and source URL visible. Probably worth more
   than the whole stats page for answering "should I trust this?".
 
@@ -287,7 +287,7 @@ Added 2026-09-09. Today `runId`, `articleText` and `sessionId` live only in Reac
 `localStorage`, no `sessionStorage`, no cookie. So a refresh, a new tab, or clicking any nav link
 destroys a run that took ~200s to produce. Adding About and Stats to the nav makes that worse.
 
-- [ ] T018 Persist the current run to `localStorage` (not `sessionStorage` — the ask is that a new
+- [x] T018 Persist the current run to `localStorage` (not `sessionStorage` — the ask is that a new
   tab sees the same run). Store `runId` + `articleText`; rehydrate on mount. **`runId` is internal
   and must never become the shared URL** — that is `share_token`'s job (core 019 FR-003). Two tabs share one
   slot and the newer run wins; acceptable for MVP.

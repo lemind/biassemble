@@ -291,8 +291,18 @@ destroys a run that took ~200s to produce. Adding About and Stats to the nav mak
   tab sees the same run). Store `runId` + `articleText`; rehydrate on mount. **`runId` is internal
   and must never become the shared URL** — that is `share_token`'s job (core 019 FR-003). Two tabs share one
   slot and the newer run wins; acceptable for MVP.
-- [ ] T019 Nav links open About/Stats in a new tab (`target="_blank"`) until T020 lands, so an
-  in-flight check survives a click. Cheap interim guard.
+
+  **Done 2026-09-09.** `frontend/src/lib/runStorage.ts` + rehydration through
+  `useGrounnelRun(initialRunId)`. Every access is wrapped — a browser that blocks storage loses
+  persistence, never the run. Stored runs older than **7 days are dropped on read**, matching core's
+  Redis status TTL: rehydrating past it would only ever poll a 404. 6 assert tests.
+- [x] T019 ~~Nav links open About/Stats in a new tab (`target="_blank"`) until T020 lands, so an
+  in-flight check survives a click. Cheap interim guard.~~
+
+  **Dropped 2026-09-09, not implemented.** T018 landed first and solves the same problem properly:
+  a nav click no longer destroys an in-flight run, because the run is restored on return. The
+  launch checklist already read "T018 **or** T019", and forcing internal navigation into new tabs
+  is a worse experience than the one it was guarding against.
 - [ ] T020 `/check/:token` page — fetch a shared assessment and render the stored text with claim
   highlights, reusing `HighlightedArticle`. This is the real fix: a URL you can return to, rather
   than browser state you can lose.

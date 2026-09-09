@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import ArticleInput from './ArticleInput';
 import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
 import WorkedExample from './WorkedExample';
+import { loadRun, saveRun } from '../../lib/runStorage';
 
 export default function GrounnelApp() {
-  const { runId, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
+  // Read once, before the first render — a run takes ~200s, so a refresh or a nav click used to
+  // destroy it outright (T018).
+  const [restored] = useState(loadRun);
+  const { runId, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun(
+    restored?.runId ?? null,
+  );
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
-  const [articleText, setArticleText] = useState('');
+  const [articleText, setArticleText] = useState(restored?.articleText ?? '');
+
+  useEffect(() => {
+    if (runId && articleText) saveRun(runId, articleText);
+  }, [runId, articleText]);
 
   const handleSubmit = (text: string) => {
     setArticleText(text);

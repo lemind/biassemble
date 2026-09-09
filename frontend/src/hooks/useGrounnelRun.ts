@@ -14,9 +14,9 @@ interface GrounnelRunState {
  * previous interval and reset status, so a new run's state always replaces (never merges with)
  * the previous one.
  */
-export default function useGrounnelRun() {
+export default function useGrounnelRun(initialRunId: string | null = null) {
   const [state, setState] = useState<GrounnelRunState>({
-    runId: null,
+    runId: initialRunId,
     error: null,
     submitting: false,
   });

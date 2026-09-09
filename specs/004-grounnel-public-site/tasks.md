@@ -131,30 +131,41 @@ Biassemble is a legacy side project on an old URL. So the one shared `index.html
 title, description, image and canonical. The Biassemble domain inherits them — accepted, and
 consistent with the hierarchy decision.
 
-- [ ] T024 Replace the static title in `frontend/index.html`. Today it reads
+- [x] T024 Replace the static title in `frontend/index.html`. Today it reads
   `Biassemble — Identify Cognitive Biases`; it becomes Grounnel's, e.g.
   `Grounnel — Verify the claims in any text`. This is what non-JS crawlers and every social scraper
   read.
-- [ ] T025 Open Graph + Twitter card tags, Grounnel-branded: `og:title`, `og:description`,
+- [x] T025 Open Graph + Twitter card tags, Grounnel-branded: `og:title`, `og:description`,
   `og:image`, `og:url`, `og:type`, `twitter:card` (`summary_large_image`), plus a
   `<meta name="description">`. Currently there are **none** — every shared link previews as a bare
   URL on both domains.
-- [ ] T026 `og:image` asset — 1200×630 PNG in `frontend/public/`. `grn-logo.svg` is 424 bytes and
+- [x] T026 `og:image` asset — 1200×630 PNG in `frontend/public/`. `grn-logo.svg` is 424 bytes and
   won't work as a social card; scrapers want a raster image at that ratio.
-- [ ] T027 Canonical link pointing at the Grounnel host, so the two domains serving identical
+- [x] T027 Canonical link pointing at the Grounnel host, so the two domains serving identical
   content don't compete as duplicates and Grounnel is the one that gets indexed.
-- [ ] T028 `frontend/public/robots.txt` — allow `/`, `/about`, `/stats`; **disallow `/check/`**.
+- [x] T028 `frontend/public/robots.txt` — allow `/`, `/about`, `/stats`; **disallow `/check/`**.
   Shared assessments often name private individuals.
-- [ ] T029 `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
+- [x] T029 `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
   (`/`, `/about`, `/stats`). Never the check links.
 - [x] T030 **Decided 2026-09-09: keep the existing `favicon.svg` on both domains.** No Grounnel
   favicon for the MVP. Note this is deliberately inconsistent with T024–T027, where the shared
   `<head>` is Grounnel-branded — the tab icon stays Biassemble's.
-- [ ] T031 `noindex` for `/check/:token`. **This is an SPA with one `index.html`, so there is no
+- [x] T031 `noindex` for `/check/:token`. **This is an SPA with one `index.html`, so there is no
   per-route static meta tag** — the real controls are `robots.txt` Disallow (T028) and core 019
   T009's `X-Robots-Tag` on the API response. This task is only the runtime belt-and-braces: inject
   a `noindex` meta into `document.head` when the path matches. Drop it if T028 + 019 T009 are judged
   sufficient.
+
+**Done 2026-09-09 (T024–T029, T031).** `index.html` carries Grounnel's title, description,
+canonical, OG and Twitter tags. `public/og-grounnel.png` is 1200x630, generated from `grn-logo.svg`
+with the verdict vocabulary on it. `robots.txt` carries a single `Disallow: /check/` — the earlier
+draft's `Allow: /$` lines created a rule conflict that only longest-match precedence resolved, and
+everything not disallowed is allowed anyway. `sitemap.xml` lists the three public paths. T031
+injects `noindex, nofollow` at runtime on `/check/`.
+
+**Hostname is now written in four places** — `brand.ts`'s arrays plus `index.html`, `robots.txt`
+and `sitemap.xml`. Static files cannot import the array, so buying `grounnel.com` means editing all
+four, not one. Deliberate: a build-time template for three constants is not worth the machinery.
 
 **Known limitation of one shared build**: `document.title` per brand (T005) fixes the browser tab at
 runtime, but social scrapers don't run JS — so the Biassemble domain previews with Grounnel's card.

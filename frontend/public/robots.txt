@@ -1,0 +1,7 @@
+# Public: /, /about, /stats — allowed by default, so they need no rule here.
+# Shared assessments often name private individuals: link-only, never indexed. The API sends
+# X-Robots-Tag: noindex for the same reason (biassemble-core spec 019, T009).
+User-agent: *
+Disallow: /check/
+
+Sitemap: https://grounnel.vercel.app/sitemap.xml

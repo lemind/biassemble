@@ -36,6 +36,17 @@ export default function App() {
     document.title = `${brand.name} — ${brand.tagline}`;
   }, [brand]);
 
+  // T031 — belt-and-braces only. One index.html means no per-route static meta, so the real
+  // controls are robots.txt's Disallow and core 019's X-Robots-Tag on the API response.
+  useEffect(() => {
+    if (route.page !== 'check') return;
+    const tag = document.createElement('meta');
+    tag.name = 'robots';
+    tag.content = 'noindex, nofollow';
+    document.head.appendChild(tag);
+    return () => tag.remove();
+  }, [route.page]);
+
   // `/grounnel` on the Grounnel host is the same page as `/`; normalise the URL without a flash,
   // since the branch below already renders the tool either way.
   useEffect(() => {

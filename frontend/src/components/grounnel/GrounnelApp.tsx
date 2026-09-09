@@ -4,6 +4,7 @@ import ArticleInput from './ArticleInput';
 import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
+import WorkedExample from './WorkedExample';
 
 export default function GrounnelApp() {
   const { runId, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
@@ -17,7 +18,7 @@ export default function GrounnelApp() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 px-4 py-12">
+    <div className="h-full bg-base-200 px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold">Grounnel</h1>
@@ -36,12 +37,18 @@ export default function GrounnelApp() {
               Paste in an article or any claim-heavy text, and it extracts the individual factual
               claims, searches for evidence, and highlights each one by verdict — supported,
               contradicted, or unclear — so you can see at a glance what&apos;s actually backed by
-              a source and what isn&apos;t.
+              a source and what isn&apos;t.{' '}
+              <a className="link" href="/about">
+                More about how it works
+              </a>
+              .
             </p>
           </div>
         </div>
 
         <ArticleInput onSubmit={handleSubmit} disabled={isRunInFlight} />
+
+        {!runId && <WorkedExample />}
 
         {error && (
           <div className="alert alert-error text-sm py-2">

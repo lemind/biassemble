@@ -11,17 +11,18 @@ const QAFlow = lazy(() => import('./components/QAFlow'));
 const AssessmentLoading = lazy(() => import('./components/AssessmentLoading'));
 const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
 
 function NotFound() {
   return (
-    <main className="mx-auto max-w-2xl px-4 py-24 text-center">
+    <div className="mx-auto max-w-2xl px-4 py-24 text-center">
       <h1 className="text-2xl font-semibold">Page not found</h1>
       <p className="mt-2 text-base-content/70">
         <a className="link" href="/">
           Go back
         </a>
       </p>
-    </main>
+    </div>
   );
 }
 
@@ -65,8 +66,16 @@ export default function App() {
       );
     }
 
-    // About (Phase 2), Stats (Phase 3) and the shared assessment (Phase 4) are routed but not
-    // built yet; they render not-found until their own phase lands.
+    if (route.page === 'about') {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <AboutPage brand={brand} />
+        </Suspense>
+      );
+    }
+
+    // Stats (Phase 3) and the shared assessment (Phase 4) are routed but not built yet; they
+    // render not-found until their own phase lands.
     if (route.page !== 'reflection') return <NotFound />;
 
     if (phase === 'qa' && sessionId) {

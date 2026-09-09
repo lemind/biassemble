@@ -48,7 +48,7 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
           ))}
         </div>
       </nav>
-      <div className="flex-1">{children}</div>
+      <main className="flex-1">{children}</main>
       <footer className="border-t border-base-300 px-4 py-6 text-center text-sm text-base-content/60">
         <p>
           Also from this project:{' '}

@@ -31,16 +31,18 @@ function toClaim(claim: SharedClaim, index: number, runStatus: SharedAssessment[
 
 function toRunProgress(assessment: SharedAssessment): RunProgress {
   const claims = assessment.claims.map((c, i) => toClaim(c, i, assessment.status));
-  const terminal = assessment.status === 'done' || assessment.status === 'failed';
+  // 'done' only, not every terminal state. A FAILED run stopped persisting rows partway, so its
+  // total is as unknown as an in-flight one — and `checked === claims.length` there by construction.
+  const totalKnown = assessment.status === 'done';
   const ended = assessment.completedAt ? Date.parse(assessment.completedAt) : Date.now();
   const started = Date.parse(assessment.createdAt);
   return {
     status: assessment.status,
     claims,
-    // Core writes a claim row only once that claim finishes, so mid-run `claims.length` is the
-    // number DONE, not the number there will be — reporting it as the total read as "3 / 3 checked"
-    // on a run with seventeen still to go. Unknown until the run is terminal.
-    progress: terminal
+    // Core writes a claim row only once that claim finishes, so `claims.length` is the number DONE,
+    // not the number there will be — reported as the total it read "3 / 3 checked" on a run with
+    // seventeen still to go.
+    progress: totalKnown
       ? { checked: claims.filter((c) => c.status !== 'pending').length, total: claims.length }
       : null,
     // Not carried by the shared shape, so a shared view of a capped run omits that warning.

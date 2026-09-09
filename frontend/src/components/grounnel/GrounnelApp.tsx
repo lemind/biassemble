@@ -57,9 +57,12 @@ export default function GrounnelApp() {
           </div>
         </div>
 
+        {/* `locked`, not `disabled`: the submit lock belongs on the button (ArticleInput sets it
+            there), and a disabled textarea makes the user's own pasted article unselectable. */}
         <ArticleInput
           onSubmit={handleSubmit}
           disabled={isRunInFlight}
+          locked={isRunInFlight}
         />
 
         {error && (
@@ -69,13 +72,6 @@ export default function GrounnelApp() {
               Dismiss
             </button>
           </div>
-        )}
-
-        {shareToken && (
-          <p className="text-xs text-base-content/60">
-            The address of this page is now a public link. It does not expire and cannot be
-            withdrawn.
-          </p>
         )}
 
         {runId && <RunView articleText={articleText} status={status} />}

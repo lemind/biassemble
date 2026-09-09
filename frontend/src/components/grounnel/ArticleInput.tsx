@@ -5,8 +5,11 @@ interface ArticleInputProps {
   disabled: boolean;
   /** Pre-fills the box — a restored run, or the text behind a shared link. */
   initialText?: string;
-  /** A finished run someone else is reading: the text is shown, never edited, and cannot be sent. */
+  /** A run someone else is reading: the text is shown and never edited. The submit button is not
+   *  rendered at all in this mode, so there is nothing to send. */
   readOnly?: boolean;
+  /** This viewer's own run is in flight: keep the text selectable, just not editable. */
+  locked?: boolean;
 }
 
 export default function ArticleInput({
@@ -14,6 +17,7 @@ export default function ArticleInput({
   disabled,
   initialText = '',
   readOnly = false,
+  locked = false,
 }: ArticleInputProps) {
   const [text, setText] = useState(initialText);
   const [error, setError] = useState<string | null>(null);
@@ -31,12 +35,12 @@ export default function ArticleInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* readOnly, not disabled, for a shared run: a disabled textarea leaves the tab order and
-          its text cannot be selected or copied, so a reader could not quote the article. */}
+      {/* Never `disabled`: that leaves the tab order and makes the text unselectable, so neither a
+          reader of a shared link nor the author of a running check could copy the article. */}
       <textarea
         className={
           'textarea textarea-bordered min-h-48 h-48 w-full resize-y' +
-          (readOnly ? ' bg-base-200' : '')
+          (readOnly || locked ? ' bg-base-200' : '')
         }
         placeholder="Paste an article or claim-heavy text to fact-check..."
         value={text}
@@ -44,8 +48,7 @@ export default function ArticleInput({
           setText(e.target.value);
           if (error) setError(null);
         }}
-        disabled={disabled}
-        readOnly={readOnly}
+        readOnly={readOnly || locked}
       />
       {error && <div className="alert alert-error text-sm py-2">{error}</div>}
       {!readOnly && (

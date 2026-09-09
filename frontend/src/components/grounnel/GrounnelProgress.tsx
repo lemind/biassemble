@@ -186,6 +186,8 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
           <span className={isTerminal ? '' : 'animate-pulse'}>
             {status.progress.checked} / {status.progress.total} claims checked
           </span>
+        ) : status.status === 'failed' ? (
+          <span>Checked so far ({status.claims.length})</span>
         ) : (
           // No fraction when the total is unknown — a made-up denominator reads as "finished".
           <span className="animate-pulse">Still checking — more claims to come</span>
@@ -201,6 +203,13 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
             <span key={group.key}>{group.node}</span>
           ))}
         </div>
+      )}
+      {/* The live page surfaces this as an error alert; a shared link had no equivalent, so a run
+          that died partway was indistinguishable from a short successful one. */}
+      {status.status === 'failed' && (
+        <p className="text-warning">
+          This check stopped before it finished — the claims below are only the ones that completed.
+        </p>
       )}
       {status.caps_hit && (
         <p className="text-warning">Results are partial — the claim limit for this run was reached.</p>

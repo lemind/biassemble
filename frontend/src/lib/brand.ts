@@ -32,18 +32,24 @@ const GROUNNEL_HOSTS = ['grounnel.vercel.app'];
 const BIASSEMBLE_HOSTS = ['frontend-topaz-eight-10.vercel.app'];
 const DEV_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
 
+// Each brand's canonical public URL, written once. The two nav bars cross-link to each other's
+// SITE, not to a path on the current host — they are separate products at separate addresses.
+const GROUNNEL_ORIGIN = `https://${GROUNNEL_HOSTS[0]}`;
+const BIASSEMBLE_ORIGIN = `https://${BIASSEMBLE_HOSTS[0]}`;
+
 const GROUNNEL: Brand = {
   id: 'grounnel',
   name: 'Grounnel',
   logo: '/grn-logo.svg',
   tagline: 'Verify the claims in any text',
-  origin: `https://${GROUNNEL_HOSTS[0]}`,
+  origin: GROUNNEL_ORIGIN,
   logoHeightClass: 'h-12',
   logoIncludesName: false,
   nav: [
     { href: '/', label: 'Check' },
     { href: '/about', label: 'About' },
     { href: '/stats', label: 'Stats' },
+    { href: BIASSEMBLE_ORIGIN, label: 'Biassemble' },
   ],
 };
 
@@ -52,14 +58,15 @@ const BIASSEMBLE: Brand = {
   name: 'Biassemble',
   logo: '/logo.svg',
   tagline: 'Identify cognitive biases in text',
-  origin: `https://${BIASSEMBLE_HOSTS[0]}`,
-  logoHeightClass: 'h-32',
+  origin: BIASSEMBLE_ORIGIN,
+  logoHeightClass: 'h-16',
   logoIncludesName: true,
+  // No Stats: that page is Grounnel's measurements and means nothing here. Grounnel points at the
+  // Grounnel site, not this host's /grounnel — that route still works for existing links (FR-002).
   nav: [
     { href: '/', label: 'Biassemble' },
-    { href: '/grounnel', label: 'Grounnel' },
     { href: '/about', label: 'About' },
-    { href: '/stats', label: 'Stats' },
+    { href: GROUNNEL_ORIGIN, label: 'Grounnel' },
   ],
 };
 

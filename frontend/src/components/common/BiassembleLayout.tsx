@@ -2,7 +2,7 @@
 // name no longer describes the hierarchy. Renaming is pure churn; do it when this file is next
 // touched substantially (plan.md, Project Structure).
 import type { ReactNode } from 'react';
-import { siblingBrand, type Brand } from '../../lib/brand';
+import type { Brand } from '../../lib/brand';
 import { normalizePath } from '../../lib/routes';
 
 interface BiassembleLayoutProps {
@@ -20,9 +20,12 @@ interface NavLinkProps {
 // Plain <a>, always full-reload — no client-side router. Cross-navigation remounting App is what
 // lets brand and route resolve once, at mount.
 function NavLink({ href, active, children }: NavLinkProps) {
+  // A cross-site nav entry is an absolute URL; it can never be the active path.
+  const external = href.startsWith('http');
   return (
     <a
       href={href}
+      rel={external ? 'noopener' : undefined}
       aria-current={active ? 'page' : undefined}
       className={active ? 'font-semibold text-primary' : 'link link-hover text-base-content/70'}
     >
@@ -35,7 +38,6 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
   // overflow-x-clip, not hidden: a claim tooltip is `absolute w-max` and stays in layout even at
   // opacity-0, so one near the right edge widened the page into a horizontal scrollbar. `clip`
   // leaves the vertical axis visible, so tooltips still hang below their claim.
-  const sibling = siblingBrand(brand);
   const active = normalizePath(activePath);
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip bg-base-200">
@@ -59,14 +61,26 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
         </div>
       </nav>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-base-300 px-4 py-6 text-center text-sm text-base-content/60">
-        <p>
-          Also from this project:{' '}
-          <a className="link" href={sibling.origin} rel="noopener">
-            {sibling.name}
-          </a>{' '}
-          — {sibling.tagline.toLowerCase()}.
-        </p>
+      <footer className="mt-16 border-t border-base-300 px-6 py-6 text-sm text-base-content/60">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 sm:flex-row sm:justify-between">
+          <p>
+            &copy; {new Date().getFullYear()} {brand.name}
+          </p>
+          <nav className="flex gap-5">
+            {brand.nav
+              .filter((item) => item.href !== '/')
+              .map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  rel={item.href.startsWith('http') ? 'noopener' : undefined}
+                  className="link link-hover"
+                >
+                  {item.label}
+                </a>
+              ))}
+          </nav>
+        </div>
       </footer>
     </div>
   );

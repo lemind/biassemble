@@ -121,7 +121,9 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
           </p>
         </div>
 
-        <ArticleInput onSubmit={() => {}} disabled initialText={assessment.text} readOnly />
+        {/* readOnly alone, never `disabled` too — `disabled` would put the textarea back out of
+            the tab order and make the article unselectable, which is what readOnly exists to fix. */}
+        <ArticleInput onSubmit={() => {}} disabled={false} initialText={assessment.text} readOnly />
 
         <RunView articleText={assessment.text} status={toRunProgress(assessment)} />
       </div>

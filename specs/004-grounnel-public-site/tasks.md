@@ -3,8 +3,10 @@
 **Goal**: ship the site. Grounnel on its own domain with its own brand, an About page, a Stats page.
 Pipeline ships **as-is** — no changes to extraction, verification, or gates.
 
-**Nothing here depends on biassemble-core spec 018.** That work is parked; see
-the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FINDINGS.md`.
+**No pipeline change depends on biassemble-core spec 018** — those findings are parked; see the
+**biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FINDINGS.md`.
+**Phase 4 does depend on core spec 019** (share token + durable read). 018 and 019 are different
+things; permalinks moved from the former to the latter.
 
 ---
 
@@ -53,10 +55,22 @@ the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FIN
   Logo assets: `grn-logo.svg` (Grounnel) / `logo.svg` (Biassemble).
 - [x] T003 **Done 2026-09-09.** `frontend/public/grn-logo.svg` added. `logo.svg` (Biassemble)
   untouched.
-- [ ] T004 Replace `isGrounnelRoute()` with a small path table matching on `window.location.pathname`
-  (not the full URL — query strings and hashes must not affect resolution): `/`, `/about`, `/stats`. Grounnel
-  host mounts the Grounnel app at `/`; Biassemble host keeps the reflection flow at `/` and
-  `/grounnel` where they are.
+- [ ] T004 Replace `isGrounnelRoute()` with a path table matching on `window.location.pathname`
+  (not the full URL — query strings and hashes must not affect resolution). It must cover the whole
+  host x path matrix, not three paths:
+
+  | path | Grounnel host | Biassemble host |
+  |---|---|---|
+  | `/` | tool | reflection flow |
+  | `/grounnel` | redirect to `/` | **tool — existing links, FR-002/SC-002** |
+  | `/about` | About | About |
+  | `/stats` | Stats | Stats |
+  | `/check/:token` | shared assessment | shared assessment |
+  | anything else | not-found | not-found |
+
+  `/grounnel` and the variable `/check/:token` segment are the two that a naive three-path table
+  drops — the first breaks links we promised not to break, the second is Phase 4. Acceptance is the
+  six-case matrix from T001, verified on both hosts.
 - [ ] T005 Layout reads the brand — logo, wordmark, nav, footer. `document.title` per brand.
 - [ ] T006 Footer link to Biassemble, framed as a sibling rather than a parent:
   *Also from this project: **Biassemble** — analyze cognitive biases in text.*
@@ -73,8 +87,12 @@ the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FIN
   analyses over the same text is a deliberate future direction, not shipped.
 - [ ] T010a **Worked example on the landing page** — one real check shown end to end: pasted text →
   extracted claims → one `contradicted` with its passage and source URL visible. Probably worth more
-  than the whole stats page for answering "should I trust this?", because it is the product doing
-  the thing rather than a number claiming it did.
+  than the whole stats page for answering "should I trust this?".
+
+  **A committed fixture, not a live run.** Freeze one real past assessment as JSON in the repo and
+  render it statically. That keeps "pipeline ships as-is" and "no new measurement" true, costs no
+  API calls per visitor, and cannot break on the landing page. Pick the example deliberately — it
+  should show a contradiction with clean, checkable evidence.
 
 
 ## Phase 2b — Link previews and metadata
@@ -88,26 +106,29 @@ Biassemble is a legacy side project on an old URL. So the one shared `index.html
 title, description, image and canonical. The Biassemble domain inherits them — accepted, and
 consistent with the hierarchy decision.
 
-- [ ] T013a Replace the static title in `frontend/index.html`. Today it reads
+- [ ] T024 Replace the static title in `frontend/index.html`. Today it reads
   `Biassemble — Identify Cognitive Biases`; it becomes Grounnel's, e.g.
   `Grounnel — Verify the claims in any text`. This is what non-JS crawlers and every social scraper
   read.
-- [ ] T013b Open Graph + Twitter card tags, Grounnel-branded: `og:title`, `og:description`,
+- [ ] T025 Open Graph + Twitter card tags, Grounnel-branded: `og:title`, `og:description`,
   `og:image`, `og:url`, `og:type`, `twitter:card` (`summary_large_image`), plus a
   `<meta name="description">`. Currently there are **none** — every shared link previews as a bare
   URL on both domains.
-- [ ] T013c `og:image` asset — 1200×630 PNG in `frontend/public/`. `grn-logo.svg` is 424 bytes and
+- [ ] T026 `og:image` asset — 1200×630 PNG in `frontend/public/`. `grn-logo.svg` is 424 bytes and
   won't work as a social card; scrapers want a raster image at that ratio.
-- [ ] T013d Canonical link pointing at the Grounnel host, so the two domains serving identical
+- [ ] T027 Canonical link pointing at the Grounnel host, so the two domains serving identical
   content don't compete as duplicates and Grounnel is the one that gets indexed.
-- [ ] T013e `frontend/public/robots.txt` — allow `/`, `/about`, `/stats`; **disallow `/check/`**.
+- [ ] T028 `frontend/public/robots.txt` — allow `/`, `/about`, `/stats`; **disallow `/check/`**.
   Shared assessments often name private individuals.
-- [ ] T013f `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
+- [ ] T029 `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
   (`/`, `/about`, `/stats`). Never the check links.
-- [ ] T013g Favicon: `favicon.svg` is currently Biassemble's and is served on both domains. Decide
+- [ ] T030 Favicon: `favicon.svg` is currently Biassemble's and is served on both domains. Decide
   whether Grounnel gets its own — the tab icon is the most-seen brand mark on the site.
-- [ ] T013h `noindex` on `/check/:token` pages specifically, belt-and-braces with T013e. Core spec
-  019 T009 sets the matching header API-side.
+- [ ] T031 `noindex` for `/check/:token`. **This is an SPA with one `index.html`, so there is no
+  per-route static meta tag** — the real controls are `robots.txt` Disallow (T028) and core 019
+  T009's `X-Robots-Tag` on the API response. This task is only the runtime belt-and-braces: inject
+  a `noindex` meta into `document.head` when the path matches. Drop it if T028 + 019 T009 are judged
+  sufficient.
 
 **Known limitation of one shared build**: `document.title` per brand (T005) fixes the browser tab at
 runtime, but social scrapers don't run JS — so the Biassemble domain previews with Grounnel's card.
@@ -133,8 +154,11 @@ testing, so volume proves nothing and a visitor who works that out trusts us les
   core change). Filter `source = 'production'`.
 - [ ] T012 Publish exactly four things, nothing else:
   1. **Window, `generatedAt`, prompt versions** — makes it a snapshot, not a live counter
-  2. **Eval contamination** — "X% of these rows are our own test runs" (currently ~96.5% of all
-     runs). Without this line every other number on the page is dishonest
+  2. **Self-testing disclosure** — the JSON is production-only (T011), so the honest sentence is
+     *"N production runs in window W; eval runs excluded. We also ran E internal evaluation runs in
+     the same window,"* **not** "96.5% of these rows are ours". The 96.5% figure describes all rows;
+     quoting it beside a production-only count is the mismatch this bullet exists to prevent.
+     Production runs are still overwhelmingly our own submissions — say that in words
   3. **Verdict mix** with one sentence on why `excluded` and `unverifiable` exist — 223 of 3,262
      claims are the tool declining to judge, which is the Cardinal Rule made visible
   4. **The confirmed false accusation**, in plain language
@@ -193,7 +217,9 @@ verdict above them) in the same block. Line numbers below are **post-rebase**.
   activation**. No code, ~2 minutes. Spend currently has no ceiling and one call has consumed
   808k tokens. Application-level spend breakers stay in core spec 018 — not here.
 
-**Launch checklist**: T014, T015, T016, T017 all done before the domain goes live.
+**Launch checklist**: **T014, T015, T017**, plus **T018 or T019** — the moment About/Stats appear in
+the nav, a click destroys an in-flight run (~200s of work). T016 is already done and is listed here
+only as history.
 
 ---
 
@@ -204,13 +230,18 @@ Added 2026-09-09. Today `runId`, `articleText` and `sessionId` live only in Reac
 destroys a run that took ~200s to produce. Adding About and Stats to the nav makes that worse.
 
 - [ ] T018 Persist the current run to `localStorage` (not `sessionStorage` — the ask is that a new
-  tab sees the same run). Store `runId` + `articleText`; rehydrate on mount. Two tabs share one
+  tab sees the same run). Store `runId` + `articleText`; rehydrate on mount. **`runId` is internal
+  and must never become the shared URL** — that is `share_token`'s job (core 019 FR-003). Two tabs share one
   slot and the newer run wins; acceptable for MVP.
 - [ ] T019 Nav links open About/Stats in a new tab (`target="_blank"`) until T020 lands, so an
   in-flight check survives a click. Cheap interim guard.
 - [ ] T020 `/check/:token` page — fetch a shared assessment and render the stored text with claim
   highlights, reusing `HighlightedArticle`. This is the real fix: a URL you can return to, rather
   than browser state you can lose.
+
+  **Reuses T014/T015.** A shared page renders the same claims, so it inherits the same wording
+  defects unless those land first. Also key incomplete runs on the run's **`status`** (core 019
+  FR-011), not only on `verdict === null` — different states, same UX.
 - [ ] T021 Surface the link when a run completes — visible, copyable, and present while the run is
   still in flight (core assigns the token at creation, so it exists before the result does).
 - [ ] T022 Proxy route `backend/src/app/api/grounnel/assessment/[token]/route.ts`. **Required, not
@@ -232,8 +263,9 @@ no revocation path exists, which is worth settling before this goes live rather 
 - `/examples` — a curated list of shared links. Cheap once Phase 4 lands, but still later.
 - `/docs`.
 - Biassemble as an integrated analysis layer — separate link only, for now.
-- Everything in spec 018: entity-agreement gate, coverage boundaries, permalinks, provenance,
-  spend guardrails. Real findings, not MVP blockers.
+- Everything in **spec 018's findings**: entity-agreement gate, coverage boundaries, provenance,
+  spend guardrails. Real measured problems, not MVP blockers. (Permalinks moved **out** of 018 and
+  are now core spec **019**, and they are **in** scope — see Phase 4.)
 
 ## After launch
 

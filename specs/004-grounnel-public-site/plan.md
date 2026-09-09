@@ -51,8 +51,10 @@ near-static pages.
 - The site is public; every existing backend route is authenticated. Anything the Stats page reads
   must come from a path that does not require a key.
 
-**Scale/Scope**: 3 paths, 2 domains, 2 brands. Roughly 70 production runs and 935 claims exist as
-the basis for published statistics.
+**Scale/Scope**: 5 paths (`/`, `/grounnel`, `/about`, `/stats`, `/check/:token`), 2 domains,
+2 brands. **236 production runs / 3,262 claims** over 2026-08-07 → 2026-09-08 are the basis for
+published statistics — one window, one script, one table. (An earlier draft said 70/935; that was a
+14-day slice, not the full window.)
 
 ## Constitution Check
 
@@ -86,7 +88,7 @@ nothing.
 specs/004-grounnel-public-site/
 ├── spec.md              # what and why
 ├── plan.md              # this file
-├── tasks.md             # T001–T016
+├── tasks.md             # T001–T031
 └── checklists/
     └── requirements.md  # spec quality validation
 ```
@@ -102,7 +104,7 @@ codebase during planning.
 frontend/
 ├── public/
 │   ├── logo.svg              # Biassemble — unchanged
-│   └── logo-grounnel.svg     # new
+│   └── grn-logo.svg          # new (Grounnel)
 ├── src/
 │   ├── lib/
 │   │   ├── brand.ts          # new — resolveBrand(hostname)
@@ -200,9 +202,11 @@ the opposite is worse than shipping neither.
 | Path table replacing a boolean | Three paths across two hosts | A third branch on the boolean is what ADR-002 §3 already strained to justify for the second |
 | Two new pages | Explicitly requested; US3/US4 | — |
 
-Nothing else is added. `/examples`, `/docs`, shareable assessment links, provenance display, spend
-guardrails and the entity-agreement work are all deliberately out — see `tasks.md` § Deliberately
-not in the MVP, and `biassemble-core/specs/018-…/FINDINGS.md` for the measured findings behind them.
+Nothing else is added. `/examples`, `/docs`, provenance display, spend guardrails and the
+entity-agreement work are deliberately out — see `tasks.md` § Deliberately not in the MVP, and the
+**biassemble-core** repo's `specs/018-…/FINDINGS.md` for the measured findings behind them.
+**Shareable assessment links are IN** (Phase 4), tracked in core spec **019** — they moved out of
+018 and are no longer parked.
 
 ## Sequencing
 
@@ -211,7 +215,9 @@ not in the MVP, and `biassemble-core/specs/018-…/FINDINGS.md` for the measured
 | 1 | Domain, brand, routing (T001–T006) | — |
 | 1b | T014/T015 UI fixes | independent; can ship first |
 | 2 | About (T007–T010) | Phase 1 |
+| 2b | Metadata / link previews (T024–T031) | Phase 1 |
 | 3 | Stats (T011–T013) | T011's read-path decision |
+| 4 | Session persistence + share links (T018–T022) | core spec **019** |
 | — | T016 `vercel.json` | **done** — removed 2026-09-09, never committed or deployed |
 
 Phase 1 carries the only real risk. Phases 2 and 3 are content on top of it.

@@ -207,7 +207,10 @@ thing you can use" rather than attribution.
 - Both sites are served by a single frontend deployment; the frontend and the backend remain
   separate deployments and remain cross-origin, exactly as today.
 - Statistics are drawn from existing telemetry; no new measurement is introduced.
-- Sharing individual assessments by link, worked examples, and API documentation are out of scope
-  for this release.
+- API documentation is out of scope for this release.
+- Sharing individual assessments by link **is in scope** (see the tasks' Phase 4) and depends on
+  biassemble-core spec 019. An earlier draft listed it as out; that is superseded.
+- The landing page's worked example is a **committed fixture** — a frozen past assessment rendered
+  statically, not a live pipeline run. This keeps "pipeline unchanged" and "no new measurement" true.
 - Biassemble is a link only. Combining bias analysis with claim checking over the same text is a
   deliberate deferral, not a rejection.

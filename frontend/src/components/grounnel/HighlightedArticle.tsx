@@ -1,11 +1,11 @@
 import { matchClaimSpans, MatchTier, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
-import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
+import { VERDICT_HIGHLIGHT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
 import { sourceNote, SOURCE_NOTE_TEXT } from '../../lib/sourceNote';
 import SourceLink from './SourceLink';
 import CitationQuote from './CitationQuote';
-import type { Claim, ClaimVerdict } from '../../types/grounnel';
+import type { Claim } from '../../types/grounnel';
 
 interface HighlightedArticleProps {
   articleText: string;
@@ -13,7 +13,7 @@ interface HighlightedArticleProps {
 }
 
 // Non-color icon per verdict (FR-007) — color is never the only cue.
-const VERDICT_STYLE: Record<ClaimVerdict, { className: string; icon: string; label: string }> = {
+const VERDICT_STYLE: Record<StyledVerdict, { className: string; icon: string; label: string }> = {
   supported: { className: VERDICT_HIGHLIGHT_CLASS.supported, icon: '✓', label: 'Supported' },
   contradicted: { className: VERDICT_HIGHLIGHT_CLASS.contradicted, icon: '✗', label: 'Contradicted' },
   partially_supported: {
@@ -88,7 +88,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         }
 
         const style = claim.verdict
-          ? VERDICT_STYLE[claim.verdict]
+          ? VERDICT_STYLE[claim.verdict as StyledVerdict]
           : claim.status === 'pending'
             ? PENDING_STYLE
             : claim.status === 'failed'

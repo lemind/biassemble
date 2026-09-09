@@ -5,22 +5,24 @@ import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
 import WorkedExample from './WorkedExample';
+import ShareLink from './ShareLink';
 import { loadRun, saveRun } from '../../lib/runStorage';
 
 export default function GrounnelApp() {
   // Read once, before the first render — a run takes ~200s, so a refresh or a nav click used to
   // destroy it outright (T018).
   const [restored] = useState(loadRun);
-  const { runId, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun(
+  const { runId, shareToken, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun(
     restored?.runId ?? null,
+    restored?.shareToken ?? null,
   );
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
   const [articleText, setArticleText] = useState(restored?.articleText ?? '');
 
   useEffect(() => {
-    if (runId && articleText) saveRun(runId, articleText);
-  }, [runId, articleText]);
+    if (runId && articleText) saveRun(runId, shareToken, articleText);
+  }, [runId, shareToken, articleText]);
 
   const handleSubmit = (text: string) => {
     setArticleText(text);
@@ -68,6 +70,8 @@ export default function GrounnelApp() {
             </button>
           </div>
         )}
+
+        {shareToken && <ShareLink token={shareToken} />}
 
         {runId && <GrounnelProgress status={status} articleText={articleText} />}
 

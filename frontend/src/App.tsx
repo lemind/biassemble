@@ -13,6 +13,7 @@ const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
 const AboutPage = lazy(() => import('./components/AboutPage'));
 const StatsPage = lazy(() => import('./components/StatsPage'));
+const SharedAssessmentPage = lazy(() => import('./components/grounnel/SharedAssessmentPage'));
 
 function NotFound() {
   return (
@@ -94,7 +95,14 @@ export default function App() {
       );
     }
 
-    // The shared assessment (Phase 4) is routed but not built yet; it renders not-found until then.
+    if (route.page === 'check' && route.token) {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <SharedAssessmentPage token={route.token} />
+        </Suspense>
+      );
+    }
+
     if (route.page !== 'reflection') return <NotFound />;
 
     if (phase === 'qa' && sessionId) {

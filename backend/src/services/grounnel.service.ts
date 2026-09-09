@@ -31,10 +31,17 @@ export async function handleCreateGrounnelExtract(text: string, clientIp?: strin
 
   // aiResult.id is biassemble-core's own grounnel run id — the frontend polls with THIS id,
   // not the local session id (ADR-002 §4).
-  return { id: aiResult.id };
+  // shareToken is the run's PUBLIC address; aiResult.id is internal and must not become a URL.
+  return { id: aiResult.id, shareToken: aiResult.shareToken };
 }
 
 export async function handleGetGrounnelStatus(id: string) {
   const ai = getAiClient();
   return ai.getGrounnelStatus(id);
+}
+
+/** Core spec 019 — a public read, no session and no local state; the token is the whole address. */
+export async function handleGetSharedAssessment(token: string) {
+  const ai = getAiClient();
+  return ai.getSharedAssessment(token);
 }

@@ -41,7 +41,10 @@ export type ClaimVerdict =
   | 'partially_supported'
   | 'unsupported'
   | 'contradicted'
-  | 'unverifiable';
+  | 'unverifiable'
+  // D032 — a claim the eligibility filter never searched (opinion, personal, prediction). It has
+  // no highlight style on purpose; it renders as ordinary text.
+  | 'excluded';
 
 export interface Claim {
   id: string;
@@ -56,6 +59,27 @@ export interface Claim {
   // D028 (biassemble-core) — verified verbatim substring of the article text, or null when
   // unproduced/unverified; matchClaimSpans.ts uses this as its primary locator.
   sourceExcerpt: string | null;
+}
+
+// Core spec 019 — a shared assessment as GET /assessment/:token returns it. Public shape: no run
+// id, no session id, and no claim ids, which is why SharedPage keys claims by position. Citations
+// are not persisted in core, so a shared claim never has any.
+export interface SharedClaim {
+  text: string;
+  verdict: ClaimVerdict | null;
+  evidence: string | null;
+  confidence: number | null;
+  reason: string | null;
+  sources: ClaimSource[];
+  sourceExcerpt: string | null;
+}
+
+export interface SharedAssessment {
+  status: GrounnelRunStatus;
+  text: string;
+  claims: SharedClaim[];
+  createdAt: string;
+  completedAt: string | null;
 }
 
 export interface Score {

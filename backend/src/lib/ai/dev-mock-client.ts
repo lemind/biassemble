@@ -1,3 +1,4 @@
+import { aiError } from "../errors";
 import type { AiClient } from "./client";
 import type {
   AssessmentOutput,
@@ -6,6 +7,7 @@ import type {
   GenerateAssessmentRequest,
   GenerateQuestionRequest,
   GrounnelStatusOutput,
+  SharedAssessment,
   QuestionOutput,
 } from "./contracts";
 
@@ -81,7 +83,43 @@ export function createDevMockClient(): AiClient {
     ): Promise<ExtractClaimsOutput> {
       const id = "00000000-0000-4000-8000-000000000000";
       pollCounts.set(id, 0);
-      return { id };
+      // 32 base64url chars, the shape core's isShareTokenShape accepts.
+      return { id, shareToken: "devmockdevmockdevmockdevmockdevm" };
+    },
+    // Mirrors what a real shared assessment looks like: no ids, no citations, and a claim the
+    // pipeline refused to judge — without that last one the "Not checked" UI is unreachable here.
+    async getSharedAssessment(token: string): Promise<SharedAssessment> {
+      if (token !== "devmockdevmockdevmockdevmockdevm") {
+        throw aiError("not_found", { path: `/assessment/${token}`, status: 404 });
+      }
+      return {
+        status: "done",
+        text: "[dev-mock] The Eiffel Tower was completed in 1889. I felt exhausted after gardening yesterday.",
+        createdAt: "2026-09-09T00:00:00.000Z",
+        completedAt: "2026-09-09T00:03:20.000Z",
+        claims: [
+          {
+            text: "[dev-mock] The Eiffel Tower was completed in 1889.",
+            verdict: "supported",
+            evidence: "[dev-mock] The tower was finished in 1889 for the World's Fair.",
+            confidence: 0.95,
+            reason: "[dev-mock] Confirmed by the mocked source.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok" },
+            ],
+            sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
+          },
+          {
+            text: "[dev-mock] I felt exhausted after gardening yesterday.",
+            verdict: "excluded",
+            evidence: null,
+            confidence: null,
+            reason: "[dev-mock] This describes a private, personal circumstance no public record could confirm.",
+            sources: [],
+            sourceExcerpt: "[dev-mock] I felt exhausted after gardening yesterday.",
+          },
+        ],
+      };
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
       // ~10s of "in flight" (2 polls at usePollGrounnelStatus's 5s interval) before "done", so

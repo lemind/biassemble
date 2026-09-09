@@ -44,4 +44,11 @@ export async function getGrounnelStatus(id: string) {
   return response.data;
 }
 
+export async function getSharedAssessment(token: string) {
+  const response = await apiClient.get(
+    `/api/grounnel/assessment/${encodeURIComponent(token)}`,
+  );
+  return response.data;
+}
+
 export default apiClient;

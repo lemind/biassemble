@@ -303,18 +303,39 @@ destroys a run that took ~200s to produce. Adding About and Stats to the nav mak
   a nav click no longer destroys an in-flight run, because the run is restored on return. The
   launch checklist already read "T018 **or** T019", and forcing internal navigation into new tabs
   is a worse experience than the one it was guarding against.
-- [ ] T020 `/check/:token` page — fetch a shared assessment and render the stored text with claim
+- [x] T020 `/check/:token` page — fetch a shared assessment and render the stored text with claim
   highlights, reusing `HighlightedArticle`. This is the real fix: a URL you can return to, rather
   than browser state you can lose.
 
   **Reuses T014/T015.** A shared page renders the same claims, so it inherits the same wording
   defects unless those land first. Also key incomplete runs on the run's **`status`** (core 019
   FR-011), not only on `verdict === null` — different states, same UX.
-- [ ] T021 Surface the link when a run completes — visible, copyable, and present while the run is
+- [x] T021 Surface the link when a run completes — visible, copyable, and present while the run is
   still in flight (core assigns the token at creation, so it exists before the result does).
-- [ ] T022 Proxy route `backend/src/app/api/grounnel/assessment/[token]/route.ts`. **Required, not
+- [x] T022 Proxy route `backend/src/app/api/grounnel/assessment/[token]/route.ts`. **Required, not
   optional**: biassemble-core is key-gated and has no CORS, so the browser cannot call it directly.
   Mirrors the existing `grounnel/status/[id]` proxy.
+
+**Done 2026-09-09 (T020–T022).** Proxy at `backend/src/app/api/grounnel/assessment/[token]`, plus
+`getSharedAssessment` on the AI client (core and dev-mock) and `sharedAssessmentSchema` in the
+backend contracts. Frontend: `SharedAssessmentPage.tsx` at `/check/:token`, `ShareLink.tsx` under
+the input, and `shareToken` threaded through `useGrounnelRun` and `runStorage` so a restored run
+keeps its link.
+
+Three things the shared shape forced, all from core 019 FR-009:
+
+- **A shared claim has no id**, so the page synthesises `shared-<index>`. Fine for a frozen
+  assessment; it would not be for a live one.
+- **A shared claim has no citations** — core never persisted them — so a shared page shows no
+  inline citation numbers and an empty References list where a live run shows both.
+- **Claim status is derived from the RUN's status**, not from `verdict === null`. Reading it off
+  the verdict labelled every unfinished claim "Verification failed" on a run still verifying
+  (caught in review). The page also states that it does not update on its own.
+
+`ClaimVerdict` gained `'excluded'` on the frontend, which core has emitted all along. That exposed
+three verdict→style maps with no entry for it; they are now typed `Record<StyledVerdict, …>` where
+`StyledVerdict = Exclude<ClaimVerdict, 'excluded'>`, so the type says what the code already did —
+an excluded claim renders as ordinary text. No rendering changed.
 
 **Depends on biassemble-core spec 019** (`share_token` + `GET /assessment/:token`) — see
 the **biassemble-core** repo, `specs/019-assessment-permalink/tasks.md`. T018 and T019 are frontend-only and

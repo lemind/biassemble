@@ -63,11 +63,17 @@ export interface ExtractClaimsRequest {
 
 export const extractClaimsOutputSchema = z.object({
   id: z.string(),
+  // Core spec 019 — the run's public address, minted at creation so the link can be offered
+  // before the result exists. Never the run id: that value is internal (019 FR-003).
+  shareToken: z.string(),
 });
 
 export type ExtractClaimsOutput = z.infer<typeof extractClaimsOutputSchema>;
 
 const grounnelSourceStatusSchema = z.enum(["ok", "paywalled", "unreachable", "blocked", "rate_limited"]);
+
+// One list, used by both the polled status shape and the shared-assessment shape below.
+const grounnelVerdictSchema = z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable", "excluded"]);
 
 const grounnelClaimSourceSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -100,7 +106,7 @@ const grounnelClaimSchema = z.object({
   id: z.string(),
   text: z.string(),
   status: z.enum(["pending", "done", "failed"]),
-  verdict: z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable", "excluded"]).nullable(),
+  verdict: grounnelVerdictSchema.nullable(),
   evidence: z.string().nullable(),
   confidence: z.number().nullable(),
   reason: z.string().nullable(),
@@ -138,3 +144,26 @@ export const grounnelStatusResponseSchema = z.object({
 });
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
+
+// Core spec 019 — the shared assessment, as GET /assessment/:token returns it. Public shape: no
+// run id, no session id, no telemetry, and no claim ids (which is why the page keys claims by
+// position). Citations are not persisted in core, so a shared claim has none.
+export const sharedClaimSchema = z.object({
+  text: z.string(),
+  verdict: grounnelVerdictSchema.nullable(),
+  evidence: z.string().nullable(),
+  confidence: z.number().nullable(),
+  reason: z.string().nullable(),
+  sources: z.array(grounnelClaimSourceSchema),
+  sourceExcerpt: z.string().nullable(),
+});
+
+export const sharedAssessmentSchema = z.object({
+  status: z.enum(["extracting", "verifying", "done", "failed"]),
+  text: z.string(),
+  claims: z.array(sharedClaimSchema),
+  createdAt: z.string(),
+  completedAt: z.string().nullable(),
+});
+
+export type SharedAssessment = z.infer<typeof sharedAssessmentSchema>;

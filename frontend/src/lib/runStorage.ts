@@ -9,6 +9,7 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface StoredRun {
   runId: string;
+  shareToken: string | null;
   articleText: string;
   savedAt: number;
 }
@@ -20,16 +21,23 @@ export function loadRun(): StoredRun | null {
     const parsed = JSON.parse(raw) as Partial<StoredRun>;
     if (typeof parsed.runId !== 'string' || typeof parsed.articleText !== 'string') return null;
     if (typeof parsed.savedAt !== 'number' || Date.now() - parsed.savedAt > MAX_AGE_MS) return null;
-    return { runId: parsed.runId, articleText: parsed.articleText, savedAt: parsed.savedAt };
+    return {
+      runId: parsed.runId,
+      // Nullable, not required: a run stored before the token existed still restores, it just has
+      // no link to offer until the next submission.
+      shareToken: typeof parsed.shareToken === 'string' ? parsed.shareToken : null,
+      articleText: parsed.articleText,
+      savedAt: parsed.savedAt,
+    };
   } catch {
     // Private mode, cleared site data, or corrupt JSON — starting fresh is the right answer.
     return null;
   }
 }
 
-export function saveRun(runId: string, articleText: string): void {
+export function saveRun(runId: string, shareToken: string | null, articleText: string): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ runId, articleText, savedAt: Date.now() }));
+    localStorage.setItem(KEY, JSON.stringify({ runId, shareToken, articleText, savedAt: Date.now() }));
   } catch {
     // Quota or a blocked store: persistence is a convenience, never a precondition for the run.
   }

@@ -10,7 +10,9 @@ import {
   type GenerateAssessmentRequest,
   type GenerateQuestionRequest,
   grounnelStatusResponseSchema,
+  sharedAssessmentSchema,
   type GrounnelStatusOutput,
+  type SharedAssessment,
   questionOutputSchema,
   type QuestionOutput,
 } from "./contracts";
@@ -125,6 +127,11 @@ export function createCoreClient(): AiClient {
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
       return getCore(`/status/${id}`, grounnelStatusResponseSchema);
+    },
+    // Core's /assessment/:token is itself unauthenticated, but the browser still cannot reach it:
+    // core is key-gated for everything else and sends no CORS headers. Proxying keeps the key here.
+    async getSharedAssessment(token: string): Promise<SharedAssessment> {
+      return getCore(`/assessment/${encodeURIComponent(token)}`, sharedAssessmentSchema);
     },
   };
 }

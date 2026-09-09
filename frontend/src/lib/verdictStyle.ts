@@ -7,7 +7,11 @@ import type { ClaimVerdict } from '../types/grounnel';
  * because Tailwind's content scanner only picks up literal class names it can find in source —
  * a dynamically-constructed class name silently produces no CSS in the production build.
  */
-export const VERDICT_HIGHLIGHT_CLASS: Record<ClaimVerdict, string> = {
+// `excluded` is deliberately absent: a claim the eligibility filter never searched is not a verdict
+// to colour. It renders as ordinary text, and the progress dot falls back to a neutral colour.
+export type StyledVerdict = Exclude<ClaimVerdict, 'excluded'>;
+
+export const VERDICT_HIGHLIGHT_CLASS: Record<StyledVerdict, string> = {
   supported: 'bg-success/30',
   contradicted: 'bg-error/30',
   partially_supported: 'bg-warning/30',
@@ -17,7 +21,7 @@ export const VERDICT_HIGHLIGHT_CLASS: Record<ClaimVerdict, string> = {
   unverifiable: 'bg-info/30',
 };
 
-export const VERDICT_DOT_CLASS: Record<ClaimVerdict, string> = {
+export const VERDICT_DOT_CLASS: Record<StyledVerdict, string> = {
   supported: 'bg-success',
   contradicted: 'bg-error',
   partially_supported: 'bg-warning',

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { assignHomeSentence, matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
-import { VERDICT_DOT_CLASS } from '../../lib/verdictStyle';
+import { VERDICT_DOT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
 import type { Claim, ClaimVerdict, GrounnelStatusOutput } from '../../types/grounnel';
 
 interface GrounnelProgressProps {
@@ -61,7 +61,8 @@ function ResultDot({ verdictKey, href, refNumbers }: { verdictKey: VerdictKey; h
   const label = verdictKey === 'failed' ? 'Verification failed' : verdictKey;
   const refSuffix = refNumbers && refNumbers.length > 0 ? ` (ref ${refNumbers.join(', ')})` : '';
   const title = href ? `${label} — click to view${refSuffix}` : label;
-  const colorClass = verdictKey === 'failed' ? FAILED_DOT_CLASS : VERDICT_DOT_CLASS[verdictKey];
+  // `excluded` has no dot colour (verdictStyle.ts) — fall back rather than render a classless dot.
+  const colorClass = verdictKey === 'failed' ? FAILED_DOT_CLASS : (VERDICT_DOT_CLASS[verdictKey as StyledVerdict] ?? 'bg-base-300');
   const className = `inline-block h-2.5 w-2.5 rounded-full ${colorClass}` + (href ? ' cursor-pointer' : '');
   return href ? (
     <a href={href} title={title} className={className} />

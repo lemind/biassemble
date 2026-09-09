@@ -6,6 +6,7 @@ import type {
   GenerateQuestionRequest,
   GrounnelStatusOutput,
   QuestionOutput,
+  SharedAssessment,
 } from "./contracts";
 
 export type AiClientMode = "core" | "dev-mock";
@@ -20,4 +21,5 @@ export interface AiClient {
   generateAssessment(input: GenerateAssessmentRequest): Promise<AssessmentOutput>;
   extractClaims(input: ExtractClaimsRequest): Promise<ExtractClaimsOutput>;
   getGrounnelStatus(id: string): Promise<GrounnelStatusOutput>;
+  getSharedAssessment(token: string): Promise<SharedAssessment>;
 }

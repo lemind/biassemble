@@ -37,11 +37,20 @@ function test(name: string, fn: () => void) {
   }
 }
 
-test('a saved run round-trips', () => {
-  saveRun('run-1', 'some article');
+test('a saved run round-trips, link included', () => {
+  saveRun('run-1', 'tok-1', 'some article');
   const loaded = loadRun();
   assert.equal(loaded?.runId, 'run-1');
+  assert.equal(loaded?.shareToken, 'tok-1');
   assert.equal(loaded?.articleText, 'some article');
+});
+
+// A run stored before share tokens existed must still restore — it just has no link to offer.
+test('a run stored without a share token still restores', () => {
+  const now = Date.now();
+  store['grounnel.run'] = JSON.stringify({ runId: 'r', articleText: 'x', savedAt: now });
+  assert.equal(loadRun()?.runId, 'r');
+  assert.equal(loadRun()?.shareToken, null);
 });
 
 test('nothing stored means no run, not a crash', () => {
@@ -74,7 +83,7 @@ test('corrupt or half-written entries are ignored', () => {
 test('a throwing storage never propagates', () => {
   throwOnAccess = true;
   assert.equal(loadRun(), null);
-  saveRun('r', 'x');
+  saveRun('r', 't', 'x');
   clearRun();
 });
 

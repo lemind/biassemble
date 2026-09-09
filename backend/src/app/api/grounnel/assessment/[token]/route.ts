@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleGetSharedAssessment } from "@/services/grounnel.service";
 import { AppException } from "@/lib/errors";
+import { NO_STORE } from "@/lib/http";
 
 // Core answers an unknown token, a malformed one and a deleted run identically (019 FR-010) — and
 // rate-limits reads (019 T014). Both statuses must reach the browser as themselves: aiError wraps
@@ -28,13 +29,13 @@ export async function GET(
     // same header; repeated here because this response is what the browser actually receives.
     return NextResponse.json(assessment, {
       status: 200,
-      headers: { "X-Robots-Tag": "noindex" },
+      headers: { "X-Robots-Tag": "noindex", ...NO_STORE },
     });
   } catch (error) {
     if (error instanceof AppException) {
-      return NextResponse.json({ error: error.message }, { status: coreStatus(error) });
+      return NextResponse.json({ error: error.message }, { status: coreStatus(error), headers: NO_STORE });
     }
     const message = error instanceof Error ? error.message : "Failed to load assessment";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 502, headers: NO_STORE });
   }
 }

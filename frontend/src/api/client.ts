@@ -1,7 +1,10 @@
 import axios from "axios";
 
+// Relative by default, in every environment: vercel.json proxies /api/* to the backend in
+// production and vite.config.ts proxies it in dev, so the browser is always same-origin. An
+// absolute URL here means a cross-origin call to a backend that sends no CORS headers at all.
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL ?? "",
   headers: {
     "Content-Type": "application/json",
   },

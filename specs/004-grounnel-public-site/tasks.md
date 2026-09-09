@@ -448,6 +448,40 @@ remains the only hard ceiling on spend; nothing here substitutes for it.
   typechecked. `matchClaimSpans` backs both the progress dots and the article highlighting. Not a
   launch blocker; it does mean nothing in this session is covered by a frontend test.
 
+- [x] T041 Contact address in the footer (`grounnel@gmail.com`), next to the copyright. One shared
+  layout, so it renders on both brands.
+
+## Phase 6 — SEO
+
+External SEO review, 2026-09-09. Its headline was right: the missing tags are not the problem, the
+single shared head is. Three of its recommendations were already done (sitemap.xml, robots.txt, and
+real `<h1>`/`<h2>` structure on About and Stats) — it had only been shown the head.
+
+- [ ] T042 **Per-route, per-brand head.** One `index.html` serves `/`, `/about`, `/stats` and
+  `/check/:token` on BOTH domains, so every URL declares `canonical`, `og:url`, `og:title` and
+  `description` of the Grounnel homepage. Consequences: `/about` and `/stats` are consolidated
+  into `/` and will not be indexed despite being in the sitemap, and the entire Biassemble domain
+  declares itself a duplicate of Grounnel's homepage. Fix: a single source of route+brand metadata
+  applied at runtime (title, description, canonical, OG), replacing the lone `document.title` line.
+
+- [ ] T043 **`X-Robots-Tag` on `/check/*` as a real HTTP header**, via `vercel.json`. Today the only
+  page-level control is a `noindex` meta tag injected after JS runs, and `robots.txt` blocks the
+  crawl — which means the meta tag is never read and a linked token URL can still be indexed bare.
+  A server header needs no crawl and no JS. Keep the `robots.txt` Disallow as well: the header
+  makes exclusion certain for anything that does get fetched.
+
+- [ ] T044 **Static per-route shells** for `/` , `/about`, `/stats`. Scrapers and previews do not
+  run JS, so T042's runtime fix is invisible to them. Generate `about.html`/`stats.html` from the
+  built `index.html` with the route's own tags substituted, and rewrite to them. Grounnel-branded
+  only — one static file cannot serve two hostnames; the Biassemble domain is covered by T042.
+
+- [ ] T045 **Custom domain.** `grounnel.vercel.app` is a `*.vercel.app` subdomain on the Public
+  Suffix List. When the real domain lands, move `canonical`, `og:url`, `sitemap.xml` and
+  `robots.txt` together and 301 the Vercel hostname, so search signals consolidate once.
+
+- [ ] T046 `WebApplication` JSON-LD on the homepage. Optional, not a launch blocker. No invented
+  ratings, reviews or organization facts.
+
 - [ ] T038 Delete four orphaned files: `frontend/src/components/grounnel/ShareLink.tsx`,
   `frontend/src/lib/runStorage.ts`, `frontend/src/lib/runStorage.test.ts`,
   `frontend/src/data/workedExample.json`. All are unreferenced; `workedExample.ts` is the live one.

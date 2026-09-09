@@ -173,7 +173,6 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   }
 
   const isTerminal = status.status === 'done' || status.status === 'failed';
-  const { checked, total } = status.progress;
   const isStalled =
     !isTerminal &&
     status.elapsed_seconds !== null &&
@@ -183,9 +182,14 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   return (
     <div role="status" className="flex flex-col gap-1.5 text-sm">
       <div className="flex items-center gap-2">
-        <span className={isTerminal ? '' : 'animate-pulse'}>
-          {checked} / {total} claims checked
-        </span>
+        {status.progress ? (
+          <span className={isTerminal ? '' : 'animate-pulse'}>
+            {status.progress.checked} / {status.progress.total} claims checked
+          </span>
+        ) : (
+          // No fraction when the total is unknown — a made-up denominator reads as "finished".
+          <span className="animate-pulse">Still checking — more claims to come</span>
+        )}
         {status.elapsed_seconds !== null && (
           <span className="text-base-content/50">({formatElapsed(status.elapsed_seconds)})</span>
         )}

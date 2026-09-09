@@ -89,7 +89,9 @@ export interface SharedAssessment {
  *  so does a shared assessment adapted for it — which carries no Score. */
 export interface RunProgress {
   status: GrounnelRunStatus;
-  progress: { checked: number; total: number };
+  // null = the total is not knowable yet, so no fraction may be shown. A live run always has it;
+  // a shared run in flight does not, because core persists a claim row only at its final state.
+  progress: { checked: number; total: number } | null;
   claims: Claim[];
   caps_hit: boolean;
   elapsed_seconds: number | null;

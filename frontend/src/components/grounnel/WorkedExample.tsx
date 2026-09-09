@@ -3,35 +3,33 @@ import HighlightedArticle from './HighlightedArticle';
 import ClaimSourceList from './ClaimSourceList';
 import workedExample from '../../data/workedExample';
 
-// A frozen real run, not a live one — no API call per visitor, and it cannot break on the landing
-// page. Regenerated from the database, never hand-edited (see the fixture's own header).
+// A frozen real run, not a live one — no API call per visitor, and nothing here can break. Lives
+// at the end of About, not on the tool page: it is reference material, and in the middle of the
+// product it sat between a person and the thing they came to do. Regenerated from the database,
+// never hand-edited (see the fixture's own header).
 export default function WorkedExample() {
   const [open, setOpen] = useState(false);
   const { text, claims, ranAt, promptVersionExtract, promptVersionVerify } = workedExample;
   const contradicted = claims.filter((c) => c.verdict === 'contradicted').length;
 
   return (
-    <section className="rounded-lg border border-base-300 bg-base-100">
+    <section>
+      <h2 className="text-sm uppercase tracking-widest text-base-content/50">A finished check</h2>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        A real run over a short travel diary — {claims.length} claims, {contradicted} contradicted by
+        its sources.
+      </p>
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-4 p-4 text-left"
+        className="link mt-2 text-sm"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        <span>
-          <span className="font-medium">See a finished check</span>
-          <span className="block text-sm text-base-content/60">
-            A real run over a short travel diary — {claims.length} claims, {contradicted} contradicted
-            by its sources.
-          </span>
-        </span>
-        <span aria-hidden className="text-base-content/50">
-          {open ? '−' : '+'}
-        </span>
+        {open ? 'Hide it' : 'Show it'}
       </button>
 
       {open && (
-        <div className="border-t border-base-300 p-4">
+        <div className="mt-6 border-t border-base-300 pt-6">
           <p className="mb-4 text-sm text-base-content/60">
             Output from an actual run on {ranAt.slice(0, 10)} (prompts {promptVersionExtract}/
             {promptVersionVerify}), trimmed to two paragraphs. The text was written for testing, so

@@ -1,4 +1,5 @@
 import { siblingBrand, type Brand } from '../lib/brand';
+import WorkedExample from './grounnel/WorkedExample';
 
 const STEPS = [
   { title: 'Text', line: 'An article, a post, an essay — anything written.' },
@@ -57,6 +58,10 @@ export default function AboutPage({ brand }: { brand: Brand }) {
         not share a pipeline. Running both on the same document is planned; nothing about that has
         shipped.
       </p>
+
+      <div className="mt-14">
+        <WorkedExample />
+      </div>
 
       <nav className="mt-14 border-t border-base-300 pt-6 text-sm">
         <a className="link" href={grounnel.id === brand.id ? '/' : grounnel.origin}>

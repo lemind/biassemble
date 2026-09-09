@@ -4,7 +4,6 @@ import ArticleInput from './ArticleInput';
 import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
-import WorkedExample from './WorkedExample';
 import ShareLink from './ShareLink';
 import { loadRun, saveRun } from '../../lib/runStorage';
 
@@ -59,8 +58,6 @@ export default function GrounnelApp() {
         </div>
 
         <ArticleInput onSubmit={handleSubmit} disabled={isRunInFlight} />
-
-        {!runId && <WorkedExample />}
 
         {error && (
           <div className="alert alert-error text-sm py-2">

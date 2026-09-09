@@ -210,12 +210,16 @@ result today. T014 directly contradicts the philosophy T009 puts on the About pa
 Fix both together — they are the same defect class (source links whose wording doesn't match the
 verdict above them) in the same block. Line numbers below are **post-rebase**.
 
-- [ ] T014 **`sourcesUncited`** (line ~126) includes `'contradicted'`, and its render branch
+- [x] T014 **`sourcesUncited`** (line ~126) includes `'contradicted'`, and its render branch
   (line ~219) emits *"Supporting sources (no exact sentence matched):"*. Symbols are authoritative;
   line numbers are navigation only. A contradicted claim shows its refuting
   evidence labelled as supporting it. Split the wording: affirmative verdicts keep *"Supporting
   sources"*, `contradicted` gets **"Refuting sources"**.
-- [ ] T015 **`sourcesAreUnconfirmed` / `sourcesUncited`** (line ~120): a claim with `verdict === null` (status `pending`/`failed`) and
+
+  **Done 2026-09-09.** Fixed together with T015 by extracting the four booleans into one
+  exhaustive `sourceNote(claim, sourceCount)` in `frontend/src/lib/sourceNote.ts`, so a claim
+  matching no branch is now impossible rather than accidental. `contradicted` returns `refuting`.
+- [x] T015 **`sourcesAreUnconfirmed` / `sourcesUncited`** (line ~120): a claim with `verdict === null` (status `pending`/`failed`) and
   `sources.length > 0` matches none of the four explanatory flags and renders bare source links, so
   a reader can't tell whether verification failed, is pending, or never evaluated the sources. Give
   it explicit wording — **"Verification incomplete — sources retrieved but not evaluated"** — rather
@@ -225,6 +229,11 @@ verdict above them) in the same block. Line numbers below are **post-rebase**.
   Gate the new branch on the **state** — `verdict === null`, i.e. the claim reached no verdict —
   not on `sources.length > 0` as a proxy for it. Today those coincide; the condition should say
   what it means so it stays correct if they stop coinciding.
+
+  **Done 2026-09-09.** `sourceNote` returns `unevaluated` for `verdict === null`, gated on the
+  verdict, not the source count. Verified against production: all 35 null-verdict claims are
+  `status = 'failed'`, so this is the whole real population — there is no `done` + null case.
+  7 assert tests in `sourceNote.test.ts`, including one asserting no verdict falls through.
 
 ## One deploy landmine — resolved
 

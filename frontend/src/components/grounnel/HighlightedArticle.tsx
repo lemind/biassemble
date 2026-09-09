@@ -2,6 +2,7 @@ import { matchClaimSpans, MatchTier, type Span } from '../../lib/matchClaimSpans
 import { numberCitations } from '../../lib/numberCitations';
 import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
+import { sourceNote, SOURCE_NOTE_TEXT } from '../../lib/sourceNote';
 import SourceLink from './SourceLink';
 import CitationQuote from './CitationQuote';
 import type { Claim, ClaimVerdict } from '../../types/grounnel';
@@ -98,35 +99,13 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         }
 
         // Tooltip shown whenever there's something to say (FR-008): real sources, citations, an
-        // approximate-location disclaimer (isFallback), or — for a zero-evidence verdict with
-        // nothing at all found — an explicit "no sources found" note (`noSourcesFound` below,
-        // 2026-08-16; supersedes spec.md's earlier "no tooltip on zero sources" note, see spec.md
-        // update in this same change) instead of a bare, unexplained "?" icon.
+        // approximate-location disclaimer, or a note — including "no sources found", so a
+        // zero-evidence verdict never renders a bare, unexplained "?" icon.
         const sources = citedSources(claim, 2);
-        const noSourcesFound =
-          (claim.verdict === 'unsupported' || claim.verdict === 'unverifiable') &&
-          sources.length === 0 &&
-          claim.citations.length === 0;
-        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback || noSourcesFound;
-        // citedSources() falls back to claim.sources — every page the pipeline attempted,
-        // paywalled/unreachable/irrelevant included — whenever there's no real citation to
-        // resolve against (real observed confusion, 2026-08-12: an `unsupported` claim showed
-        // two source links with nothing indicating they were searched-and-rejected, not
-        // evidence, which reads as if they somehow back a claim the label says has no evidence).
-        // Gated on verdict (T23, 2026-08-30) — matches noSourcesFound's own gating above. Without
-        // it, a citation-less `supported`/`contradicted`/`partially_supported` claim (D028: no
-        // extractable source_excerpt, or the LLM cited inline without a discrete source link) wrongly
-        // showed "found nothing that confirms this" under its own affirmative label.
-        const sourcesAreUnconfirmed =
-          (claim.verdict === 'unsupported' || claim.verdict === 'unverifiable') &&
-          claim.citations.length === 0 &&
-          sources.length > 0;
-        // The other side of the same gate: a citation-less claim whose verdict IS affirmative
-        // still has real sources worth showing — just not with language implying they failed.
-        const sourcesUncited =
-          (claim.verdict === 'supported' || claim.verdict === 'partially_supported' || claim.verdict === 'contradicted') &&
-          claim.citations.length === 0 &&
-          sources.length > 0;
+        // One exhaustive note per claim (sourceNote.ts) instead of four independent booleans —
+        // a claim matching none of them used to render bare, unexplained links (T014/T015).
+        const note = sourceNote(claim, sources.length);
+        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback || note !== null;
         const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
         const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
@@ -209,18 +188,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                         <CitationQuote citation={citation} sources={claim.sources} />
                       </span>
                     ))}
-                    {sourcesAreUnconfirmed && (
-                      <span className="text-base-content/60">Searched, found nothing that confirms this:</span>
-                    )}
-                    {sourcesUncited && (
-                      // T23 — honest about both halves: the verdict stands, but no single sentence
-                      // was pinpointed as the citation. Distinct wording from sourcesAreUnconfirmed,
-                      // which is for a verdict that failed — this one hasn't.
-                      <span className="text-base-content/60">Supporting sources (no exact sentence matched):</span>
-                    )}
-                    {noSourcesFound && (
-                      <span className="text-base-content/60">No sources were found to check this claim.</span>
-                    )}
+                    {note && <span className="text-base-content/60">{SOURCE_NOTE_TEXT[note]}</span>}
                     {sources
                       .filter((source) => source.kind !== 'web' || !shownCitationUrls.has(source.url))
                       .map((source) => (

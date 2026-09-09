@@ -2,26 +2,21 @@ import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import ArticleInput from './ArticleInput';
 import RunView from './RunView';
-import { loadRun, saveRun } from '../../lib/runStorage';
+
 
 export default function GrounnelApp() {
-  // Read once, before the first render — a run takes ~200s, so a refresh or a nav click used to
-  // destroy it outright (T018).
-  const [restored] = useState(loadRun);
-  const { runId, shareToken, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun(
-    restored?.runId ?? null,
-    restored?.shareToken ?? null,
-  );
+  const { runId, shareToken, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
-  const [articleText, setArticleText] = useState(restored?.articleText ?? '');
+  const [articleText, setArticleText] = useState('');
 
-  useEffect(() => {
-    if (runId && articleText) saveRun(runId, shareToken, articleText);
-  }, [runId, shareToken, articleText]);
-
-  // The address bar IS the share link. replaceState, not push: the pre-run page is not a place to
+  // The address bar IS the share link. replaceState, not push: the empty page is not somewhere to
   // go back to, and the token exists from creation, so this lands as soon as the run starts.
+  //
+  // This is why `/` no longer restores the previous run (it did under T018, via localStorage): the
+  // URL now persists a run across reloads and tabs, and does it better — it survives the tab
+  // closing and can be handed to someone else. Restoring as well made `/` un-reachable, because a
+  // stored run immediately rewrote the URL back to itself and there was no way to start a new check.
   useEffect(() => {
     if (!shareToken) return;
     const url = `/check/${shareToken}`;
@@ -65,7 +60,6 @@ export default function GrounnelApp() {
         <ArticleInput
           onSubmit={handleSubmit}
           disabled={isRunInFlight}
-          initialText={restored?.articleText ?? ''}
         />
 
         {error && (

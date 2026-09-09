@@ -128,9 +128,14 @@ function devBrandOverride(kind: HostKind): Brand | null {
   if (kind !== 'development') return null;
   try {
     const requested = new URLSearchParams(window.location.search).get('brand');
-    if (requested) sessionStorage.setItem(OVERRIDE_KEY, requested);
     const id = requested ?? sessionStorage.getItem(OVERRIDE_KEY);
-    return id === 'grounnel' || id === 'biassemble' ? BRANDS[id] : null;
+    if (id !== 'grounnel' && id !== 'biassemble') return null;
+    // Written only for a value that resolved, and only when it changes — `resolveBrand` is called
+    // from a render body, so an unconditional write would be a side effect during render.
+    if (requested && sessionStorage.getItem(OVERRIDE_KEY) !== id) {
+      sessionStorage.setItem(OVERRIDE_KEY, id);
+    }
+    return BRANDS[id];
   } catch {
     // Storage blocked, or no window.location.search — the hostname rules still apply.
     return null;

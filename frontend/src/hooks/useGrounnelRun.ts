@@ -16,13 +16,10 @@ interface GrounnelRunState {
  * previous interval and reset status, so a new run's state always replaces (never merges with)
  * the previous one.
  */
-export default function useGrounnelRun(
-  initialRunId: string | null = null,
-  initialShareToken: string | null = null,
-) {
+export default function useGrounnelRun() {
   const [state, setState] = useState<GrounnelRunState>({
-    runId: initialRunId,
-    shareToken: initialShareToken,
+    runId: null,
+    shareToken: null,
     error: null,
     submitting: false,
   });

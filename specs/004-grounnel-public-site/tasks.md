@@ -300,6 +300,13 @@ destroys a run that took ~200s to produce. Adding About and Stats to the nav mak
   and must never become the shared URL** — that is `share_token`'s job (core 019 FR-003). Two tabs share one
   slot and the newer run wins; acceptable for MVP.
 
+  **Superseded 2026-09-09 by the URL change in T021, and reverted.** The address bar now becomes
+  `/check/<share_token>` the moment a run starts, which persists a run across reloads and tabs the
+  same way localStorage did — and better: it survives the tab closing and can be handed to someone
+  else. Keeping BOTH was a live bug: a stored run rewrote the URL back to itself on every visit to
+  `/`, so there was no way to reach a blank tool page and start a new check. `/` is a fresh tool
+  again. `runStorage.ts`, its test and `ShareLink.tsx` are now unreferenced — delete them.
+
   **Done 2026-09-09.** `frontend/src/lib/runStorage.ts` + rehydration through
   `useGrounnelRun(initialRunId)`. Every access is wrapped — a browser that blocks storage loses
   persistence, never the run. Stored runs older than **7 days are dropped on read**, matching core's
@@ -315,11 +322,21 @@ destroys a run that took ~200s to produce. Adding About and Stats to the nav mak
   highlights, reusing `HighlightedArticle`. This is the real fix: a URL you can return to, rather
   than browser state you can lose.
 
+  **Done 2026-09-09 — the same page, not a second one.** `/check/:token` renders the tool's own
+  layout: the disabled textarea holding the submitted text, the same progress row and dots, the same
+  highlighted article and sources. No "A shared check" heading and no "still running" prose; an
+  unfinished run is shown by the progress row itself, and the page polls at the same 5s interval so
+  it advances rather than sitting still.
+
   **Reuses T014/T015.** A shared page renders the same claims, so it inherits the same wording
   defects unless those land first. Also key incomplete runs on the run's **`status`** (core 019
   FR-011), not only on `verdict === null` — different states, same UX.
 - [x] T021 Surface the link when a run completes — visible, copyable, and present while the run is
   still in flight (core assigns the token at creation, so it exists before the result does).
+
+  **Done 2026-09-09, without a panel.** The address bar IS the link: on submit the URL is
+  `replaceState`d to `/check/<share_token>`. No "Link to this check" block — the browser already
+  shows it. `replaceState`, not `push`, because the empty page is not somewhere to go back to.
 - [x] T022 Proxy route `backend/src/app/api/grounnel/assessment/[token]/route.ts`. **Required, not
   optional**: biassemble-core is key-gated and has no CORS, so the browser cannot call it directly.
   Mirrors the existing `grounnel/status/[id]` proxy.

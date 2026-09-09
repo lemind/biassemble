@@ -77,6 +77,30 @@ the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FIN
   the thing rather than a number claiming it did.
 
 
+## Phase 2b — Link previews and metadata
+
+`frontend/index.html` currently has **no `og:*` tags, no `twitter:*` tags, no meta description** —
+only a `<title>`. So every link shared to Slack, Twitter or LinkedIn previews as a bare URL today,
+on both domains. This matters more once T021 starts handing people shareable check links.
+
+- [ ] T013a Add Open Graph + Twitter card tags and a meta description to `index.html`. Static, one
+  set, written for Grounnel since that's the public product. Needs an `og:image` asset.
+- [ ] T013b `document.title` per brand at runtime (already in T005) fixes the browser tab but **not**
+  link previews — social scrapers don't run JS. Accepted limitation of one shared build: the
+  Biassemble domain will preview with Grounnel's card.
+
+  If that becomes unacceptable, the fix is a per-host HTML shell via a Vercel middleware rewrite
+  (~an afternoon), **not** splitting into two builds. Two frontend-only Vercel projects are viable —
+  the Inngest objection only applied to full-stack deploys — but they cost two deploys to keep in
+  sync and don't solve the deeper problem.
+- [ ] T013c `noindex` on `/check/:token` pages specifically. Shared assessments often name private
+  individuals; they're meant to be passed between people, not indexed. (Core spec 019 T009 sets the
+  matching header on the API side.)
+
+**Not in scope**: real SEO. This is a client-rendered Vite SPA with no SSR — crawlers that don't
+execute JavaScript see an empty page, and build count doesn't change that. If organic discovery ever
+matters, the answer is SSR or prerendering, not two builds.
+
 ## Phase 3 — Stats
 
 **Not a public scoreboard.** 236 production runs and 3,262 claims are almost entirely our own

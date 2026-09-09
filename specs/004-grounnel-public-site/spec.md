@@ -166,6 +166,9 @@ thing you can use" rather than attribution.
   claim's verdict.
 - **FR-013**: A claim with no verdict MUST be visibly distinguished from one that was checked, and
   its retrieved sources MUST NOT be presented as evidence.
+- **FR-017**: A link to the site shared in a chat or social application MUST render a preview with a
+  title, description and image rather than a bare URL.
+- **FR-018**: Shared assessment pages MUST NOT be indexed by search engines.
 - **FR-015**: The landing page MUST show one real check end to end — submitted text, extracted
   claims, and at least one verdict with its supporting passage and source.
 - **FR-016**: A false-positive *rate* MUST NOT be published until it has a labelled denominator.
@@ -192,6 +195,7 @@ thing you can use" rather than attribution.
 - **SC-005**: 100% of published figures state denominator, window and definition.
 - **SC-006**: No published figure can be contradicted by the project's own records.
 - **SC-008**: A first-time visitor can see a complete worked example without submitting anything.
+- **SC-009**: A link pasted into a chat application renders a preview card, not a bare URL.
 - **SC-007**: No claim displays source links whose wording conflicts with its verdict.
 
 ## Assumptions

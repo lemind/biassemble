@@ -42,7 +42,7 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
         <a href="/" className="flex items-center gap-2 justify-self-start" aria-label={brand.name}>
           <img src={brand.logo} alt="" className={`${brand.logoHeightClass} w-auto`} />
           {!brand.logoIncludesName && (
-            <span className="text-lg font-semibold tracking-tight">{brand.name}</span>
+            <span className="text-2xl font-semibold tracking-tight">{brand.name}</span>
           )}
         </a>
         <div className="flex justify-self-center gap-6 text-sm">

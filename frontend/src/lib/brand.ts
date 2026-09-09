@@ -38,7 +38,7 @@ const GROUNNEL: Brand = {
   logo: '/grn-logo.svg',
   tagline: 'Verify the claims in any text',
   origin: `https://${GROUNNEL_HOSTS[0]}`,
-  logoHeightClass: 'h-8',
+  logoHeightClass: 'h-12',
   logoIncludesName: false,
   nav: [
     { href: '/', label: 'Check' },
@@ -53,7 +53,7 @@ const BIASSEMBLE: Brand = {
   logo: '/logo.svg',
   tagline: 'Identify cognitive biases in text',
   origin: `https://${BIASSEMBLE_HOSTS[0]}`,
-  logoHeightClass: 'h-12',
+  logoHeightClass: 'h-16',
   logoIncludesName: true,
   nav: [
     { href: '/', label: 'Biassemble' },
@@ -79,9 +79,19 @@ export function classifyHost(hostname: string): HostKind {
   return 'unknown';
 }
 
-/** Pure: hostname → brand. Unknown and development hosts both fall back to Biassemble (FR-006). */
+/**
+ * Pure: hostname → brand. Unknown and development hosts both fall back to Biassemble (FR-006),
+ * except that a development host may NAME the brand it wants as its first label —
+ * `grounnel.localhost` renders Grounnel. That is the only way to see the Grounnel brand without a
+ * deploy: browsers HSTS-preload `*.vercel.app`, so the real host can't be pointed at a dev server.
+ * It cannot leak into production: `.localhost` is reserved and never resolves off this machine.
+ */
 export function brandForHost(hostname: string): Brand {
-  return classifyHost(hostname) === 'grounnel' ? GROUNNEL : BIASSEMBLE;
+  const host = hostname.toLowerCase();
+  if (GROUNNEL_HOSTS.includes(host)) return GROUNNEL;
+  if (BIASSEMBLE_HOSTS.includes(host)) return BIASSEMBLE;
+  if (classifyHost(host) === 'development' && host.split('.')[0] === 'grounnel') return GROUNNEL;
+  return BIASSEMBLE;
 }
 
 export function getBrand(id: BrandId): Brand {

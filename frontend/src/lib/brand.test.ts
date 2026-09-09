@@ -40,6 +40,19 @@ test('localhost is development, not unknown', () => {
   assert.equal(classifyHost('127.0.0.1'), 'development');
 });
 
+// The only way to see the Grounnel brand without a deploy — see brandForHost's comment.
+test('a development host can name the brand it wants: grounnel.localhost renders Grounnel', () => {
+  assert.equal(brandForHost('grounnel.localhost').id, 'grounnel');
+  assert.equal(classifyHost('grounnel.localhost'), 'development');
+  assert.equal(brandForHost('localhost').id, 'biassemble');
+});
+
+// The override is development-only: a production-looking host must never pick a brand by name.
+test('a production host called grounnel.example.com does NOT get the Grounnel brand', () => {
+  assert.equal(classifyHost('grounnel.example.com'), 'unknown');
+  assert.equal(brandForHost('grounnel.example.com').id, 'biassemble');
+});
+
 test('a production-looking unrecognised host is unknown and still renders Biassemble', () => {
   assert.equal(classifyHost('grounnell.com'), 'unknown');
   assert.equal(brandForHost('grounnell.com').id, 'biassemble');

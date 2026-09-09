@@ -93,7 +93,7 @@ export function createDevMockClient(): AiClient {
       return {
         id,
         status,
-        progress: { checked: status === "done" ? 1 : 0, total: 1 },
+        progress: { checked: status === "done" ? 3 : 0, total: 3 },
         claims: status === "done" ? [
           {
             id: "00000000-0000-4000-8000-000000000001",
@@ -111,8 +111,39 @@ export function createDevMockClient(): AiClient {
             ],
             sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
           },
+          // An `excluded` claim — without it the "Not checked" UI is unreachable in dev-mock.
+          {
+            id: "00000000-0000-4000-8000-000000000002",
+            text: "[dev-mock] I felt exhausted after gardening yesterday.",
+            status: "done",
+            verdict: "excluded",
+            evidence: null,
+            confidence: null,
+            reason: "[dev-mock] This describes a private, personal circumstance no public record could confirm.",
+            sources: [],
+            citations: [],
+            sourceExcerpt: "[dev-mock] I felt exhausted after gardening yesterday.",
+          },
+          // A citation-less `supported` claim — without it the sourcesUncited "Supporting sources
+          // (no exact sentence matched)" UI is unreachable in dev-mock (T23, D032 §12 Finding A).
+          {
+            id: "00000000-0000-4000-8000-000000000003",
+            text: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
+            status: "done",
+            verdict: "supported",
+            evidence: "[dev-mock] Everest's summit is the highest point above sea level on Earth.",
+            confidence: 0.95,
+            reason: "[dev-mock] Confirmed by the mocked source, but no single sentence was pinpointed to cite.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/everest", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [],
+            sourceExcerpt: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
+          },
         ] : [],
-        score: { grounded_pct: status === "done" ? 100 : 0, grounded_n: status === "done" ? 1 : 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: status === "done" ? 0 : 1, eligible: 1 },
+        // `eligible` stays 2 with 3 claims: excluded claims are deliberately dropped from the
+        // denominator (core's grounnel-store), so the mock teaches the same arithmetic as prod.
+        score: { grounded_pct: status === "done" ? 100 : 0, grounded_n: status === "done" ? 2 : 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 1, eligible: 2 },
         caps_hit: false,
         started_at: new Date().toISOString(),
         elapsed_seconds: 3,

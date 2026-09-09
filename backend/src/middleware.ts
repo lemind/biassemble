@@ -15,7 +15,9 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .concat([
     "https://grounnel.vercel.app",
     "https://frontend-topaz-eight-10.vercel.app",
-    "http://localhost:5173",
+    // Dev only. In production this would let any page a visitor happens to have on Vite's default
+    // port read this API cross-origin.
+    ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173"]),
   ]);
 
 function isAllowed(origin: string | null): boolean {
@@ -55,6 +57,10 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   for (const [k, v] of Object.entries(corsHeaders(origin))) response.headers.set(k, v);
+  // Blanket, not per-route: /api/* is now proxied through the site's Vercel edge, so EVERY route
+  // under it is behind a shared CDN — including /api/result and /api/session, which return one
+  // person's story and answers. Next's default there is `public`.
+  response.headers.set("Cache-Control", "no-store");
   return response;
 }
 

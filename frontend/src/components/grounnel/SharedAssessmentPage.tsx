@@ -68,9 +68,17 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
         setAssessment(data);
         if (data.status === 'done' || data.status === 'failed') stop();
       } catch {
-        // Only a first load can report failure. A transient error mid-poll must not replace a
-        // result already on screen with an error page.
-        if (!cancelled && !loaded.current) setFailed(true);
+        if (cancelled) return;
+        // A first load that fails is a dead link: report it and STOP. Without this the timer runs
+        // for the life of the tab — 720 requests an hour against a 120/hour limit, which locks the
+        // viewer out of every valid shared link too.
+        if (!loaded.current) {
+          setFailed(true);
+          stop();
+          return;
+        }
+        // Once a result is on screen, a transient error must not replace it with an error page,
+        // and polling continues so the next tick can recover.
       }
     };
 

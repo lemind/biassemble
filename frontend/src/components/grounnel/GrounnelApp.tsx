@@ -71,6 +71,13 @@ export default function GrounnelApp() {
           </div>
         )}
 
+        {shareToken && (
+          <p className="text-xs text-base-content/60">
+            The address of this page is now a public link. It does not expire and cannot be
+            withdrawn.
+          </p>
+        )}
+
         {runId && <RunView articleText={articleText} status={status} />}
       </div>
     </div>

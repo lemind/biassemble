@@ -43,6 +43,7 @@ export default function ArticleInput({
       />
       {error && <div className="alert alert-error text-sm py-2">{error}</div>}
       {!readOnly && (
+      <>
       <button type="submit" className="btn btn-primary w-full" disabled={disabled}>
         {disabled ? (
           <>
@@ -53,6 +54,13 @@ export default function ArticleInput({
           'Run fact-check'
         )}
       </button>
+      {/* Before the action, not after: the share link is minted the moment a run starts, so a
+          notice shown only once the URL exists comes too late to be a choice. */}
+      <p className="text-xs text-base-content/60">
+        Running a check publishes the text and its results at a permanent public link. Don&apos;t
+        paste private or sensitive material.
+      </p>
+      </>
       )}
     </form>
   );

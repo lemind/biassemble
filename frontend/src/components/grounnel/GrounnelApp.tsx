@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
+import { resolveBrand } from '../../lib/brand';
+import { applyPageMeta } from '../../lib/seo';
 import ArticleInput from './ArticleInput';
 import RunView from './RunView';
 
@@ -20,7 +22,11 @@ export default function GrounnelApp() {
   useEffect(() => {
     if (!shareToken) return;
     const url = `/check/${shareToken}`;
-    if (window.location.pathname !== url) window.history.replaceState(null, '', url);
+    if (window.location.pathname === url) return;
+    window.history.replaceState(null, '', url);
+    // App resolved the route at mount and never re-renders for this, so the head would keep the
+    // homepage title and canonical on the one URL that must carry neither.
+    applyPageMeta(resolveBrand(), 'check');
   }, [shareToken]);
 
   const handleSubmit = (text: string) => {

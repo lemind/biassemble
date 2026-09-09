@@ -1,9 +1,20 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://biassemble-backend.vercel.app/api/:path*" },
+    {
+      "source": "/about",
+      "has": [{ "type": "host", "value": "frontend-topaz-eight-10.vercel.app" }],
+      "destination": "/about-biassemble.html"
+    },
     { "source": "/about", "destination": "/about.html" },
     { "source": "/stats", "destination": "/stats.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/grounnel", "destination": "/index.html" },
+    { "source": "/check/:token", "destination": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/about/", "destination": "/about", "permanent": true },
+    { "source": "/stats/", "destination": "/stats", "permanent": true }
   ],
   "headers": [
     {

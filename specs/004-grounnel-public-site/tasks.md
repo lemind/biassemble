@@ -457,23 +457,53 @@ External SEO review, 2026-09-09. Its headline was right: the missing tags are no
 single shared head is. Three of its recommendations were already done (sitemap.xml, robots.txt, and
 real `<h1>`/`<h2>` structure on About and Stats) — it had only been shown the head.
 
-- [ ] T042 **Per-route, per-brand head.** One `index.html` serves `/`, `/about`, `/stats` and
+- [x] T042 **Per-route, per-brand head.** One `index.html` serves `/`, `/about`, `/stats` and
   `/check/:token` on BOTH domains, so every URL declares `canonical`, `og:url`, `og:title` and
   `description` of the Grounnel homepage. Consequences: `/about` and `/stats` are consolidated
   into `/` and will not be indexed despite being in the sitemap, and the entire Biassemble domain
   declares itself a duplicate of Grounnel's homepage. Fix: a single source of route+brand metadata
   applied at runtime (title, description, canonical, OG), replacing the lone `document.title` line.
 
-- [ ] T043 **`X-Robots-Tag` on `/check/*` as a real HTTP header**, via `vercel.json`. Today the only
+- [x] T043 **`X-Robots-Tag` on `/check/*` as a real HTTP header**, via `vercel.json`. Today the only
   page-level control is a `noindex` meta tag injected after JS runs, and `robots.txt` blocks the
   crawl — which means the meta tag is never read and a linked token URL can still be indexed bare.
   A server header needs no crawl and no JS. Keep the `robots.txt` Disallow as well: the header
   makes exclusion certain for anything that does get fetched.
 
-- [ ] T044 **Static per-route shells** for `/` , `/about`, `/stats`. Scrapers and previews do not
+- [x] T044 **Static per-route shells** for `/` , `/about`, `/stats`. Scrapers and previews do not
   run JS, so T042's runtime fix is invisible to them. Generate `about.html`/`stats.html` from the
   built `index.html` with the route's own tags substituted, and rewrite to them. Grounnel-branded
   only — one static file cannot serve two hostnames; the Biassemble domain is covered by T042.
+
+- [x] T047 SEO review round 2 (2026-09-09). Nine findings, all fixed:
+
+  **Regressions the first pass introduced.** `/stats` on the Biassemble host became a second,
+  self-canonical, indexable copy of Grounnel's Stats page — it now canonicalises to Grounnel's and
+  is `noindex` off-brand. `/grounnel` on the Biassemble host (the fact-checker, kept for existing
+  links) was given Biassemble's title and a canonical pointing at that host's root, which serves
+  the reflection flow instead; `tool` and `reflection` are now separate cases and the tool
+  canonicalises to Grounnel's home wherever it is mounted.
+
+  **The Biassemble description I wrote was factually wrong** — it described a one-shot read that
+  quotes passages. The product is a three-step flow (situation, AI-guided questions, reflection)
+  and `AssessmentOutput.biases[]` has no quote field. Rewritten from the actual product.
+
+  **`Disallow: /check/` plus `X-Robots-Tag` was self-defeating**, not belt-and-braces: a blocked
+  URL is never fetched, so the header is never read, and a linked token could still be indexed as
+  a bare URL. The Disallow is gone; the header is the control.
+
+  **Soft 404s.** The catch-all rewrote every unknown path to `index.html` with a 200 and the
+  homepage's head. Routes are now enumerated and unmatched paths fall through to a generated
+  `404.html` with a real 404 status and `noindex`.
+
+  **The `/about` shell was Grounnel's on both hosts**, telling non-JS crawlers that Biassemble's
+  About page *is* Grounnel's. A host-matched rewrite now serves a Biassemble-branded shell.
+
+  Also: `og:image:alt` no longer contradicts a Biassemble-titled card; `/about/` and `/stats/`
+  301 to the canonical form instead of falling through to the homepage head; the shell generator
+  escapes attribute values and uses a function replacer so a quote or `$&` in future copy cannot
+  corrupt the tag; the homepage description is trimmed from 173 to 136 characters and the 404 no
+  longer borrows it.
 
 - [ ] T045 **Custom domain.** `grounnel.vercel.app` is a `*.vercel.app` subdomain on the Public
   Suffix List. When the real domain lands, move `canonical`, `og:url`, `sitemap.xml` and

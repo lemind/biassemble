@@ -1,7 +1,7 @@
-# Public: /, /about, /stats — allowed by default, so they need no rule here.
-# Shared assessments often name private individuals: link-only, never indexed. The API sends
-# X-Robots-Tag: noindex for the same reason (biassemble-core spec 019, T009).
+# Shared assessments carry X-Robots-Tag: noindex, nofollow as a real response header
+# (vercel.json). Deliberately NOT disallowed here: a blocked URL is never fetched, so the
+# header is never read, and a linked token could still be indexed as a bare URL.
 User-agent: *
-Disallow: /check/
+Allow: /
 
 Sitemap: https://grounnel.vercel.app/sitemap.xml

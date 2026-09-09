@@ -1,65 +1,90 @@
 // One source of head metadata for every route x brand pair. Until this existed, index.html's
 // static head (Grounnel's homepage) was served on every URL of both domains.
-import type { Brand } from './brand';
+import { getBrand, type Brand } from './brand';
 import type { PageId } from './routes';
 
 export interface PageMeta {
   title: string;
   description: string;
-  /** Path on this brand's own origin, or null to emit no canonical at all. */
-  canonicalPath: string | null;
-  /** True for pages that must never be indexed; also suppresses canonical. */
+  /** Absolute canonical URL, or null to emit none. Not always on `brand.origin`: a page whose
+   *  content belongs to the other brand canonicalises to where that content really lives. */
+  canonical: string | null;
   noindex: boolean;
 }
 
-const GROUNNEL_DESCRIPTION =
-  'Grounnel pulls the factual claims out of a piece of writing and checks each one against the open web, marking them in place with the passage and source behind every verdict.';
+const GROUNNEL_ORIGIN = getBrand('grounnel').origin;
 
-const BIASSEMBLE_DESCRIPTION =
-  'Biassemble reads a piece of writing and names the cognitive biases shaping it, quoting the passage behind every observation.';
+const GROUNNEL_HOME =
+  'Grounnel finds the factual claims in a piece of writing and checks each one against the open web, marking every verdict with its source.';
 
-// A shared assessment gets no canonical: pointing one at the homepage told search engines these
-// pages were duplicates of it, and pointing it at itself would invite indexing pages that can
-// name private individuals. The X-Robots-Tag header in vercel.json is the binding control.
-const CHECK_META = (brand: Brand): PageMeta => ({
-  title: `Fact-check — ${brand.name}`,
+// Rewritten after review: the product is a three-step flow (situation, AI-guided questions,
+// reflection) and its output quotes no passages — that is Grounnel's affordance, not this one's.
+const BIASSEMBLE_HOME =
+  'Write about a situation in your own words, answer a few questions, and see the cognitive biases that may be shaping how you tell it.';
+
+// Shared assessments are always Grounnel's artifact, whichever host serves the route. No canonical:
+// pointing at the homepage made them duplicates of it, pointing at themselves invites indexing.
+const CHECK: PageMeta = {
+  title: 'Fact-check — Grounnel',
   description: 'A shared fact-check. Every verdict shows the passage and the source behind it.',
-  canonicalPath: null,
+  canonical: null,
   noindex: true,
-});
+};
 
 export function pageMeta(brand: Brand, page: PageId): PageMeta {
-  const home = brand.id === 'grounnel' ? GROUNNEL_DESCRIPTION : BIASSEMBLE_DESCRIPTION;
+  const isGrounnel = brand.id === 'grounnel';
 
   switch (page) {
-    case 'about':
+    // The fact-checker, wherever it is mounted. On the Biassemble host `/grounnel` serves this same
+    // tool (FR-002), so it canonicalises to Grounnel's own home rather than to this host's root.
+    case 'tool':
       return {
-        title: `About ${brand.name} — how it works`,
-        description:
-          brand.id === 'grounnel'
-            ? 'How Grounnel finds the factual claims in a text, searches for evidence, and decides each verdict — including what it gets wrong.'
-            : 'What Biassemble looks for, how it reads a text, and how it relates to Grounnel.',
-        canonicalPath: '/about',
+        title: 'Grounnel — Verify the claims in any text',
+        description: GROUNNEL_HOME,
+        canonical: `${GROUNNEL_ORIGIN}/`,
         noindex: false,
       };
-    case 'stats':
-      return {
-        title: `What we have measured — ${brand.name}`,
-        description:
-          'Measured results from real Grounnel runs: verdict mix, false accusations, and what the numbers do and do not show.',
-        canonicalPath: '/stats',
-        noindex: false,
-      };
-    case 'check':
-      return CHECK_META(brand);
-    case 'not-found':
-      return { title: `Page not found — ${brand.name}`, description: home, canonicalPath: null, noindex: true };
-    default:
+    case 'reflection':
       return {
         title: `${brand.name} — ${brand.tagline}`,
-        description: home,
-        canonicalPath: '/',
+        description: BIASSEMBLE_HOME,
+        canonical: `${brand.origin}/`,
         noindex: false,
+      };
+    case 'about':
+      return isGrounnel
+        ? {
+            title: 'About Grounnel — how it works',
+            description:
+              'How Grounnel finds the factual claims in a text, searches for evidence and decides each verdict — including where it gets things wrong.',
+            canonical: `${GROUNNEL_ORIGIN}/about`,
+            noindex: false,
+          }
+        : {
+            title: 'About Biassemble — how it works',
+            description:
+              'How Biassemble turns an account of a situation into questions, and what the cognitive biases it names do and do not tell you.',
+            canonical: `${brand.origin}/about`,
+            noindex: false,
+          };
+    // Grounnel's measurements. The route resolves on both hosts but the page is one page: the
+    // Biassemble copy canonicalises to it and stays out of the index rather than duplicating it.
+    case 'stats':
+      return {
+        title: 'What we have measured — Grounnel',
+        description:
+          'Measured results from real Grounnel runs: verdict mix, false accusations, and what the numbers do and do not show.',
+        canonical: `${GROUNNEL_ORIGIN}/stats`,
+        noindex: !isGrounnel,
+      };
+    case 'check':
+      return CHECK;
+    default:
+      return {
+        title: `Page not found — ${brand.name}`,
+        description: `That page does not exist on ${brand.name}.`,
+        canonical: null,
+        noindex: true,
       };
   }
 }
@@ -84,24 +109,23 @@ function setCanonical(href: string | null): void {
   tag.href = href;
 }
 
-/** Rewrites the static head to this brand and route. Returns nothing; call it from an effect. */
+/** Rewrites the static head to this brand and route. Safe to call again on an in-place URL change. */
 export function applyPageMeta(brand: Brand, page: PageId): void {
   const meta = pageMeta(brand, page);
-  const url = meta.canonicalPath === null ? null : `${brand.origin}${meta.canonicalPath}`;
 
   document.title = meta.title;
   setMeta('meta[name="description"]', 'name', 'description', meta.description);
-  setCanonical(url);
+  setCanonical(meta.canonical);
 
   setMeta('meta[property="og:site_name"]', 'property', 'og:site_name', brand.name);
   setMeta('meta[property="og:title"]', 'property', 'og:title', meta.title);
   setMeta('meta[property="og:description"]', 'property', 'og:description', meta.description);
-  setMeta('meta[property="og:url"]', 'property', 'og:url', url ?? `${brand.origin}/`);
+  setMeta('meta[property="og:url"]', 'property', 'og:url', meta.canonical ?? `${brand.origin}/`);
+  // The shared card image is Grounnel's; its alt must not contradict a Biassemble-titled card.
+  setMeta('meta[property="og:image:alt"]', 'property', 'og:image:alt', meta.title);
   setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', meta.title);
   setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', meta.description);
 
-  // Belt-and-braces only for the pages that need it — vercel.json's X-Robots-Tag is the real one,
-  // since it needs neither JS nor a crawl that robots.txt already discourages.
   const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
   if (meta.noindex) setMeta('meta[name="robots"]', 'name', 'robots', 'noindex, nofollow');
   else robots?.remove();

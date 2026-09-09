@@ -152,7 +152,10 @@ thing you can use" rather than attribution.
   in-app navigation.
 - **FR-005**: Branding MUST be determined by which domain the visitor arrived on, independently of
   which page they are viewing.
-- **FR-006**: An unrecognised host MUST render a complete, coherent site rather than a partial one.
+- **FR-006**: An unrecognised host MUST render a complete, coherent site rather than a partial one,
+  and MUST record that the host was unrecognised. A misconfigured production domain therefore looks
+  like a working Biassemble site — accepted, because T001's six-case host x path check catches it
+  before launch. No user-visible indicator.
 - **FR-007**: About MUST describe the input, the processing sequence, and the output in terms a
   non-technical reader can follow.
 - **FR-008**: About MUST state the false-accusation-over-missed-detection principle explicitly.

@@ -41,8 +41,9 @@ things; permalinks moved from the former to the latter.
   | `localhost`, `*.vercel.app` preview | Biassemble, plus a dev-console line naming the resolved brand |
   | anything else (production-looking, unrecognised) | Biassemble, plus a visible console warning |
 
-  The last row is the one that matters: without it, a DNS typo renders a perfectly valid Biassemble
-  page and the deploy looks successful while Grounnel is simply not configured.
+  A DNS typo therefore renders a valid Biassemble page and the deploy looks successful while
+  Grounnel is not configured. **Accepted** — a console warning is the whole mitigation; T001's
+  six-case check is what actually catches it. No on-page indicator.
 
   Hosts live as named **arrays** in `brand.ts` — one explicit list, not a regex, not repeated
   across files. Real values as of 2026-09-09:
@@ -122,8 +123,9 @@ consistent with the hierarchy decision.
   Shared assessments often name private individuals.
 - [ ] T029 `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
   (`/`, `/about`, `/stats`). Never the check links.
-- [ ] T030 Favicon: `favicon.svg` is currently Biassemble's and is served on both domains. Decide
-  whether Grounnel gets its own — the tab icon is the most-seen brand mark on the site.
+- [x] T030 **Decided 2026-09-09: keep the existing `favicon.svg` on both domains.** No Grounnel
+  favicon for the MVP. Note this is deliberately inconsistent with T024–T027, where the shared
+  `<head>` is Grounnel-branded — the tab icon stays Biassemble's.
 - [ ] T031 `noindex` for `/check/:token`. **This is an SPA with one `index.html`, so there is no
   per-route static meta tag** — the real controls are `robots.txt` Disallow (T028) and core 019
   T009's `X-Robots-Tag` on the API response. This task is only the runtime belt-and-braces: inject

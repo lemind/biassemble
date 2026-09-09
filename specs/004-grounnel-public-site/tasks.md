@@ -204,6 +204,13 @@ testing, so volume proves nothing and a visitor who works that out trusts us les
   (a subjective claim marked `contradicted` on evidence about a different same-named organisation).
   Report it. And do **not** publish a false-positive *rate* until T023 gives it a denominator.
 
+  **Wording revised 2026-09-09 after external review.** The section is headed *One observed
+  incorrect contradiction*, not *false accusation*. "False accusation" asserts the claim was true;
+  that was never established — the claim had no clean truth value, which is why it should have been
+  excluded from checking at all. What was observed is narrower and still reportable: the cited
+  evidence did not establish a contradiction. T013 still holds — the incident is on the page and no
+  rate is published.
+
 **Done 2026-09-09 (T011–T013).** `backend/scripts/generate-stats.ts` writes
 `frontend/src/data/stats.ts` — a **`.ts` module, not `stats.json`** as T011 said, matching
 `workedExample.ts` next to it and avoiding a `resolveJsonModule` tsconfig change plus a cast.

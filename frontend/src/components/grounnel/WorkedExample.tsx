@@ -16,8 +16,8 @@ export default function WorkedExample() {
     <section>
       <h2 className="text-sm uppercase tracking-widest text-base-content/50">A finished check</h2>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        A real run over a short travel diary — {claims.length} claims, {contradicted} contradicted by
-        its sources.
+        A real run over a short travel diary — {claims.length} claims checked, {contradicted} marked
+        contradicted.
       </p>
       <button
         type="button"

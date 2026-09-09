@@ -1,5 +1,5 @@
 import stats from '../data/stats';
-import { VERDICT_ROWS, ABSTAINED_VERDICTS } from '../lib/verdictRows';
+import { VERDICT_ROWS, INDEFINITE_VERDICTS } from '../lib/verdictRows';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -20,7 +20,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 export default function StatsPage() {
   const n = (key: string) => stats.verdicts.find((v) => v.verdict === key)?.n ?? 0;
   const total = stats.totalClaims;
-  const abstained = ABSTAINED_VERDICTS.reduce((sum, key) => sum + n(key), 0);
+  const indefinite = INDEFINITE_VERDICTS.reduce((sum, key) => sum + n(key), 0);
   const failed = n('no_verdict');
   const fmt = (x: number) => x.toLocaleString('en-GB');
 
@@ -40,18 +40,20 @@ export default function StatsPage() {
       </dl>
       <p className="mt-3 text-sm text-base-content/55">
         These figures are fixed at the date above. They are not a live counter.
+        {stats.promptVersions.length > 1 &&
+          ' These runs span more than one extraction prompt version; the figures below combine them.'}
       </p>
 
       <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">
         Most of this is us
       </h2>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        {fmt(stats.productionRuns)} runs in this window were submitted through the site. Evaluation
-        runs are excluded from every number below. In the same dates we also ran{' '}
-        {fmt(stats.evalRuns)} internal evals against fixed tests.
+        {fmt(stats.productionRuns)} production runs were recorded in this window. Evaluation runs
+        are excluded from every number below. Over the same dates we also ran {fmt(stats.evalRuns)}{' '}
+        internal evals against fixed tests.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        Even the {fmt(stats.productionRuns)} are almost all our own articles while we were building.
+        Almost all {fmt(stats.productionRuns)} were our own test articles while building the system.
         Read this page as a record of what the tool does — not as proof that anyone else is using
         it.
       </p>
@@ -82,30 +84,32 @@ export default function StatsPage() {
       </table>
 
       <p className="mt-6 leading-relaxed text-base-content/80">
-        {fmt(abstained)} of them — {Math.round((abstained / total) * 100)}% — were left unjudged on
-        purpose: not eligible to check, or unverifiable from what was found. That is the design, not
-        a shortfall. A further {failed} are not abstentions: verification errored. They are listed
-        separately above.
+        {fmt(indefinite)} of them — {Math.round((indefinite / total) * 100)}% — did not receive a
+        definitive factual verdict: {fmt(n('excluded'))} were excluded from checking and{' '}
+        {fmt(n('unverifiable'))} were unverifiable from the evidence found. That is deliberate
+        behaviour, not a shortfall. The other {failed} are different again: verification failed
+        rather than reaching any judgement.
       </p>
 
       <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">
-        One confirmed false accusation
+        One observed incorrect contradiction
       </h2>
       <div className="mt-4 border-l-2 border-base-content/25 pl-4">
         <p className="leading-relaxed text-base-content/80">
           On 8 September 2026 a run marked a claim{' '}
-          <strong className="font-medium">contradicted</strong> using evidence about a different
-          organisation that shared the same name. The claim was closer to opinion than fact, and
-          should not have been judged.
+          <strong className="font-medium">contradicted</strong> when the cited evidence did not
+          establish a contradiction: it described a different organisation that happened to share
+          the same name. The claim should also have been excluded as non-checkable rather than
+          judged at all.
         </p>
         <p className="mt-4 leading-relaxed text-base-content/80">
           That is the failure this system is built to avoid. It happened.
         </p>
       </div>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        We are not publishing a false-positive rate. One confirmed case is a sample of one. A rate
-        needs a labelled denominator we do not have yet — hundreds of contradicted claims read by
-        hand. Until that exists, the paragraph above is the number.
+        We are not publishing a false-positive rate. One observed case is a sample of one, and a
+        rate needs a labelled denominator we do not have yet — hundreds of contradicted claims read
+        by hand. Until that exists, the paragraph above is the number.
       </p>
 
       <nav className="mt-14 border-t border-base-300 pt-6 text-sm">

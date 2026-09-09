@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import stats from '../data/stats';
-import { VERDICT_ROWS } from './verdictRows';
+import { VERDICT_ROWS, INDEFINITE_VERDICTS } from './verdictRows';
 
 let passed = 0;
 
@@ -37,12 +37,12 @@ test('the rows account for every claim, so the bar totals 100%', () => {
 
 // The principle paragraph rests on this number, so assert the invariant, not the literal — the
 // snapshot is regenerated and a pinned count would break on a legitimate refresh.
-test('the abstention count never absorbs failed verifications', () => {
+test('the no-definitive-verdict count never absorbs failed verifications', () => {
   const n = (k: string) => stats.verdicts.find((v) => v.verdict === k)?.n ?? 0;
-  const abstained = n('unverifiable') + n('excluded');
+  assert.ok(!INDEFINITE_VERDICTS.includes('no_verdict'), 'a failed verification is not a judgement');
+  const indefinite = INDEFINITE_VERDICTS.reduce((sum, k) => sum + n(k), 0);
   assert.ok(n('no_verdict') > 0, 'fixture has no failed verifications left to keep separate');
-  assert.equal(abstained + n('no_verdict') > abstained, true);
-  assert.ok(abstained > 0 && abstained < stats.totalClaims);
+  assert.ok(indefinite > 0 && indefinite < stats.totalClaims);
 });
 
 console.log(`\n${passed} tests passed`);

@@ -3,10 +3,16 @@ import WorkedExample from './grounnel/WorkedExample';
 
 const STEPS = [
   { title: 'Text', line: 'An article, a post, an essay — anything written.' },
-  { title: 'Claims', line: 'Statements of fact are extracted. Opinions are left alone.' },
+  {
+    title: 'Claims',
+    line: 'Statements of fact are extracted. Opinions, and other claims Grounnel declines to check, are left alone.',
+  },
   { title: 'Evidence', line: 'Each claim is searched on the open web.' },
   { title: 'Sources', line: 'Pages are fetched and ranked. Only useful passages are kept.' },
-  { title: 'Verdicts', line: 'Every claim gets a verdict, the passage behind it, and a link.' },
+  {
+    title: 'Verdicts',
+    line: 'Each checked claim gets a verdict, the passage behind it, and a source link.',
+  },
 ];
 
 export default function AboutPage({ brand }: { brand: Brand }) {
@@ -20,7 +26,8 @@ export default function AboutPage({ brand }: { brand: Brand }) {
       <h1 className="mt-2 text-4xl font-semibold tracking-tight">Grounnel</h1>
       <p className="mt-5 text-lg leading-relaxed text-base-content/80">
         Paste a piece of writing. Grounnel finds the factual claims, checks each one against the
-        open web, and marks them in your text — verdict, passage, and source. It is a reading tool,
+        open web, and shows the result in your text — verdict, passage, and source. It is a reading
+        tool,
         not a truth score.
       </p>
 

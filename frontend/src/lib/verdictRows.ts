@@ -13,6 +13,7 @@ export const VERDICT_ROWS: { key: string; label: string; bar: string }[] = [
   { key: 'no_verdict', label: 'Verification failed', bar: 'bg-base-content/50' },
 ];
 
-// Deliberately judged, not failed. `no_verdict` is a verification that errored and is never
-// counted here — folding it in would pad the number the principle rests on.
-export const ABSTAINED_VERDICTS = ['unverifiable', 'excluded'];
+// Claims that reached no definitive factual verdict. NOT "abstentions": `unverifiable` was judged,
+// and the judgement was that the evidence found was insufficient. `no_verdict` is a verification
+// that errored and is never counted here — folding it in would pad the number the principle rests on.
+export const INDEFINITE_VERDICTS = ['unverifiable', 'excluded'];

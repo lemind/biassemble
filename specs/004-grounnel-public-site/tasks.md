@@ -419,15 +419,34 @@ remains the only hard ceiling on spend; nothing here substitutes for it.
   both Vercel projects (production target). Client IP now prefers the edge-set
   `x-vercel-forwarded-for`/`x-real-ip` over the caller-prependable `x-forwarded-for`.
 
-  **Not verified yet:** which header actually carries the end user through the frontend's `/api`
-  rewrite is a property of the deployed edge. The extract route logs the candidates until one
-  real production run settles it. Confirm, then remove the log.
+  Review correction: `x-forwarded-for` is FIRST again. This app sits behind a second Vercel edge
+  (the frontend's `/api` rewrite), so `x-real-ip`/`x-vercel-forwarded-for` describe that hop and
+  preferring them would have re-created the global bucket. Order is still unverified against the
+  deployed edge — set `LOG_IP_HEADER_PROBE=1` for one deploy to settle it. The probe logs header
+  NAMES only, never IP values.
+
+  Also fixed here: shared-link READS were a global bucket too. `getSharedAssessment` sent no IP
+  and core's `/assessment/:token` keyed on `request.ip`, so one viewer polling a link could 429
+  every other visitor on the site. Both sides now forward and honour the real viewer.
 
 - [x] T037 Vercel preview deployments stay blocked from the API, deliberately, and this is
   recorded in `backend/src/middleware.ts` rather than left looking like a bug. Admitting previews
   needs either a hostname pattern loose enough to be worth attacking, or letting preview branches
   spend production budget, write live rows, consume the shared rate limit and mint permanent
   public links from test text. `CORS_ORIGINS` allows one exact preview origin when needed.
+
+- [x] T039 Review round 2 (2026-09-09, after the fixes above): a FAILED shared run still rendered
+  "N / N claims checked" with nothing saying it failed; the live page still `disabled` its own
+  textarea for the whole run; the two permanence notices rendered stacked and identical; a 429 was
+  reported to the viewer as "This link could not be opened"; a never-terminating run polled for the
+  life of the tab. All fixed. `GROUNNEL_INTERNAL_PROXY_SECRET` now documented in `.env.example` and
+  AGENTS.md's shared-secret table, and warns once at runtime when absent.
+
+- [ ] T040 **No frontend test runner exists.** `frontend/package.json` has no `test` script and no
+  vitest/jest dependency, and `tsconfig.app.json` excludes `src/**/*.test.ts` — so six test files
+  (`brand`, `routes`, `matchClaimSpans`, `sourceNote`, `stats`, `runStorage`) are neither run nor
+  typechecked. `matchClaimSpans` backs both the progress dots and the article highlighting. Not a
+  launch blocker; it does mean nothing in this session is covered by a frontend test.
 
 - [ ] T038 Delete four orphaned files: `frontend/src/components/grounnel/ShareLink.tsx`,
   `frontend/src/lib/runStorage.ts`, `frontend/src/lib/runStorage.test.ts`,

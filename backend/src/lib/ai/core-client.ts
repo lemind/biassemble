@@ -29,6 +29,14 @@ export function getCoreConfig() {
   return { baseUrl, apiKey };
 }
 
+// Core honors X-Grounnel-Client-IP only when this secret matches (core routes/grounnel.ts,
+// D020 §4). Without it every run shares one rate-limit bucket keyed on this server's egress IP.
+function proxyHeaders(clientIp?: string): Record<string, string> | undefined {
+  const secret = process.env.GROUNNEL_INTERNAL_PROXY_SECRET;
+  if (!clientIp || !secret) return undefined;
+  return { "X-Grounnel-Client-IP": clientIp, "X-Grounnel-Internal-Secret": secret };
+}
+
 async function postCore<T>(
   path: string,
   body: unknown,
@@ -122,7 +130,7 @@ export function createCoreClient(): AiClient {
         "/extract",
         { text: input.text, sessionId: input.sessionId },
         extractClaimsOutputSchema,
-        input.clientIp ? { "X-Grounnel-Client-IP": input.clientIp } : undefined
+        proxyHeaders(input.clientIp)
       );
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {

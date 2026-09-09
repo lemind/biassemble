@@ -171,9 +171,39 @@ verdict above them) in the same block. Line numbers below are **post-rebase**.
 
 ---
 
+## Phase 4 — Session persistence and shareable links
+
+Added 2026-09-09. Today `runId`, `articleText` and `sessionId` live only in React `useState` — no
+`localStorage`, no `sessionStorage`, no cookie. So a refresh, a new tab, or clicking any nav link
+destroys a run that took ~200s to produce. Adding About and Stats to the nav makes that worse.
+
+- [ ] T018 Persist the current run to `localStorage` (not `sessionStorage` — the ask is that a new
+  tab sees the same run). Store `runId` + `articleText`; rehydrate on mount. Two tabs share one
+  slot and the newer run wins; acceptable for MVP.
+- [ ] T019 Nav links open About/Stats in a new tab (`target="_blank"`) until T020 lands, so an
+  in-flight check survives a click. Cheap interim guard.
+- [ ] T020 `/check/:token` page — fetch a shared assessment and render the stored text with claim
+  highlights, reusing `HighlightedArticle`. This is the real fix: a URL you can return to, rather
+  than browser state you can lose.
+- [ ] T021 Surface the link when a run completes — visible, copyable, and present while the run is
+  still in flight (core assigns the token at creation, so it exists before the result does).
+- [ ] T022 Proxy route `backend/src/app/api/grounnel/assessment/[token]/route.ts`. **Required, not
+  optional**: biassemble-core is key-gated and has no CORS, so the browser cannot call it directly.
+  Mirrors the existing `grounnel/status/[id]` proxy.
+
+**Depends on biassemble-core spec 019** (`share_token` + `GET /assessment/:token`) — see
+`../../biassemble-core/specs/019-assessment-permalink/tasks.md`. T018 and T019 are frontend-only and
+can ship first.
+
+**Note**: shared links are public, unguessable and never expire, and the documents are often
+personal essays naming real people. That was the decision on 2026-09-08; 019's checklist flags that
+no revocation path exists, which is worth settling before this goes live rather than after.
+
+---
+
 ## Deliberately not in the MVP
 
-- `/examples` — needs shareable permalinks, which need core work. Later.
+- `/examples` — a curated list of shared links. Cheap once Phase 4 lands, but still later.
 - `/docs`.
 - Biassemble as an integrated analysis layer — separate link only, for now.
 - Everything in spec 018: entity-agreement gate, coverage boundaries, permalinks, provenance,

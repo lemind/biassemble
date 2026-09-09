@@ -38,14 +38,16 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
     <div className="relative flex min-h-screen flex-col bg-base-200">
       {/* Height governs, width follows — a fixed w-x h-x box squashes both files, which have
           different aspect ratios. The wordmark is text only when the logo doesn't already carry it. */}
-      <nav className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-base-300 px-6 py-3">
+      {/* items-start, not items-center: centring the row against a tall logo pushed the menu far
+          down the header. The menu sits at the top and the logo hangs below it, as it did before. */}
+      <nav className="grid grid-cols-[1fr_auto_1fr] items-start gap-4 border-b border-base-300 px-6 pt-3 pb-2">
         <a href="/" className="flex items-center gap-2 justify-self-start" aria-label={brand.name}>
           <img src={brand.logo} alt="" className={`${brand.logoHeightClass} w-auto`} />
           {!brand.logoIncludesName && (
             <span className="text-2xl font-semibold tracking-tight">{brand.name}</span>
           )}
         </a>
-        <div className="flex justify-self-center gap-6 text-sm">
+        <div className="flex justify-self-center gap-6 pt-1.5 text-sm">
           {brand.nav.map((item) => (
             <NavLink key={item.href} href={item.href} active={item.href === active}>
               {item.label}

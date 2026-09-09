@@ -88,7 +88,7 @@ export function createDevMockClient(): AiClient {
     },
     // Mirrors what a real shared assessment looks like: no ids, no citations, and a claim the
     // pipeline refused to judge — without that last one the "Not checked" UI is unreachable here.
-    async getSharedAssessment(token: string): Promise<SharedAssessment> {
+    async getSharedAssessment(token: string, _clientIp?: string): Promise<SharedAssessment> {
       if (token !== "devmockdevmockdevmockdevmockdevm") {
         throw aiError("not_found", { path: `/assessment/${token}`, status: 404 });
       }

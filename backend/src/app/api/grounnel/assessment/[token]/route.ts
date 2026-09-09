@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleGetSharedAssessment } from "@/services/grounnel.service";
 import { AppException } from "@/lib/errors";
-import { NO_STORE } from "@/lib/http";
+import { clientIpFrom, NO_STORE } from "@/lib/http";
 
 // Core answers an unknown token, a malformed one and a deleted run identically (019 FR-010) — and
 // rate-limits reads (019 T014). Both statuses must reach the browser as themselves: aiError wraps
@@ -19,12 +19,12 @@ function coreStatus(error: AppException): number {
  * and sends no CORS headers, so the browser cannot call it directly. Mirrors the status proxy.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const { token } = await params;
-    const assessment = await handleGetSharedAssessment(token);
+    const assessment = await handleGetSharedAssessment(token, clientIpFrom(request));
     // These documents often name private individuals — link-only, never indexed. Core sets the
     // same header; repeated here because this response is what the browser actually receives.
     return NextResponse.json(assessment, {

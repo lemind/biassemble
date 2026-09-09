@@ -29,10 +29,18 @@ export function getCoreConfig() {
   return { baseUrl, apiKey };
 }
 
+let warnedNoProxySecret = false;
+
 // Core honors X-Grounnel-Client-IP only when this secret matches (core routes/grounnel.ts,
-// D020 §4). Without it every run shares one rate-limit bucket keyed on this server's egress IP.
+// D020 §4). Missing it is silent and looks healthy, so warn once rather than never.
 function proxyHeaders(clientIp?: string): Record<string, string> | undefined {
   const secret = process.env.GROUNNEL_INTERNAL_PROXY_SECRET;
+  if (!secret && !warnedNoProxySecret) {
+    warnedNoProxySecret = true;
+    console.warn(
+      "[core-client] GROUNNEL_INTERNAL_PROXY_SECRET is unset — core cannot see per-visitor IPs, so every visitor shares ONE rate-limit bucket. Set it to the same value in biassemble-be and biassemble-core."
+    );
+  }
   if (!clientIp || !secret) return undefined;
   return { "X-Grounnel-Client-IP": clientIp, "X-Grounnel-Internal-Secret": secret };
 }
@@ -75,11 +83,11 @@ async function postCore<T>(
 
 // GET-equivalent of postCore (ADR-001 §2 — no such helper existed before Grounnel's
 // GET /status/:id needed one). Same auth/error-handling shape, no body.
-async function getCore<T>(path: string, schema: z.ZodSchema<T>): Promise<T> {
+async function getCore<T>(path: string, schema: z.ZodSchema<T>, clientIp?: string): Promise<T> {
   const { baseUrl, apiKey } = getCoreConfig();
   const res = await fetch(`${baseUrl}${path}`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}` },
+    headers: { Authorization: `Bearer ${apiKey}`, ...proxyHeaders(clientIp) },
   });
 
   if (!res.ok) {
@@ -138,8 +146,10 @@ export function createCoreClient(): AiClient {
     },
     // Core's /assessment/:token is itself unauthenticated, but the browser still cannot reach it:
     // core is key-gated for everything else and sends no CORS headers. Proxying keeps the key here.
-    async getSharedAssessment(token: string): Promise<SharedAssessment> {
-      return getCore(`/assessment/${encodeURIComponent(token)}`, sharedAssessmentSchema);
+    // Every viewer of every shared link reaches core through THIS server, so without a forwarded
+    // IP core's read limit is one bucket for the whole site: one busy reader 429s everyone else.
+    async getSharedAssessment(token: string, clientIp?: string): Promise<SharedAssessment> {
+      return getCore(`/assessment/${encodeURIComponent(token)}`, sharedAssessmentSchema, clientIp);
     },
   };
 }

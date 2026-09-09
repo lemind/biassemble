@@ -21,5 +21,5 @@ export interface AiClient {
   generateAssessment(input: GenerateAssessmentRequest): Promise<AssessmentOutput>;
   extractClaims(input: ExtractClaimsRequest): Promise<ExtractClaimsOutput>;
   getGrounnelStatus(id: string): Promise<GrounnelStatusOutput>;
-  getSharedAssessment(token: string): Promise<SharedAssessment>;
+  getSharedAssessment(token: string, clientIp?: string): Promise<SharedAssessment>;
 }

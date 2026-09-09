@@ -41,7 +41,7 @@ export async function handleGetGrounnelStatus(id: string) {
 }
 
 /** Core spec 019 — a public read, no session and no local state; the token is the whole address. */
-export async function handleGetSharedAssessment(token: string) {
+export async function handleGetSharedAssessment(token: string, clientIp?: string) {
   const ai = getAiClient();
-  return ai.getSharedAssessment(token);
+  return ai.getSharedAssessment(token, clientIp);
 }

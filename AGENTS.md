@@ -59,6 +59,7 @@ Dependency direction: `biassemble` (this repo's backend) → `biassemble-core` �
 |---|---|---|---|
 | `AI_CORE_API_KEY` | `backend`'s Vercel env (`biassemble-be`) | ⟷ | `biassemble-core`'s Vercel env (`AI_CORE_API_KEY`) |
 | `AI_CORE_BASE_URL` | `backend`'s Vercel env | must point at | `biassemble-core`'s actual deployed URL |
+| `GROUNNEL_INTERNAL_PROXY_SECRET` | `backend`'s Vercel env (`biassemble-be`) | ⟷ | `biassemble-core`'s Vercel env (same name) |
 | — | — | (biassemble-core ⟷ biassemble-engine's `RAG_API_KEY` is a `biassemble-core`-side concern, documented there — this repo has no direct dependency on the engine) |
 
 **Rotate `AI_CORE_API_KEY` in exactly one place and the other silently breaks** — this happened for real (2026-07-22): rotating it in `biassemble-core`'s Vercel env without updating this repo's backend broke every backend→core call with `401 Invalid API key`, no build failure, no obvious error until someone hit the app. If you ever rotate this key in either repo, update it in **both** Vercel projects in the same sitting, then verify with a real call through the backend (e.g. its `/api/contracts` proxy route) — not just a call to core directly, since that alone won't prove the backend's copy is still valid.

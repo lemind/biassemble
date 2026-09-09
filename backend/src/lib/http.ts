@@ -1,31 +1,33 @@
 // Generic request-header helpers — no Grounnel/reflection-specific logic here.
 
-// Real end-user IP, not this server's own egress IP (ADR-001 §4).
+// Real end-user IP, not this server's own egress IP (ADR-001 §4). Order is deliberate and
+// UNVERIFIED against the deployed edge — see docs note in AGENTS.md.
 //
-// x-forwarded-for is a chain the CALLER can prepend to, so its first value is only the real client
-// when every hop in front of us is trusted. Vercel's edge sets x-vercel-forwarded-for and x-real-ip
-// itself and overwrites whatever arrived, so those are preferred; x-forwarded-for stays as the last
-// resort for non-Vercel environments (local dev). Which header actually carries the end user
-// through the frontend's /api rewrite is logged at the call site until it is confirmed deployed.
-const IP_HEADERS = ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for"] as const;
+// x-forwarded-for stays first. This deployment sits behind a SECOND Vercel edge (the frontend's
+// /api rewrite proxies here), so x-real-ip and x-vercel-forwarded-for describe that proxy hop and
+// would key every visitor to one bucket — the exact bug the forwarding was added to fix. A wrong
+// chain position costs an attacker their own bucket; a wrong header costs every real user theirs.
+const IP_HEADERS = ["x-forwarded-for", "x-vercel-forwarded-for", "x-real-ip"] as const;
 
-export function clientIpFrom(request: Request): string | undefined {
+/** The chosen IP and the header it came from — one traversal, so the probe needs no second one. */
+export function clientIpWithSource(request: Request): { ip?: string; header?: string } {
   for (const header of IP_HEADERS) {
-    const value = request.headers.get(header);
-    const first = value?.split(",")[0]?.trim();
-    if (first) return first;
+    const first = request.headers.get(header)?.split(",")[0]?.trim();
+    if (first) return { ip: first, header };
   }
-  return undefined;
+  return {};
 }
 
-/** Every candidate header and its value, for confirming which one carries the end user. */
-export function clientIpCandidates(request: Request): Record<string, string> {
-  const seen: Record<string, string> = {};
-  for (const header of IP_HEADERS) {
-    const value = request.headers.get(header);
-    if (value) seen[header] = value;
-  }
-  return seen;
+export function clientIpFrom(request: Request): string | undefined {
+  return clientIpWithSource(request).ip;
+}
+
+// Names only, never values: which header carries the end user is the open question, and answering
+// it must not write a visitor identifier into the platform log. Off unless explicitly enabled.
+export function logIpHeaderProbe(request: Request, chosen: { header?: string }): void {
+  if (process.env.LOG_IP_HEADER_PROBE !== "1") return;
+  const present = IP_HEADERS.filter((h) => request.headers.get(h));
+  console.log(`[grounnel:ip-probe] chose=${chosen.header ?? "none"} present=${present.join(",") || "none"}`);
 }
 
 // Every API response here is dynamic and often per-person. Next's default on a route handler is

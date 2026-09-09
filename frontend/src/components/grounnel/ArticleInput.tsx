@@ -31,15 +31,21 @@ export default function ArticleInput({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* readOnly, not disabled, for a shared run: a disabled textarea leaves the tab order and
+          its text cannot be selected or copied, so a reader could not quote the article. */}
       <textarea
-        className="textarea textarea-bordered min-h-48 h-48 w-full resize-y"
+        className={
+          'textarea textarea-bordered min-h-48 h-48 w-full resize-y' +
+          (readOnly ? ' bg-base-200' : '')
+        }
         placeholder="Paste an article or claim-heavy text to fact-check..."
         value={text}
         onChange={(e) => {
           setText(e.target.value);
           if (error) setError(null);
         }}
-        disabled={disabled || readOnly}
+        disabled={disabled}
+        readOnly={readOnly}
       />
       {error && <div className="alert alert-error text-sm py-2">{error}</div>}
       {!readOnly && (

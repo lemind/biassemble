@@ -12,6 +12,7 @@ const AssessmentLoading = lazy(() => import('./components/AssessmentLoading'));
 const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
 const AboutPage = lazy(() => import('./components/AboutPage'));
+const StatsPage = lazy(() => import('./components/StatsPage'));
 
 function NotFound() {
   return (
@@ -85,8 +86,15 @@ export default function App() {
       );
     }
 
-    // Stats (Phase 3) and the shared assessment (Phase 4) are routed but not built yet; they
-    // render not-found until their own phase lands.
+    if (route.page === 'stats') {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <StatsPage />
+        </Suspense>
+      );
+    }
+
+    // The shared assessment (Phase 4) is routed but not built yet; it renders not-found until then.
     if (route.page !== 'reflection') return <NotFound />;
 
     if (phase === 'qa' && sessionId) {

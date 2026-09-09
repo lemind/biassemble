@@ -184,12 +184,12 @@ matters, the answer is SSR or prerendering, not two builds.
 testing, so volume proves nothing and a visitor who works that out trusts us less. The page is a
 **dated lab snapshot**: four things, all cheap, all defensible.
 
-- [ ] T011 Generation. A trusted script with DB access writes `frontend/src/data/stats.json`;
+- [x] T011 Generation. A trusted script with DB access writes `frontend/src/data/stats.json`;
   the aggregate is committed; the normal frontend build sees no database and no secrets.
   **Never add `DATABASE_URL` to Vercel frontend env** — `VITE_*` is public and a non-`VITE_` var
   still exposes the DB to build code. Lives in `backend/scripts/` (same Supabase DB as core, so no
   core change). Filter `source = 'production'`.
-- [ ] T012 Publish exactly four things, nothing else:
+- [x] T012 Publish exactly four things, nothing else:
   1. **Window, `generatedAt`, prompt versions** — makes it a snapshot, not a live counter
   2. **Self-testing disclosure** — the JSON is production-only (T011), so the honest sentence is
      *"N production runs in window W; eval runs excluded. We also ran E internal evaluation runs in
@@ -199,9 +199,21 @@ testing, so volume proves nothing and a visitor who works that out trusts us les
   3. **Verdict mix** with one sentence on why `excluded` and `unverifiable` exist — 223 of 3,262
      claims are the tool declining to judge, which is the Cardinal Rule made visible
   4. **The confirmed false accusation**, in plain language
-- [ ] T013 **Never publish "0 false accusations"** — one was observed 2026-09-08 in run `2a701ffa`
+- [x] T013 **Never publish "0 false accusations"** — one was observed 2026-09-08 in run `2a701ffa`
   (a subjective claim marked `contradicted` on evidence about a different same-named organisation).
   Report it. And do **not** publish a false-positive *rate* until T023 gives it a denominator.
+
+**Done 2026-09-09 (T011–T013).** `backend/scripts/generate-stats.ts` writes
+`frontend/src/data/stats.ts` — a **`.ts` module, not `stats.json`** as T011 said, matching
+`workedExample.ts` next to it and avoiding a `resolveJsonModule` tsconfig change plus a cast.
+Aggregates only: no run text, no claim text, no cost or token figures. Window is derived from the
+production rows themselves (2026-08-07..2026-09-08), and eval runs are counted over the same dates
+so the two are comparable: **268 production vs 3,207 eval**, 3,804 claims.
+
+`StatsPage.tsx` publishes the four things and nothing else. One correction made during review:
+abstentions (`unverifiable` + `excluded`, 318) are counted **apart from** `no_verdict` (35). A
+verification that errored is not a principled abstention, and folding it in would have padded the
+number the Cardinal Rule paragraph rests on.
 
 **Deliberately not on this page**: claim/run volume counters, cost and token metrics, time-to-verdict,
 retrieval rates, golden-set detection numbers, confidence distributions. Cost and tokens are

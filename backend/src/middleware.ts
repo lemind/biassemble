@@ -20,6 +20,21 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
     ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173"]),
   ]);
 
+/**
+ * Vercel preview deployments are 403'd here, deliberately, and this is not a bug to fix later.
+ *
+ * A preview frontend gets a fresh hostname per deployment, so no fixed allowlist admits it. The
+ * options were a pattern loose enough to match generated preview hostnames — which is a pattern
+ * loose enough to be worth attacking — or letting previews through to the PRODUCTION backend,
+ * where every call spends real LLM and search budget, writes rows to the live database, consumes
+ * the shared rate limit, and mints permanent public assessment links from test text. There is no
+ * staging backend, and building one is out of scope for launch.
+ *
+ * So previews stay unable to call the API. Local dev and production are the supported paths. To
+ * enable one specific preview temporarily, add its exact origin to CORS_ORIGINS above — an
+ * explicit, revocable, one-deployment decision rather than a standing rule.
+ */
+
 function isAllowed(origin: string | null): boolean {
   return origin !== null && ALLOWED_ORIGINS.includes(origin);
 }

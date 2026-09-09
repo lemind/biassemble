@@ -28,7 +28,7 @@ things; permalinks moved from the former to the latter.
   **Acceptance covers both hosts, not just DNS.** "Domain attached" can pass while the runtime
   resolver is wrong, so verify all six: Grounnel host → Grounnel branding → tool at `/`; Biassemble
   host → Biassemble branding → reflection flow at `/` → Grounnel app still at `/grounnel`.
-- [ ] T002 `frontend/src/lib/brand.ts` — `resolveBrand()` from `window.location.hostname` →
+- [x] T002 `frontend/src/lib/brand.ts` — `resolveBrand()` from `window.location.hostname` →
   `{ id, name, logo, tagline, nav }`. Brand is identity only; the path table (T004) decides which
   component renders. Keep them orthogonal.
 
@@ -54,9 +54,13 @@ things; permalinks moved from the former to the latter.
   ```
 
   Logo assets: `grn-logo.svg` (Grounnel) / `logo.svg` (Biassemble).
+
+  **Done 2026-09-09.** `classifyHost`/`brandForHost` are pure and tested; `resolveBrand()` reads
+  `window.location.hostname` and logs once. Brand gained `origin` (canonical URL) so the footer
+  link doesn't write a hostname outside the two arrays.
 - [x] T003 **Done 2026-09-09.** `frontend/public/grn-logo.svg` added. `logo.svg` (Biassemble)
   untouched.
-- [ ] T004 Replace `isGrounnelRoute()` with a path table matching on `window.location.pathname`
+- [x] T004 Replace `isGrounnelRoute()` with a path table matching on `window.location.pathname`
   (not the full URL — query strings and hashes must not affect resolution). It must cover the whole
   host x path matrix, not three paths:
 
@@ -72,10 +76,18 @@ things; permalinks moved from the former to the latter.
   `/grounnel` and the variable `/check/:token` segment are the two that a naive three-path table
   drops — the first breaks links we promised not to break, the second is Phase 4. Acceptance is the
   six-case matrix from T001, verified on both hosts.
-- [ ] T005 Layout reads the brand — logo, wordmark, nav, footer. `document.title` per brand.
-- [ ] T006 Footer link to Biassemble, framed as a sibling rather than a parent:
+
+  **Done 2026-09-09.** `resolveRoute(pathname, brand)` in `routes.ts`, 9 assert tests covering the
+  matrix. Fixed paths compare case-insensitively but the `/check/:token` segment keeps its case —
+  the token is base64url. Verified on the pure resolver; both hosts still need the T001 walk-through.
+- [x] T005 Layout reads the brand — logo, wordmark, nav, footer. `document.title` per brand.
+  **Done 2026-09-09.** Layout takes `brand` + `activePath`; title is `${name} — ${tagline}`, set in
+  `App.tsx`. About/Stats/check are routed but render not-found until their own phases land.
+- [x] T006 Footer link to Biassemble, framed as a sibling rather than a parent:
   *Also from this project: **Biassemble** — analyze cognitive biases in text.*
   Grounnel is the umbrella; Biassemble is a separate related project keeping its own URL.
+  **Done 2026-09-09.** Footer renders `siblingBrand(brand)`, so each host links to the other by its
+  canonical origin and the wording is symmetric.
 
 ## Phase 2 — About
 

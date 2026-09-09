@@ -4,7 +4,7 @@
 Pipeline ships **as-is** — no changes to extraction, verification, or gates.
 
 **Nothing here depends on biassemble-core spec 018.** That work is parked; see
-`../../biassemble-core/specs/018-assessment-integrity-and-guardrails/FINDINGS.md`.
+the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FINDINGS.md`.
 
 ---
 
@@ -71,58 +71,41 @@ Pipeline ships **as-is** — no changes to extraction, verification, or gates.
 - [ ] T010 One short paragraph on Biassemble as a **related project**, not a parent — what it does
   (cognitive-bias analysis of text), that it lives at its own URL, and that combining the two
   analyses over the same text is a deliberate future direction, not shipped.
+- [ ] T010a **Worked example on the landing page** — one real check shown end to end: pasted text →
+  extracted claims → one `contradicted` with its passage and source URL visible. Probably worth more
+  than the whole stats page for answering "should I trust this?", because it is the product doing
+  the thing rather than a number claiming it did.
+
 
 ## Phase 3 — Stats
 
-- [ ] T011 Stats read path. The page is public; every existing backend route is authenticated.
-  **Decided: pre-generated static JSON.** (A public read route on `biassemble/backend` is the
-  fallback if the aggregate ever needs to be live. Reusing an existing route is not viable — all
-  key-gated.)
+**Not a public scoreboard.** 236 production runs and 3,262 claims are almost entirely our own
+testing, so volume proves nothing and a visitor who works that out trusts us less. The page is a
+**dated lab snapshot**: four things, all cheap, all defensible.
 
-  Only **already-aggregated values** cross the boundary — never raw runs or claims. Illustrative
-  shape only; do not bake these numbers:
+- [ ] T011 Generation. A trusted script with DB access writes `frontend/src/data/stats.json`;
+  the aggregate is committed; the normal frontend build sees no database and no secrets.
+  **Never add `DATABASE_URL` to Vercel frontend env** — `VITE_*` is public and a non-`VITE_` var
+  still exposes the DB to build code. Lives in `backend/scripts/` (same Supabase DB as core, so no
+  core change). Filter `source = 'production'`.
+- [ ] T012 Publish exactly four things, nothing else:
+  1. **Window, `generatedAt`, prompt versions** — makes it a snapshot, not a live counter
+  2. **Eval contamination** — "X% of these rows are our own test runs" (currently ~96.5% of all
+     runs). Without this line every other number on the page is dishonest
+  3. **Verdict mix** with one sentence on why `excluded` and `unverifiable` exist — 223 of 3,262
+     claims are the tool declining to judge, which is the Cardinal Rule made visible
+  4. **The confirmed false accusation**, in plain language
+- [ ] T013 **Never publish "0 false accusations"** — one was observed 2026-09-08 in run `2a701ffa`
+  (a subjective claim marked `contradicted` on evidence about a different same-named organisation).
+  Report it. And do **not** publish a false-positive *rate* until T023 gives it a denominator.
 
-  ```json
-  { "generatedAt": "<ISO timestamp>", "window": "<start>/<end>",
-    "productionRuns": 0, "productionClaims": 0,
-    "falseAccusations": { "observed": 0, "ofClaims": 0 } }
-  ```
+**Deliberately not on this page**: claim/run volume counters, cost and token metrics, time-to-verdict,
+retrieval rates, golden-set detection numbers, confidence distributions. Cost and tokens are
+internal (publishing margins is odd, and "tokens per contradiction" rewards finding *more*
+contradictions). Golden-set numbers are our own fixture with lies we planted — marking our own
+homework. Confidence is pinned at 0.9 and charting it implies meaning it doesn't have.
 
-  **Filter `source = 'production'`** — ~96.5% of runs are internal evals (1,912 vs 70 over 14 days)
-  and must not inflate a public number.
-
-  **Decided mechanism for MVP — option 1, run outside the build.** The Vercel frontend build has no
-  production database access and must not be given any. So:
-
-  ```text
-  trusted local/admin script (has DATABASE_URL)
-      ↓  writes aggregate only
-  frontend/src/data/stats.json  — committed
-      ↓
-  normal frontend build — no DB, no secrets
-  ```
-
-  Refreshed by re-running the script and committing. Never add `DATABASE_URL` to Vercel frontend
-  env vars — `VITE_*` vars are public, and a non-`VITE_` var still exposes the DB to build code for
-  no gain. Commit only the aggregate; never raw telemetry.
-- [ ] T012 Publish only figures with a stated denominator, window and definition — and, because
-  option 1 produces a **snapshot rather than live statistics**, render `generatedAt` and the window
-  on the page itself. A reader six weeks later must not mistake stale values for current ones.
-- [ ] T013 **Do not publish "0 false accusations".** One was observed on 2026-09-08 in run
-  `2a701ffa`. Either report it honestly or omit the metric — do not print a zero a reader can
-  disprove.
-
-  **Name the metric for what it actually measures.** "False accusation" reads as *true claim →
-  contradicted*, but the operational definition is broader: *contradicted verdict → cited evidence
-  doesn't establish a contradiction*. Different populations. Publish it as:
-
-  > **Observed incorrect contradictions: 1 / 935 production claims** (window stated)
-  > A claim was returned as `contradicted`, but the cited evidence did not actually establish a
-  > contradiction.
-
-  Then note separately that the one observed incident involved a **subjective** claim with no truth
-  value — so it isn't a claim-truth false positive in the strict sense. That's more defensible than
-  either publishing zero or overclaiming. Define it internally even if the metric doesn't ship.
+Internal baselines are recorded in the **biassemble-core** repo, `HANDOFF-2026-09-09.md`, not here.
 
 ---
 
@@ -192,7 +175,7 @@ destroys a run that took ~200s to produce. Adding About and Stats to the nav mak
   Mirrors the existing `grounnel/status/[id]` proxy.
 
 **Depends on biassemble-core spec 019** (`share_token` + `GET /assessment/:token`) — see
-`../../biassemble-core/specs/019-assessment-permalink/tasks.md`. T018 and T019 are frontend-only and
+the **biassemble-core** repo, `specs/019-assessment-permalink/tasks.md`. T018 and T019 are frontend-only and
 can ship first.
 
 **Note**: shared links are public, unguessable and never expire, and the documents are often
@@ -210,6 +193,17 @@ no revocation path exists, which is worth settling before this goes live rather 
   spend guardrails. Real findings, not MVP blockers.
 
 ## After launch
+
+- [ ] T023 **Contradiction precision audit.** Draw 50–100 `contradicted` claims (random, excluding
+  golden planted rows), label each: *evidence actually refutes the claim* / *does not* (wrong
+  entity, reporting-vs-object fact, circular citation). Precision = refutes / labelled. Half a day
+  of reading, not an engineering project.
+
+  This is the unlock: it produces a real contradiction-precision figure **and** makes cost-per-false-
+  positive computable — today there is exactly one confirmed FP, so any rate is a sample of one.
+  Publish in the next stats snapshot. Not a launch blocker.
+
+
 
 Spend ran ~$2/day during heavy self-testing at ~$0.036/run, so public traffic is cheap. T017 is the
 ceiling; anything more is core spec 018.

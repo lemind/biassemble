@@ -100,7 +100,8 @@ definition without asking the author.
 
 1. **Given** any published figure, **When** a reader looks at it, **Then** its denominator,
    measurement window and definition are stated alongside it.
-2. **Given** run counts, **When** they are published, **Then** they exclude internal evaluation runs.
+2. **Given** any published figure, **When** it is shown, **Then** the proportion of rows produced by
+   internal testing is disclosed alongside it.
 3. **Given** a known failure has occurred, **When** the page reports reliability, **Then** the
    observed failure is reported rather than omitted.
 
@@ -157,13 +158,17 @@ thing you can use" rather than attribution.
 - **FR-008**: About MUST state the false-accusation-over-missed-detection principle explicitly.
 - **FR-009**: Every figure published on Stats MUST carry its denominator, measurement window and
   definition.
-- **FR-010**: Published run and claim counts MUST exclude internal evaluation activity.
+- **FR-010**: Published figures MUST disclose what proportion of the underlying activity is internal
+  testing rather than external use.
 - **FR-011**: Stats MUST NOT publish a reliability figure that contradicts an observed failure. Where
   a failure has been observed it is reported, or the metric is omitted.
 - **FR-012**: Source links shown for a claim MUST be described in language consistent with that
   claim's verdict.
 - **FR-013**: A claim with no verdict MUST be visibly distinguished from one that was checked, and
   its retrieved sources MUST NOT be presented as evidence.
+- **FR-015**: The landing page MUST show one real check end to end — submitted text, extracted
+  claims, and at least one verdict with its supporting passage and source.
+- **FR-016**: A false-positive *rate* MUST NOT be published until it has a labelled denominator.
 - **FR-014**: Grounnel MUST link to Biassemble as a separate related project, describing what it
   does, without implying Biassemble is a parent or that Grounnel is a component of it.
 
@@ -186,6 +191,7 @@ thing you can use" rather than attribution.
   false-accusation principle after reading About once.
 - **SC-005**: 100% of published figures state denominator, window and definition.
 - **SC-006**: No published figure can be contradicted by the project's own records.
+- **SC-008**: A first-time visitor can see a complete worked example without submitting anything.
 - **SC-007**: No claim displays source links whose wording conflicts with its verdict.
 
 ## Assumptions

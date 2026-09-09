@@ -113,7 +113,20 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
         // resolve against (real observed confusion, 2026-08-12: an `unsupported` claim showed
         // two source links with nothing indicating they were searched-and-rejected, not
         // evidence, which reads as if they somehow back a claim the label says has no evidence).
-        const sourcesAreUnconfirmed = claim.citations.length === 0 && sources.length > 0;
+        // Gated on verdict (T23, 2026-08-30) — matches noSourcesFound's own gating above. Without
+        // it, a citation-less `supported`/`contradicted`/`partially_supported` claim (D028: no
+        // extractable source_excerpt, or the LLM cited inline without a discrete source link) wrongly
+        // showed "found nothing that confirms this" under its own affirmative label.
+        const sourcesAreUnconfirmed =
+          (claim.verdict === 'unsupported' || claim.verdict === 'unverifiable') &&
+          claim.citations.length === 0 &&
+          sources.length > 0;
+        // The other side of the same gate: a citation-less claim whose verdict IS affirmative
+        // still has real sources worth showing — just not with language implying they failed.
+        const sourcesUncited =
+          (claim.verdict === 'supported' || claim.verdict === 'partially_supported' || claim.verdict === 'contradicted') &&
+          claim.citations.length === 0 &&
+          sources.length > 0;
         const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
         const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
@@ -198,6 +211,12 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                     ))}
                     {sourcesAreUnconfirmed && (
                       <span className="text-base-content/60">Searched, found nothing that confirms this:</span>
+                    )}
+                    {sourcesUncited && (
+                      // T23 — honest about both halves: the verdict stands, but no single sentence
+                      // was pinpointed as the citation. Distinct wording from sourcesAreUnconfirmed,
+                      // which is for a verdict that failed — this one hasn't.
+                      <span className="text-base-content/60">Supporting sources (no exact sentence matched):</span>
                     )}
                     {noSourcesFound && (
                       <span className="text-base-content/60">No sources were found to check this claim.</span>

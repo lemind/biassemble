@@ -7,6 +7,9 @@ import type { Claim, RunProgress, SharedAssessment, SharedClaim } from '../../ty
 // Same interval as usePollGrounnelStatus — a shared link opened mid-run is the same run, so it
 // should advance at the same rate rather than sitting still until someone reloads.
 const POLL_INTERVAL_MS = 5000;
+// A run whose worker died never reaches a terminal status, so "stop when terminal" alone polls for
+// the life of the tab and burns the viewer's whole read budget. 120 ticks ≈ 10 minutes.
+const MAX_POLLS = 120;
 
 // A shared claim carries no id (core 019 FR-009 keeps internal identifiers out) and no citations
 // (core never persisted them), so both are synthesised. Position is a stable key for one
@@ -54,6 +57,7 @@ function toRunProgress(assessment: SharedAssessment): RunProgress {
 export default function SharedAssessmentPage({ token }: { token: string }) {
   const [assessment, setAssessment] = useState<SharedAssessment | null>(null);
   const [failed, setFailed] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
 
   // Mirrors usePollGrounnelStatus: interval first, then an immediate poll, so a run that is
   // already finished can stop the timer from inside that first call.
@@ -61,6 +65,7 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    let polls = 0;
     let timer: ReturnType<typeof setInterval> | null = null;
     const stop = () => {
       if (timer) clearInterval(timer);
@@ -69,17 +74,24 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
 
     // try/catch, never `await ….catch()` (AGENTS.md Rule 11).
     const load = async () => {
+      if (++polls > MAX_POLLS) return stop();
       try {
         const data: SharedAssessment = await getSharedAssessment(token);
         if (cancelled) return;
         loaded.current = true;
         setAssessment(data);
         if (data.status === 'done' || data.status === 'failed') stop();
-      } catch {
+      } catch (err) {
         if (cancelled) return;
-        // A first load that fails is a dead link: report it and STOP. Without this the timer runs
-        // for the life of the tab — 720 requests an hour against a 120/hour limit, which locks the
-        // viewer out of every valid shared link too.
+        // 429 is not a dead link — reporting it as one told viewers a perfectly good link "may be
+        // mistyped". Distinguish it, and stop either way so a limited viewer stops digging deeper.
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 429) {
+          setRateLimited(true);
+          stop();
+          return;
+        }
+        // A first load that fails any other way is a dead link: report it and STOP.
         if (!loaded.current) {
           setFailed(true);
           stop();
@@ -97,6 +109,17 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
       stop();
     };
   }, [token]);
+
+  if (rateLimited && !assessment) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-24 text-center">
+        <h1 className="text-2xl font-semibold">Too many requests right now</h1>
+        <p className="mt-2 text-base-content/70">
+          This link is fine — the server is just busy. Wait a minute and reload.
+        </p>
+      </div>
+    );
+  }
 
   if (failed && !assessment) {
     return (

@@ -1,12 +1,7 @@
 // Generic request-header helpers — no Grounnel/reflection-specific logic here.
 
-// Real end-user IP, not this server's own egress IP (ADR-001 §4). Order is deliberate and
-// UNVERIFIED against the deployed edge — see docs note in AGENTS.md.
-//
-// x-forwarded-for stays first. This deployment sits behind a SECOND Vercel edge (the frontend's
-// /api rewrite proxies here), so x-real-ip and x-vercel-forwarded-for describe that proxy hop and
-// would key every visitor to one bucket — the exact bug the forwarding was added to fix. A wrong
-// chain position costs an attacker their own bucket; a wrong header costs every real user theirs.
+// Real end-user IP (ADR-001 §4). x-forwarded-for FIRST and the order is unverified against the
+// deployed edge: this app sits behind a second Vercel edge, so x-real-ip describes that hop.
 const IP_HEADERS = ["x-forwarded-for", "x-vercel-forwarded-for", "x-real-ip"] as const;
 
 /** The chosen IP and the header it came from — one traversal, so the probe needs no second one. */

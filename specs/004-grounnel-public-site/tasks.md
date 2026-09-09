@@ -388,6 +388,51 @@ no revocation path exists, which is worth settling before this goes live rather 
 
 ---
 
+## Phase 5 — Review findings, 2026-09-09
+
+Raised by the pre-launch code review and an external second opinion on the fix plan. T017 above
+remains the only hard ceiling on spend; nothing here substitutes for it.
+
+- [x] T032 `shareToken` required in all three contract mirrors (core Zod, backend Zod, frontend
+  types), and the frontend API client typed so the mirror is compiler-checked rather than
+  decorative — `submitGrounnelText`/`getGrounnelStatus`/`getSharedAssessment` returned `any`.
+  Rejected the alternative of making the field optional everywhere: that hides a deploy-order
+  bug behind a permanently weaker type. Deploy core before the site instead.
+
+- [x] T033 Permanent-link disclosure moved **before** the run starts. The share token is minted
+  the moment a check begins, so a notice shown only once the URL exists is not a choice the user
+  can act on. A shorter reminder still appears next to the swapped address.
+
+- [x] T034 Shared article text is `readOnly`, not `disabled` — a disabled textarea leaves the tab
+  order and cannot be selected or copied, so a reader could not quote the article. Includes the
+  shared page, which was passing both props and so kept the old behaviour.
+
+- [x] T035 A mid-run shared link no longer reports itself as finished. Core persists a claim row
+  only at that claim's final state, so mid-run `claims.length` is the number DONE, not the total —
+  rendered as "3 / 3 claims checked" on a run with seventeen still going. `RunProgress.progress`
+  is now nullable and non-terminal shared runs show no fraction at all.
+
+- [x] T036 Rate limits are per client again, not one global bucket. Core honours
+  `X-Grounnel-Client-IP` only when `X-Grounnel-Internal-Secret` matches, and the backend never
+  sent the secret — so `resolveClientIp` always fell back to the backend's own egress IP and the
+  advertised "5 runs/hour/IP" was 5 runs/hour for the entire site. Secret generated and set on
+  both Vercel projects (production target). Client IP now prefers the edge-set
+  `x-vercel-forwarded-for`/`x-real-ip` over the caller-prependable `x-forwarded-for`.
+
+  **Not verified yet:** which header actually carries the end user through the frontend's `/api`
+  rewrite is a property of the deployed edge. The extract route logs the candidates until one
+  real production run settles it. Confirm, then remove the log.
+
+- [x] T037 Vercel preview deployments stay blocked from the API, deliberately, and this is
+  recorded in `backend/src/middleware.ts` rather than left looking like a bug. Admitting previews
+  needs either a hostname pattern loose enough to be worth attacking, or letting preview branches
+  spend production budget, write live rows, consume the shared rate limit and mint permanent
+  public links from test text. `CORS_ORIGINS` allows one exact preview origin when needed.
+
+- [ ] T038 Delete four orphaned files: `frontend/src/components/grounnel/ShareLink.tsx`,
+  `frontend/src/lib/runStorage.ts`, `frontend/src/lib/runStorage.test.ts`,
+  `frontend/src/data/workedExample.json`. All are unreferenced; `workedExample.ts` is the live one.
+
 ## Deliberately not in the MVP
 
 - `/examples` — a curated list of shared links. Cheap once Phase 4 lands, but still later.

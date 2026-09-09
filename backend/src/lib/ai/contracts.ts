@@ -100,7 +100,7 @@ const grounnelClaimSchema = z.object({
   id: z.string(),
   text: z.string(),
   status: z.enum(["pending", "done", "failed"]),
-  verdict: z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable"]).nullable(),
+  verdict: z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable", "excluded"]).nullable(),
   evidence: z.string().nullable(),
   confidence: z.number().nullable(),
   reason: z.string().nullable(),

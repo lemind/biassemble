@@ -168,6 +168,8 @@ thing you can use" rather than attribution.
   its retrieved sources MUST NOT be presented as evidence.
 - **FR-017**: A link to the site shared in a chat or social application MUST render a preview with a
   title, description and image rather than a bare URL.
+- **FR-019**: Site-level metadata — title, description, preview image, canonical address — MUST
+  present Grounnel, since Grounnel is the public product. The legacy domain inherits it.
 - **FR-018**: Shared assessment pages MUST NOT be indexed by search engines.
 - **FR-015**: The landing page MUST show one real check end to end — submitted text, extracted
   claims, and at least one verdict with its supporting passage and source.

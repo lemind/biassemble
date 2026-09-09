@@ -83,19 +83,38 @@ the **biassemble-core** repo, `specs/018-assessment-integrity-and-guardrails/FIN
 only a `<title>`. So every link shared to Slack, Twitter or LinkedIn previews as a bare URL today,
 on both domains. This matters more once T021 starts handing people shareable check links.
 
-- [ ] T013a Add Open Graph + Twitter card tags and a meta description to `index.html`. Static, one
-  set, written for Grounnel since that's the public product. Needs an `og:image` asset.
-- [ ] T013b `document.title` per brand at runtime (already in T005) fixes the browser tab but **not**
-  link previews — social scrapers don't run JS. Accepted limitation of one shared build: the
-  Biassemble domain will preview with Grounnel's card.
+**Decision: the static `<head>` is Grounnel's.** Grounnel is the umbrella and the public product;
+Biassemble is a legacy side project on an old URL. So the one shared `index.html` carries Grounnel's
+title, description, image and canonical. The Biassemble domain inherits them — accepted, and
+consistent with the hierarchy decision.
 
-  If that becomes unacceptable, the fix is a per-host HTML shell via a Vercel middleware rewrite
-  (~an afternoon), **not** splitting into two builds. Two frontend-only Vercel projects are viable —
-  the Inngest objection only applied to full-stack deploys — but they cost two deploys to keep in
-  sync and don't solve the deeper problem.
-- [ ] T013c `noindex` on `/check/:token` pages specifically. Shared assessments often name private
-  individuals; they're meant to be passed between people, not indexed. (Core spec 019 T009 sets the
-  matching header on the API side.)
+- [ ] T013a Replace the static title in `frontend/index.html`. Today it reads
+  `Biassemble — Identify Cognitive Biases`; it becomes Grounnel's, e.g.
+  `Grounnel — Verify the claims in any text`. This is what non-JS crawlers and every social scraper
+  read.
+- [ ] T013b Open Graph + Twitter card tags, Grounnel-branded: `og:title`, `og:description`,
+  `og:image`, `og:url`, `og:type`, `twitter:card` (`summary_large_image`), plus a
+  `<meta name="description">`. Currently there are **none** — every shared link previews as a bare
+  URL on both domains.
+- [ ] T013c `og:image` asset — 1200×630 PNG in `frontend/public/`. `grn-logo.svg` is 424 bytes and
+  won't work as a social card; scrapers want a raster image at that ratio.
+- [ ] T013d Canonical link pointing at the Grounnel host, so the two domains serving identical
+  content don't compete as duplicates and Grounnel is the one that gets indexed.
+- [ ] T013e `frontend/public/robots.txt` — allow `/`, `/about`, `/stats`; **disallow `/check/`**.
+  Shared assessments often name private individuals.
+- [ ] T013f `frontend/public/sitemap.xml` listing the Grounnel host's public paths only
+  (`/`, `/about`, `/stats`). Never the check links.
+- [ ] T013g Favicon: `favicon.svg` is currently Biassemble's and is served on both domains. Decide
+  whether Grounnel gets its own — the tab icon is the most-seen brand mark on the site.
+- [ ] T013h `noindex` on `/check/:token` pages specifically, belt-and-braces with T013e. Core spec
+  019 T009 sets the matching header API-side.
+
+**Known limitation of one shared build**: `document.title` per brand (T005) fixes the browser tab at
+runtime, but social scrapers don't run JS — so the Biassemble domain previews with Grounnel's card.
+Accepted. If it ever isn't, the fix is a per-host HTML shell via a Vercel middleware rewrite
+(~an afternoon), **not** splitting into two builds. Two frontend-only Vercel projects are viable —
+the Inngest objection only applied to full-stack deploys — but they cost two deploys to keep in sync
+and don't solve the deeper problem.
 
 **Not in scope**: real SEO. This is a client-rendered Vite SPA with no SSR — crawlers that don't
 execute JavaScript see an empty page, and build count doesn't change that. If organic discovery ever

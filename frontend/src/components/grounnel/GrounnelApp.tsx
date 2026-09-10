@@ -60,26 +60,27 @@ export default function GrounnelApp() {
           </p>
         </div>
 
-        {alphaOpen ? (
-          <div className="alert alert-info items-start py-3 text-sm">
-            <span>
-              <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
-              about 2,000 characters, or 350 words. Longer texts are checked in part, so run them
-              a few paragraphs at a time.
-            </span>
-            <button className="btn btn-ghost btn-xs" aria-label="Hide details" onClick={toggleAlphaNotice}>
-              ✕
-            </button>
-          </div>
-        ) : (
+        {/* One persistent trigger, not two swapped elements: toggling used to unmount the button
+            under the keyboard user's focus, dropping them back to the top of the document. */}
+        <div className="flex flex-col gap-2">
           <button
             className="btn btn-ghost btn-xs w-fit gap-1 text-info"
-            aria-expanded={false}
+            aria-expanded={alphaOpen}
+            aria-controls="alpha-notice"
             onClick={toggleAlphaNotice}
           >
             <span aria-hidden>ⓘ</span> Alpha version
           </button>
-        )}
+          {alphaOpen && (
+            <div id="alpha-notice" className="alert alert-info items-start py-3 text-sm">
+              <span>
+                <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
+                about 2,000 characters, or 350 words. Longer texts are checked in part, so run
+                them a few paragraphs at a time.
+              </span>
+            </div>
+          )}
+        </div>
 
         <div className="collapse collapse-arrow border border-base-300 bg-base-100">
           {/* No defaultChecked — collapsed by default, same collapse pattern as ResultsView.tsx */}

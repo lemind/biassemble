@@ -13,6 +13,17 @@ async function main() {
     console.error(`Refusing to write ${OUT}: no production runs found. Wrong database?`);
     process.exit(1);
   }
+  // Only the fields the FRONTEND contract declares, listed explicitly. A field added to the
+  // backend type would otherwise land in a file the frontend type-checks, breaking its build.
+  const fallback = {
+    generatedAt: snapshot.generatedAt,
+    window: snapshot.window,
+    productionRuns: snapshot.productionRuns,
+    evalRuns: snapshot.evalRuns,
+    promptVersions: snapshot.promptVersions,
+    verdicts: snapshot.verdicts,
+    totalClaims: snapshot.totalClaims,
+  };
   writeFileSync(
     OUT,
     [
@@ -20,7 +31,7 @@ async function main() {
       "// no claim text, no cost or token figures. Regenerate, don't edit.",
       "import type { StatsSnapshot } from '../types/stats';",
       "",
-      `const stats: StatsSnapshot = ${JSON.stringify(snapshot, null, 2)};`,
+      `const stats: StatsSnapshot = ${JSON.stringify(fallback, null, 2)};`,
       "",
       "export default stats;",
       "",

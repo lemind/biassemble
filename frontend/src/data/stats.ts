@@ -3,7 +3,7 @@
 import type { StatsSnapshot } from '../types/stats';
 
 const stats: StatsSnapshot = {
-  "generatedAt": "2026-09-10T19:23:26.156Z",
+  "generatedAt": "2026-09-10T19:37:39.157Z",
   "window": {
     "from": "2026-08-07",
     "to": "2026-09-10"

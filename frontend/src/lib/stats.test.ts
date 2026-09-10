@@ -2,7 +2,7 @@
 // A verdict core emits that isn't in the fixed row list is shown as 'Other', never dropped.
 import assert from 'node:assert/strict';
 import stats from '../data/stats';
-import { VERDICT_ROWS, INDEFINITE_VERDICTS } from './verdictRows';
+import { VERDICT_ROWS, INDEFINITE_VERDICTS, bucketVerdicts } from './verdictRows';
 
 let passed = 0;
 
@@ -32,17 +32,13 @@ test('the rows account for every claim, so the bar totals 100%', () => {
   assert.equal(counted, stats.totalClaims);
 });
 
-// The page renders live data this fixture cannot see, so the guarantee has to be structural: an
-// unknown verdict lands in "Other" and still reaches the total. This asserts the arithmetic.
+// The page renders live data this fixture cannot see, so the guarantee has to be structural. This
+// calls the SAME function the page does — asserting a local copy of the sum proved nothing.
 test('an unknown verdict is absorbed by Other rather than lost', () => {
-  const known = new Set(VERDICT_ROWS.map((r) => r.key));
   const verdicts = [...stats.verdicts, { verdict: 'partially_verified', n: 37 }];
-  const other = verdicts.reduce((sum, v) => (known.has(v.verdict) ? sum : sum + v.n), 0);
-  const shown = VERDICT_ROWS.reduce(
-    (sum, r) => sum + (verdicts.find((v) => v.verdict === r.key)?.n ?? 0),
-    other,
-  );
-  assert.equal(other, 37);
+  const { rows, other } = bucketVerdicts(verdicts);
+  assert.equal(other, 37, 'an unrecognised verdict must reach the Other bucket');
+  const shown = rows.reduce((sum, r) => sum + r.n, other);
   assert.equal(shown, stats.totalClaims + 37, 'every claim is on the page somewhere');
 });
 

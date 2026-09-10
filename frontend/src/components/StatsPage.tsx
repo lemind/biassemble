@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import fallbackStats from '../data/stats';
 import type { StatsSnapshot } from '../types/stats';
 import { getStats } from '../api/client';
-import { VERDICT_ROWS, INDEFINITE_VERDICTS } from '../lib/verdictRows';
+import { VERDICT_ROWS, INDEFINITE_VERDICTS, bucketVerdicts } from '../lib/verdictRows';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -24,7 +24,9 @@ export default function StatsPage() {
   // Fallback-first: the committed snapshot is already in the bundle, so the page paints real
   // numbers immediately and upgrades in place. The freshness row is what tells the two apart.
   const [stats, setStats] = useState<StatsSnapshot>(fallbackStats);
-  const [live, setLive] = useState(false);
+  // Three states, not a boolean: "still asking" is not "asked and failed", and a boolean made the
+  // page assert the figures were unavailable for the whole time the request was in flight.
+  const [freshness, setFreshness] = useState<'loading' | 'live' | 'fallback'>('loading');
 
   useEffect(() => {
     let cancelled = false;
@@ -32,21 +34,19 @@ export default function StatsPage() {
       .then((fresh) => {
         if (cancelled) return;
         setStats(fresh);
-        setLive(true);
+        setFreshness('live');
       })
       .catch(() => {
-        // Nothing to do: the fallback is already what's rendered, and `live` stays false.
+        if (!cancelled) setFreshness('fallback');
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const live = freshness === 'live';
   const n = (key: string) => stats.verdicts.find((v) => v.verdict === key)?.n ?? 0;
-  // A verdict core starts emitting before this page knows about it would otherwise be counted in
-  // the total and shown nowhere, leaving the bar short. Named rather than dropped.
-  const knownKeys = new Set(VERDICT_ROWS.map((r) => r.key));
-  const other = stats.verdicts.reduce((sum, v) => (knownKeys.has(v.verdict) ? sum : sum + v.n), 0);
+  const { other } = bucketVerdicts(stats.verdicts);
   const total = stats.totalClaims;
   const indefinite = INDEFINITE_VERDICTS.reduce((sum, key) => sum + n(key), 0);
   const failed = n('no_verdict');
@@ -71,9 +71,12 @@ export default function StatsPage() {
         </Meta>
       </dl>
       <p className="mt-3 text-sm text-base-content/55">
-        {live
-          ? 'These figures are refreshed hourly. A cached result may be served while a fresh one is fetched.'
-          : 'Live figures were unavailable, so these are the last committed snapshot and may be out of date.'}
+        {freshness === 'live' &&
+          'These figures are refreshed hourly. A cached result may be served while a fresh one is fetched.'}
+        {freshness === 'loading' &&
+          'Showing the last committed snapshot while the current figures load.'}
+        {freshness === 'fallback' &&
+          'Live figures were unavailable, so these are the last committed snapshot and may be out of date.'}
         {stats.promptVersions.length > 1 &&
           ' These runs span more than one extraction prompt version; the figures below combine them.'}
       </p>

@@ -58,7 +58,7 @@ export async function buildStatsSnapshot(): Promise<StatsSnapshot> {
     generatedAt: new Date().toISOString(),
     window,
     productionRuns: Number(win?.runs ?? 0),
-    evalRuns: Number(evals.runs),
+    evalRuns: Number(evals?.runs ?? 0),
     promptVersions: prompts.map((p) => ({ extract: String(p.extract), verify: String(p.verify) })),
     verdicts: verdicts.map((v) => ({ verdict: String(v.verdict), n: Number(v.n) })),
     totalClaims: verdicts.reduce((sum, v) => sum + Number(v.n), 0),

@@ -12,7 +12,7 @@ interface GrounnelProgressProps {
 
 const SOFT_STALL_THRESHOLD_SECONDS = 60;
 // Mirrors MAX_CLAIMS in biassemble-core's extract.service.ts — shown so "partial" says how partial.
-const MAX_CLAIMS_PER_RUN = 100;
+const MAX_CLAIMS_PER_RUN = 40;
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -232,10 +232,10 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
       )}
       {status.caps_hit && (
         <p className="text-warning">
-          This text had more claims than one check can handle, so only the first {MAX_CLAIMS_PER_RUN} were
-          looked at — the rest were not checked at all.{' '}
+          This text has more factual claims than one check covers. The first {MAX_CLAIMS_PER_RUN} were
+          checked; the rest were not looked at.{' '}
           <span className="text-base-content/70">
-            Run it again a few paragraphs at a time to get everything covered.
+            Checking longer texts in full isn&apos;t supported yet.
           </span>
         </p>
       )}

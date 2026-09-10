@@ -97,7 +97,11 @@ export function brandForHost(hostname: string): Brand {
   const host = hostname.toLowerCase();
   if (GROUNNEL_HOSTS.includes(host)) return GROUNNEL;
   if (BIASSEMBLE_HOSTS.includes(host)) return BIASSEMBLE;
-  if (classifyHost(host) === 'development' && host.split('.')[0] === 'grounnel') return GROUNNEL;
+  if (classifyHost(host) === 'development') {
+    const named = host.split('.')[0];
+    if (named === 'grounnel') return GROUNNEL;
+    if (named === 'biassemble') return BIASSEMBLE;
+  }
   return BIASSEMBLE;
 }
 
@@ -124,11 +128,14 @@ const OVERRIDE_KEY = 'grounnel.devBrand';
  * a dev server because browsers HSTS-preload `*.vercel.app`. This path needs neither. It is read
  * ONLY on a development host, so production branding still comes from the hostname alone.
  */
-function devBrandOverride(kind: HostKind): Brand | null {
+function devBrandOverride(kind: HostKind, hostNamesBrand: boolean): Brand | null {
   if (kind !== 'development') return null;
   try {
     const requested = new URLSearchParams(window.location.search).get('brand');
-    const id = requested ?? sessionStorage.getItem(OVERRIDE_KEY);
+    // A hostname that NAMES its brand (`grounnel.localhost`) outranks a sticky stored value: one
+    // `?brand=biassemble` earlier in the tab otherwise silently overrode the host from then on.
+    const stored = hostNamesBrand ? null : sessionStorage.getItem(OVERRIDE_KEY);
+    const id = requested ?? stored;
     if (id !== 'grounnel' && id !== 'biassemble') return null;
     // Written only for a value that resolved, and only when it changes — `resolveBrand` is called
     // from a render body, so an unconditional write would be a side effect during render.
@@ -144,7 +151,8 @@ function devBrandOverride(kind: HostKind): Brand | null {
 
 export function resolveBrand(hostname = window.location.hostname): Brand {
   const kind = classifyHost(hostname);
-  const override = devBrandOverride(kind);
+  const hostNamesBrand = ['grounnel', 'biassemble'].includes(hostname.toLowerCase().split('.')[0]);
+  const override = devBrandOverride(kind, hostNamesBrand);
   const brand = override ?? brandForHost(hostname);
   if (!announced) {
     announced = true;

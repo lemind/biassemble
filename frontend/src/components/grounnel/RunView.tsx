@@ -19,7 +19,7 @@ export default function RunView({
       <GrounnelProgress status={status} articleText={articleText} />
       {/* Finished runs only: mid-run the numbers swing on every claim, and a failed run scores
           what it happened to finish rather than what the article says. */}
-      {status?.status === 'done' && <ArticleScores claims={claims} />}
+      {status?.status === 'done' && <ArticleScores claims={claims} capsHit={status.caps_hit} />}
       <div className="card bg-base-100 shadow">
         <div className="card-body">
           <HighlightedArticle articleText={articleText} claims={claims} />

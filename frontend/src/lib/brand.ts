@@ -93,16 +93,18 @@ export function classifyHost(hostname: string): HostKind {
  * deploy: browsers HSTS-preload `*.vercel.app`, so the real host can't be pointed at a dev server.
  * It cannot leak into production: `.localhost` is reserved and never resolves off this machine.
  */
+/** The brand a dev hostname names in its first label, e.g. `grounnel.localhost`, or null. */
+export function hostNamedBrand(hostname: string): BrandId | null {
+  const named = hostname.toLowerCase().split('.')[0];
+  return named === 'grounnel' || named === 'biassemble' ? named : null;
+}
+
 export function brandForHost(hostname: string): Brand {
   const host = hostname.toLowerCase();
   if (GROUNNEL_HOSTS.includes(host)) return GROUNNEL;
   if (BIASSEMBLE_HOSTS.includes(host)) return BIASSEMBLE;
-  if (classifyHost(host) === 'development') {
-    const named = host.split('.')[0];
-    if (named === 'grounnel') return GROUNNEL;
-    if (named === 'biassemble') return BIASSEMBLE;
-  }
-  return BIASSEMBLE;
+  const named = classifyHost(host) === 'development' ? hostNamedBrand(host) : null;
+  return named ? BRANDS[named] : BIASSEMBLE;
 }
 
 export function getBrand(id: BrandId): Brand {
@@ -121,21 +123,21 @@ let announced = false;
 const OVERRIDE_KEY = 'grounnel.devBrand';
 
 /**
- * Development-only brand switch: `?brand=grounnel` once, and it sticks for the tab.
+ * Development-only brand switch for a NEUTRAL dev host: `?brand=grounnel` once on `localhost`,
+ * and it sticks for the tab. Ignored entirely on a host that already names its brand — there
+ * `grounnel.localhost` IS the answer, and a stored value silently outranking it was a bug.
  *
- * The hostname conventions above both need DNS to cooperate — `grounnel.localhost` fails outright
- * behind an HTTP proxy that only exempts bare `localhost`, and the real host cannot be pointed at
- * a dev server because browsers HSTS-preload `*.vercel.app`. This path needs neither. It is read
- * ONLY on a development host, so production branding still comes from the hostname alone.
+ * It exists because the hostname conventions need DNS to cooperate: `grounnel.localhost` fails
+ * behind an HTTP proxy that only exempts bare `localhost`, and the real host cannot be pointed
+ * at a dev server because browsers HSTS-preload `*.vercel.app`.
  */
 function devBrandOverride(kind: HostKind, hostNamesBrand: boolean): Brand | null {
-  if (kind !== 'development') return null;
+  // Not read AND not written on a brand-naming host: writing a value that can never be read back
+  // left dead state behind and made the "it sticks for the tab" contract false there.
+  if (kind !== 'development' || hostNamesBrand) return null;
   try {
     const requested = new URLSearchParams(window.location.search).get('brand');
-    // A hostname that NAMES its brand (`grounnel.localhost`) outranks a sticky stored value: one
-    // `?brand=biassemble` earlier in the tab otherwise silently overrode the host from then on.
-    const stored = hostNamesBrand ? null : sessionStorage.getItem(OVERRIDE_KEY);
-    const id = requested ?? stored;
+    const id = requested ?? sessionStorage.getItem(OVERRIDE_KEY);
     if (id !== 'grounnel' && id !== 'biassemble') return null;
     // Written only for a value that resolved, and only when it changes — `resolveBrand` is called
     // from a render body, so an unconditional write would be a side effect during render.
@@ -151,7 +153,7 @@ function devBrandOverride(kind: HostKind, hostNamesBrand: boolean): Brand | null
 
 export function resolveBrand(hostname = window.location.hostname): Brand {
   const kind = classifyHost(hostname);
-  const hostNamesBrand = ['grounnel', 'biassemble'].includes(hostname.toLowerCase().split('.')[0]);
+  const hostNamesBrand = hostNamedBrand(hostname) !== null;
   const override = devBrandOverride(kind, hostNamesBrand);
   const brand = override ?? brandForHost(hostname);
   if (!announced) {

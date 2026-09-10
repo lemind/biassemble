@@ -15,6 +15,119 @@ import type {
  * Local mock — no prompts, no LLM keys. For public-repo dev when AI Core is unavailable.
  * Do not use in production.
  */
+// The one run this mock serves. getGrounnelStatus and getSharedAssessment both project from it,
+// so a dev's share link shows the same check they just ran — they used to be different articles.
+const MOCK_RUN_TEXT =
+  "[dev-mock] The Eiffel Tower was completed in 1889. Mount Everest is the tallest mountain above sea level. The Statue of Liberty was a gift from Canada. COBOL was designed primarily by Grace Hopper. The village hall was repainted in the spring of 1974. The bridge carries roughly 40,000 vehicles a day. I felt exhausted after gardening yesterday.";
+
+const MOCK_RUN_CLAIMS: GrounnelStatusOutput["claims"] = [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            text: "[dev-mock] The Eiffel Tower was completed in 1889.",
+            status: "done",
+            verdict: "supported",
+            evidence: "[dev-mock] The tower was finished in 1889 for the World's Fair.",
+            confidence: 0.95,
+            reason: "[dev-mock] Confirmed by the mocked source.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [
+              { source: "A", sentence: 1, url: "https://example.com", text: "[dev-mock] The tower was finished in 1889 for the World's Fair." },
+            ],
+            sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
+          },
+          // An `excluded` claim — without it the "Not checked" UI is unreachable in dev-mock.
+          {
+            id: "00000000-0000-4000-8000-000000000002",
+            text: "[dev-mock] I felt exhausted after gardening yesterday.",
+            status: "done",
+            verdict: "excluded",
+            evidence: null,
+            confidence: null,
+            reason: "[dev-mock] This describes a private, personal circumstance no public record could confirm.",
+            sources: [],
+            citations: [],
+            sourceExcerpt: "[dev-mock] I felt exhausted after gardening yesterday.",
+          },
+          // A citation-less `supported` claim — without it the sourcesUncited "Supporting sources
+          // (no exact sentence matched)" UI is unreachable in dev-mock (T23, D032 §12 Finding A).
+          {
+            id: "00000000-0000-4000-8000-000000000003",
+            text: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
+            status: "done",
+            verdict: "supported",
+            evidence: "[dev-mock] Everest's summit is the highest point above sea level on Earth.",
+            confidence: 0.95,
+            reason: "[dev-mock] Confirmed by the mocked source, but no single sentence was pinpointed to cite.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/everest", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [],
+            sourceExcerpt: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
+          },
+          // Four more, so the run clears articleScore's N >= 5 guard: a contradiction, a partial,
+          // an unsupported, and an engine failure (lowers completeness, never groundedness).
+          {
+            id: "00000000-0000-4000-8000-000000000004",
+            text: "[dev-mock] The Statue of Liberty was a gift from Canada.",
+            status: "done",
+            verdict: "contradicted",
+            evidence: "[dev-mock] The statue was a gift from the people of France.",
+            confidence: 0.93,
+            reason: "[dev-mock] The source names France, not Canada.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/liberty", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [
+              { source: "A", sentence: 1, url: "https://example.com/liberty", text: "[dev-mock] The statue was a gift from the people of France." },
+            ],
+            sourceExcerpt: "[dev-mock] The Statue of Liberty was a gift from Canada.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000005",
+            text: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
+            status: "done",
+            verdict: "partially_supported",
+            evidence: "[dev-mock] Hopper led the team that invented COBOL.",
+            confidence: 0.71,
+            reason: "[dev-mock] Leading a team is not the same as primary personal authorship.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/cobol", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [
+              { source: "A", sentence: 2, url: "https://example.com/cobol", text: "[dev-mock] Hopper led the team that invented COBOL." },
+            ],
+            sourceExcerpt: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000006",
+            text: "[dev-mock] The village hall was repainted in the spring of 1974.",
+            status: "done",
+            verdict: "unsupported",
+            evidence: null,
+            confidence: 0.8,
+            reason: "[dev-mock] None of the retrieved sentences mention the village hall.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/village", status: "ok", retrievalMethod: "tavily_fallback" },
+            ],
+            citations: [],
+            sourceExcerpt: "[dev-mock] The village hall was repainted in the spring of 1974.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000007",
+            text: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
+            status: "failed",
+            verdict: null,
+            evidence: null,
+            confidence: null,
+            reason: null,
+            sources: [],
+            citations: [],
+            sourceExcerpt: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
+          },
+];
+
 export function createDevMockClient(): AiClient {
   // Real observed gap, 2026-08-12: getGrounnelStatus used to return "done" on the very first
   // poll, unconditionally — a real run takes several seconds, so there was no way to actually
@@ -94,31 +207,19 @@ export function createDevMockClient(): AiClient {
       }
       return {
         status: "done",
-        text: "[dev-mock] The Eiffel Tower was completed in 1889. I felt exhausted after gardening yesterday.",
+        text: MOCK_RUN_TEXT,
         createdAt: "2026-09-09T00:00:00.000Z",
         completedAt: "2026-09-09T00:03:20.000Z",
-        claims: [
-          {
-            text: "[dev-mock] The Eiffel Tower was completed in 1889.",
-            verdict: "supported",
-            evidence: "[dev-mock] The tower was finished in 1889 for the World's Fair.",
-            confidence: 0.95,
-            reason: "[dev-mock] Confirmed by the mocked source.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok" },
-            ],
-            sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
-          },
-          {
-            text: "[dev-mock] I felt exhausted after gardening yesterday.",
-            verdict: "excluded",
-            evidence: null,
-            confidence: null,
-            reason: "[dev-mock] This describes a private, personal circumstance no public record could confirm.",
-            sources: [],
-            sourceExcerpt: "[dev-mock] I felt exhausted after gardening yesterday.",
-          },
-        ],
+        // Core persists no citations and no ids for a shared assessment (019 FR-009).
+        claims: MOCK_RUN_CLAIMS.map((c) => ({
+          text: c.text,
+          verdict: c.verdict,
+          evidence: c.evidence,
+          confidence: c.confidence,
+          reason: c.reason,
+          sources: c.sources,
+          sourceExcerpt: c.sourceExcerpt,
+        })),
       };
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
@@ -132,119 +233,14 @@ export function createDevMockClient(): AiClient {
         id,
         status,
         progress: { checked: status === "done" ? 7 : 0, total: 7 },
-        claims: status === "done" ? [
-          {
-            id: "00000000-0000-4000-8000-000000000001",
-            text: "[dev-mock] The Eiffel Tower was completed in 1889.",
-            status: "done",
-            verdict: "supported",
-            evidence: "[dev-mock] The tower was finished in 1889 for the World's Fair.",
-            confidence: 0.95,
-            reason: "[dev-mock] Confirmed by the mocked source.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com", status: "ok", retrievalMethod: "diy_fetch" },
-            ],
-            citations: [
-              { source: "A", sentence: 1, url: "https://example.com", text: "[dev-mock] The tower was finished in 1889 for the World's Fair." },
-            ],
-            sourceExcerpt: "[dev-mock] The Eiffel Tower was completed in 1889.",
-          },
-          // An `excluded` claim — without it the "Not checked" UI is unreachable in dev-mock.
-          {
-            id: "00000000-0000-4000-8000-000000000002",
-            text: "[dev-mock] I felt exhausted after gardening yesterday.",
-            status: "done",
-            verdict: "excluded",
-            evidence: null,
-            confidence: null,
-            reason: "[dev-mock] This describes a private, personal circumstance no public record could confirm.",
-            sources: [],
-            citations: [],
-            sourceExcerpt: "[dev-mock] I felt exhausted after gardening yesterday.",
-          },
-          // A citation-less `supported` claim — without it the sourcesUncited "Supporting sources
-          // (no exact sentence matched)" UI is unreachable in dev-mock (T23, D032 §12 Finding A).
-          {
-            id: "00000000-0000-4000-8000-000000000003",
-            text: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
-            status: "done",
-            verdict: "supported",
-            evidence: "[dev-mock] Everest's summit is the highest point above sea level on Earth.",
-            confidence: 0.95,
-            reason: "[dev-mock] Confirmed by the mocked source, but no single sentence was pinpointed to cite.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/everest", status: "ok", retrievalMethod: "diy_fetch" },
-            ],
-            citations: [],
-            sourceExcerpt: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
-          },
-          // Four more, so the run clears articleScore's N >= 5 guard and exercises every band:
-          // a contradiction (the multiplicative penalty), a partial (the 0.5 weight), an
-          // unsupported, and an engine failure (must lower completeness, never groundedness).
-          {
-            id: "00000000-0000-4000-8000-000000000004",
-            text: "[dev-mock] The Statue of Liberty was a gift from Canada.",
-            status: "done",
-            verdict: "contradicted",
-            evidence: "[dev-mock] The statue was a gift from the people of France.",
-            confidence: 0.93,
-            reason: "[dev-mock] The source names France, not Canada.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/liberty", status: "ok", retrievalMethod: "diy_fetch" },
-            ],
-            citations: [
-              { source: "A", sentence: 1, url: "https://example.com/liberty", text: "[dev-mock] The statue was a gift from the people of France." },
-            ],
-            sourceExcerpt: "[dev-mock] The Statue of Liberty was a gift from Canada.",
-          },
-          {
-            id: "00000000-0000-4000-8000-000000000005",
-            text: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
-            status: "done",
-            verdict: "partially_supported",
-            evidence: "[dev-mock] Hopper led the team that invented COBOL.",
-            confidence: 0.71,
-            reason: "[dev-mock] Leading a team is not the same as primary personal authorship.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/cobol", status: "ok", retrievalMethod: "diy_fetch" },
-            ],
-            citations: [
-              { source: "A", sentence: 2, url: "https://example.com/cobol", text: "[dev-mock] Hopper led the team that invented COBOL." },
-            ],
-            sourceExcerpt: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
-          },
-          {
-            id: "00000000-0000-4000-8000-000000000006",
-            text: "[dev-mock] The village hall was repainted in the spring of 1974.",
-            status: "done",
-            verdict: "unsupported",
-            evidence: null,
-            confidence: 0.8,
-            reason: "[dev-mock] None of the retrieved sentences mention the village hall.",
-            sources: [
-              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/village", status: "ok", retrievalMethod: "tavily_fallback" },
-            ],
-            citations: [],
-            sourceExcerpt: "[dev-mock] The village hall was repainted in the spring of 1974.",
-          },
-          {
-            id: "00000000-0000-4000-8000-000000000007",
-            text: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
-            status: "failed",
-            verdict: null,
-            evidence: null,
-            confidence: null,
-            reason: null,
-            sources: [],
-            citations: [],
-            sourceExcerpt: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
-          },
-        ] : [],
+        claims: status === "done" ? MOCK_RUN_CLAIMS : [],
         // `eligible` drops the one excluded claim but keeps the failed one, matching core's
         // grounnel-store, so the mock teaches the same arithmetic as production.
         score: status === "done"
           ? { grounded_pct: 33, grounded_n: 2, unclear_n: 1, no_evidence_n: 1, contradicted_n: 1, not_checked_n: 1, eligible: 6 }
-          : { grounded_pct: 0, grounded_n: 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 6 },
+          // eligible 0, not 6: with no claims core computes 0, and its own schema refines that the
+          // five buckets sum to eligible — a non-zero here teaches an arithmetic core would reject.
+          : { grounded_pct: 0, grounded_n: 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 0 },
         caps_hit: false,
         started_at: new Date().toISOString(),
         elapsed_seconds: 3,

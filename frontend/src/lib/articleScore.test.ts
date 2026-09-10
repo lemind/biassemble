@@ -88,8 +88,33 @@ assert.equal(articleScore(claims({ supported: 18, unsupported: 2, pending: 5 }))
              failed.completeness);
 
 // Degenerate inputs must not divide by zero.
-assert.deepEqual(articleScore([]).completeness, 0);
-assert.equal(articleScore(claims({ excluded: 9 })).completeness, 0);
+assert.equal(articleScore([]).completeness, null);
+assert.equal(articleScore(claims({ excluded: 9 })).completeness, null);
 assert.equal(articleScore([]).groundedness, null);
+
+// An opinion piece is not 0% assessed — it has nothing to assess. Suppressed, never scored 0.
+const opinionOnly = articleScore(claims({ excluded: 12 }));
+assert.equal(opinionOnly.completeness, null);
+assert.equal(opinionOnly.completenessSuppressed, 'nothing-checkable');
+assert.equal(articleScore([]).completenessSuppressed, 'nothing-checkable');
+
+// Extraction hit the claim cap: an unknown number were never extracted, so no fraction is honest.
+const capped = articleScore(claims({ supported: 100 }), true);
+assert.equal(capped.completeness, null);
+assert.equal(capped.completenessSuppressed, 'capped');
+assert.equal(capped.groundedness, 100, 'the cap says nothing about the claims we DID check');
+
+// One contradiction in five must not force the red ring — 1/5 is exactly the threshold.
+const oneOfFive = articleScore(claims({ supported: 4, contradicted: 1 }));
+assert.equal(oneOfFive.groundedness, 64);
+assert.equal(groundednessColor(oneOfFive.groundedness!, oneOfFive.counts), 'text-warning');
+const twoOfFive = articleScore(claims({ supported: 3, contradicted: 2 }));
+assert.equal(groundednessColor(twoOfFive.groundedness!, twoOfFive.counts), 'text-error');
+
+// A verdict this build has never heard of must not vanish from the denominators.
+const unknown = claims({ supported: 6 });
+unknown.push({ ...unknown[0], id: 'x', verdict: 'mixed' as never });
+assert.equal(articleScore(unknown).counts.checked, 6);
+assert.equal(articleScore(unknown).counts.noVerdict, 1, 'unknown verdict falls back to noVerdict');
 
 console.log('articleScore.test.ts: all assertions passed');

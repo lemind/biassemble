@@ -3,7 +3,7 @@
  * decision). Run: npx tsx src/lib/brand.test.ts
  */
 import assert from 'node:assert/strict';
-import { classifyHost, brandForHost, siblingBrand } from './brand';
+import { classifyHost, brandForHost, hostNamedBrand, siblingBrand } from './brand';
 
 let passed = 0;
 
@@ -77,3 +77,16 @@ test('siblingBrand points each brand at the other, by its canonical origin', () 
 });
 
 console.log(`\n${passed} tests passed`);
+
+// hostNamedBrand — the first-label convention both brandForHost and resolveBrand key on.
+assert.equal(hostNamedBrand('grounnel.localhost'), 'grounnel');
+assert.equal(hostNamedBrand('biassemble.localhost'), 'biassemble');
+assert.equal(hostNamedBrand('localhost'), null);
+assert.equal(hostNamedBrand('GROUNNEL.localhost'), 'grounnel');
+assert.equal(hostNamedBrand('grounnelish.localhost'), null);
+
+// biassemble.localhost must resolve explicitly, not by falling through to the default.
+assert.equal(brandForHost('biassemble.localhost').id, 'biassemble');
+assert.equal(brandForHost('grounnel.localhost').id, 'grounnel');
+console.log('brand.test.ts: hostNamedBrand assertions passed');
+

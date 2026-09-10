@@ -174,9 +174,8 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   }
 
   const isTerminal = status.status === 'done' || status.status === 'failed';
-  // Core's `checked` counts every claim that RESOLVED — excluded and failed ones included — so a
-  // finished run read "7 / 7 claims checked" when only 5 were verified. 'done' only: a failed run
-  // never persisted the rest, so any denominator here would understate it.
+  // Core's `checked` counts every claim that RESOLVED, excluded and failed included. 'done' only:
+  // a failed run never persisted the rest, so any denominator here would understate it.
   const counts = status.status === 'done' ? countClaims(status.claims) : null;
   const skipped = counts ? counts.excluded + counts.noVerdict : 0;
   const isStalled =

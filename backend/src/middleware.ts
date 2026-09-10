@@ -22,7 +22,10 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "[::1]"]);
 /** Any http loopback origin, on any port. Dev only — vite walks the port forward when one is
  *  taken, and `<brand>.localhost` is how the two brands are told apart locally (brand.ts). */
 function isDevOrigin(origin: string): boolean {
-  if (process.env.NODE_ENV === "production") return false;
+  // VERCEL_ENV, not NODE_ENV: `next build` only DEFAULTS NODE_ENV to production and accepts
+  // "development", so one env var on the project would open this on a real deploy. Vercel sets
+  // VERCEL_ENV itself on every deployment and it cannot be set locally by accident.
+  if (process.env.VERCEL_ENV || process.env.NODE_ENV === "production") return false;
   try {
     const { protocol, hostname } = new URL(origin);
     return protocol === "http:" && (LOOPBACK_HOSTS.has(hostname) || hostname.endsWith(".localhost"));

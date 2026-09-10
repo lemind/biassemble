@@ -4,16 +4,19 @@ import type { Claim } from '../../types/grounnel';
 
 const SUPPRESSED_COPY = {
   'too-few': 'Fewer than five claims were checked, so a score would be noise.',
-  'no-direction': 'Nothing was confirmed or refuted, so there is no direction to report.',
+  'no-direction': 'Nothing was confirmed or contradicted, so there is no direction to report.',
+} as const;
+
+const COMPLETENESS_SUPPRESSED_COPY = {
+  'nothing-checkable': 'This text contains no factual claims to check.',
+  capped: 'The claim limit was reached, so how much is left unchecked is unknown.',
 } as const;
 
 const RADIUS = 52;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-/**
- * A ring, not a bare number: 0–100 is only obvious once the remaining arc is visible. Drawn as
- * plain SVG rather than daisyUI's radial-progress, which cannot take an arbitrary stroke colour.
- */
+/** A ring, not a bare number: 0–100 is only obvious once the remaining arc is visible. Plain SVG
+ *  because daisyUI's radial-progress cannot take an arbitrary stroke colour. */
 function ScoreRing({ value, colorClass }: { value: number | null; colorClass: string }) {
   const filled = value ?? 0;
   return (
@@ -31,7 +34,9 @@ function ScoreRing({ value, colorClass }: { value: number | null; colorClass: st
             stroke="currentColor"
             className={colorClass}
             strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={CIRCUMFERENCE * (1 - filled / 100)}
+            // A literal 0 draws no arc at all, making the worst possible score geometrically
+            // identical to "no score". Keep a visible stub so the ring always says which it is.
+            strokeDashoffset={CIRCUMFERENCE * (1 - Math.max(filled, 1.5) / 100)}
           />
         )}
       </svg>
@@ -72,13 +77,19 @@ function Score({
 // The counts the two scores rest on. Sample size used to be folded into completeness, where it
 // silently capped short articles; showing it is both more honest and more useful.
 function basis(c: Counts): string {
-  const refuted = c.contradicted > 0 ? `, ${c.contradicted} contradicted` : '';
-  return `${c.supported} of ${c.checked} checked claims supported by retrieved evidence${refuted}`;
+  // Partial support is named explicitly: it is half-credited in the score, so omitting it made
+  // the number and its own justification read as disagreeing.
+  const parts = [
+    `${c.supported} of ${c.checked} checked claims supported by retrieved evidence`,
+    c.partiallySupported > 0 ? `${c.partiallySupported} partly` : null,
+    c.contradicted > 0 ? `${c.contradicted} contradicted` : null,
+  ].filter(Boolean);
+  return parts.join(', ');
 }
 
 /** Only rendered for a finished run — mid-run these swing wildly as claims resolve. */
-export default function ArticleScores({ claims }: { claims: Claim[] }) {
-  const score = articleScore(claims);
+export default function ArticleScores({ claims, capsHit }: { claims: Claim[]; capsHit: boolean }) {
+  const score = articleScore(claims, capsHit);
 
   return (
     <div className="card border border-base-300 bg-base-100">
@@ -92,8 +103,13 @@ export default function ArticleScores({ claims }: { claims: Claim[] }) {
           />
           <Score
             value={score.completeness}
-            colorClass={completenessColor(score.completeness)}
+            colorClass={score.completeness === null ? '' : completenessColor(score.completeness)}
             label="Assessment completeness"
+            note={
+              score.completenessSuppressed
+                ? COMPLETENESS_SUPPRESSED_COPY[score.completenessSuppressed]
+                : undefined
+            }
           />
         </div>
         <p className="text-xs text-base-content/60">

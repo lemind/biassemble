@@ -8,9 +8,9 @@ export interface ArticleScore {
   /** 0-100, or null when the assessment's own denominator is unknown. */
   completeness: number | null;
   /** Why groundedness is null, for the copy that replaces the number. */
-  suppressed: 'too-few' | 'no-direction' | null;
+  suppressed: 'too-few' | 'no-direction' | 'unverified' | null;
   /** Why completeness is null. */
-  completenessSuppressed: 'nothing-checkable' | 'capped' | null;
+  completenessSuppressed: 'nothing-checkable' | 'capped' | 'unverified' | null;
   counts: Counts;
 }
 
@@ -32,6 +32,18 @@ const MIN_CHECKED = 5;
 /** ABOVE this share of checked claims contradicted, the score is driven by refutation. Strict:
  *  at N=5 a single contradiction is exactly 0.2, and one claim should not force the red ring. */
 const REFUTED_SHARE = 0.2;
+
+const warnedVerdicts = new Set<string>();
+
+// Schema drift is invisible otherwise: the counts stay arithmetically valid, so nothing looks
+// wrong. Once per distinct value, so a 100-claim run does not flood the console.
+function warnUnknownVerdict(verdict: string): void {
+  if (warnedVerdicts.has(verdict)) return;
+  warnedVerdicts.add(verdict);
+  console.warn(
+    `[articleScore] unknown verdict "${verdict}" — counted as unresolved. This build's ClaimVerdict union has drifted from core's schema.`
+  );
+}
 
 function withChecked(c: Omit<Counts, 'checked'>): Counts {
   return {
@@ -60,7 +72,11 @@ export function countClaims(claims: Claim[]): Counts {
     const key = bucket[claim.verdict];
     // Fail safe on a verdict this build has never heard of: core's schema and this hand-mirrored
     // union can drift, and an unknown key would silently erase the claim from every denominator.
-    if (key === undefined) { c.noVerdict++; continue; }
+    if (key === undefined) {
+      warnUnknownVerdict(claim.verdict);
+      c.noVerdict++;
+      continue;
+    }
     c[key]++;
   }
   c.checked = c.supported + c.partiallySupported + c.unsupported + c.unverifiable + c.contradicted;
@@ -75,9 +91,23 @@ export function countClaims(claims: Claim[]): Counts {
 export function articleScore(
   claims: Claim[],
   capsHit = false,
-  authoritative?: Omit<Counts, 'checked'>
+  authoritative?: Omit<Counts, 'checked'>,
+  /** Set for a shared assessment: without the snapshot its denominators cannot be trusted. */
+  requireAuthoritative = false
 ): ArticleScore {
   const counts = authoritative ? withChecked(authoritative) : countClaims(claims);
+
+  // A run finished before core snapshotted its counts. Falling back to the rows here would
+  // reinstate exactly the inflated score the snapshot exists to prevent, silently.
+  if (requireAuthoritative && !authoritative) {
+    return {
+      groundedness: null,
+      completeness: null,
+      suppressed: 'unverified',
+      completenessSuppressed: 'unverified',
+      counts,
+    };
+  }
   const { supported: S, partiallySupported: P, contradicted: C, checked: N, noVerdict, excluded } = counts;
 
   const attempted = N + noVerdict;

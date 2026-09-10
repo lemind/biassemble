@@ -160,6 +160,7 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
           articleText={assessment.text}
           status={toRunProgress(assessment)}
           counts={assessment.counts}
+          requireCounts
         />
       </div>
     </div>

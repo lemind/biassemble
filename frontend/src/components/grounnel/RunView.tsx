@@ -10,11 +10,14 @@ export default function RunView({
   articleText,
   status,
   counts,
+  requireCounts = false,
 }: {
   articleText: string;
   status: RunProgress | null;
   /** Set only for a shared assessment, where the claim rows are best-effort and may be short. */
   counts?: SharedCounts;
+  /** True on the shared path: no snapshot means the denominators are unverifiable, not derivable. */
+  requireCounts?: boolean;
 }) {
   const claims = status?.claims ?? [];
   return (
@@ -22,7 +25,7 @@ export default function RunView({
       <GrounnelProgress status={status} articleText={articleText} />
       {/* Finished runs only: mid-run the numbers swing on every claim, and a failed run scores
           what it happened to finish rather than what the article says. */}
-      {status?.status === 'done' && <ArticleScores claims={claims} capsHit={status.caps_hit} counts={counts} />}
+      {status?.status === 'done' && <ArticleScores claims={claims} capsHit={status.caps_hit} counts={counts} requireCounts={requireCounts} />}
       <div className="card bg-base-100 shadow">
         <div className="card-body">
           <HighlightedArticle articleText={articleText} claims={claims} />

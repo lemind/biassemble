@@ -2,14 +2,18 @@ import { articleScore, completenessColor, groundednessColor } from '../../lib/ar
 import type { Counts } from '../../lib/articleScore';
 import type { Claim, SharedCounts } from '../../types/grounnel';
 
+const UNVERIFIED = 'This check ran before scoring existed, so its totals cannot be verified.';
+
 const SUPPRESSED_COPY = {
   'too-few': 'Fewer than five claims were checked, so a score would be noise.',
   'no-direction': 'Nothing was confirmed or contradicted, so there is no direction to report.',
+  unverified: UNVERIFIED,
 } as const;
 
 const COMPLETENESS_SUPPRESSED_COPY = {
   'nothing-checkable': 'This text contains no factual claims to check.',
   capped: 'The claim limit was reached, so how much is left unchecked is unknown.',
+  unverified: UNVERIFIED,
 } as const;
 
 const RADIUS = 52;
@@ -92,12 +96,14 @@ export default function ArticleScores({
   claims,
   capsHit,
   counts,
+  requireCounts = false,
 }: {
   claims: Claim[];
   capsHit: boolean;
   counts?: SharedCounts;
+  requireCounts?: boolean;
 }) {
-  const score = articleScore(claims, capsHit, counts);
+  const score = articleScore(claims, capsHit, counts, requireCounts);
 
   return (
     <div className="card border border-base-300 bg-base-100">

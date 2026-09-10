@@ -141,4 +141,14 @@ assert.equal(groundednessColor(40, lowWithContra.counts), 'text-warning');
 assert.equal(groundednessColor(40, articleScore(claims({ supported: 2, unsupported: 8 })).counts),
              'text-info', 'no contradictions at the same score stays blue');
 
+// A shared run with no snapshot must show NO score. Falling back to its rows would reinstate the
+// inflated number the snapshot exists to prevent, and silently.
+const noSnapshot = articleScore(claims({ supported: 16 }), false, undefined, true);
+assert.equal(noSnapshot.groundedness, null);
+assert.equal(noSnapshot.completeness, null);
+assert.equal(noSnapshot.suppressed, 'unverified');
+assert.equal(noSnapshot.completenessSuppressed, 'unverified');
+// The live path is unaffected: its claims come from core's authoritative store already.
+assert.equal(articleScore(claims({ supported: 16 })).groundedness, 100);
+
 console.log('articleScore.test.ts: all assertions passed');

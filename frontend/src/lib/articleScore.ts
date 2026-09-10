@@ -111,9 +111,9 @@ export function articleScore(
 export function groundednessColor(score: number, counts: Counts): string {
   if (counts.checked > 0 && counts.contradicted / counts.checked > REFUTED_SHARE) return 'text-error';
   if (score >= 75) return 'text-success';
-  if (score >= 45) return 'text-warning';
-  // Low but nothing refuted: thin evidence, not a verdict against the article. `info` is the
-  // colour an unverifiable claim already uses.
+  // Blue is "nothing was refuted", so it must not be reachable while a contradiction exists —
+  // below the red threshold a refutation still makes the article mixed, not merely thin.
+  if (score >= 45 || counts.contradicted > 0) return 'text-warning';
   return 'text-info';
 }
 

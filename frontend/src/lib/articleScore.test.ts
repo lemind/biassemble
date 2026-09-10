@@ -132,4 +132,13 @@ assert.equal(shared.completeness, fullRun.completeness, 'snapshot restores the t
 assert.equal(shared.groundedness, fullRun.groundedness);
 assert.equal(shared.counts.excluded, 4);
 
+// Blue means "nothing refuted". A low score WITH a contradiction is mixed, not thin.
+const lowWithContra = articleScore(claims({
+  supported: 2, partially_supported: 1, unsupported: 1, contradicted: 1,
+}));
+assert.equal(lowWithContra.groundedness, 40);
+assert.equal(groundednessColor(40, lowWithContra.counts), 'text-warning');
+assert.equal(groundednessColor(40, articleScore(claims({ supported: 2, unsupported: 8 })).counts),
+             'text-info', 'no contradictions at the same score stays blue');
+
 console.log('articleScore.test.ts: all assertions passed');

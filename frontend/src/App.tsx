@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import LoadingFallback from './components/common/LoadingFallback';
 import BiassembleLayout from './components/common/BiassembleLayout';
@@ -143,6 +144,9 @@ export default function App() {
       <BiassembleLayout brand={brand} activePath={window.location.pathname}>
         {page()}
       </BiassembleLayout>
+      {/* Outside ErrorBoundary's child tree on purpose: a beacon must not be unmounted by a
+          render error, and it must never be the thing that breaks the page. */}
+      <Analytics />
     </ErrorBoundary>
   );
 }

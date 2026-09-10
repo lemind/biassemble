@@ -35,13 +35,14 @@ export default function ClaimSourceList({ articleText, claims }: ClaimSourceList
               >
                 <span className="shrink-0 font-mono text-base-content/50">[{ref.number}]</span>
                 {/* Real footnote style: the source's name, not a repeated quote — hover/click
-                    still lands on the exact cited sentence via the text-fragment link. */}
+                    still lands on the exact cited sentence via the text-fragment link. min-w-0
+                    because a flex item will not shrink below its content. */}
                 <a
                   href={buildTextFragmentUrl(ref.url, ref.citations[0]!.text)}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Opens the source at this exact sentence"
-                  className="text-info hover:underline"
+                  className="min-w-0 break-words text-info hover:underline"
                 >
                   {sourceLabel(ref.url, allSources)}
                 </a>

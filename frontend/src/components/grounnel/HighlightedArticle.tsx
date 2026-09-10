@@ -79,8 +79,10 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
   const segments = buildSegments(articleText, claims, spans);
   const { claimNumbers } = numberCitations(articleText, claims, spans);
 
+  // break-words: an unbroken token wider than the container (a 260-digit number, a bare URL) has
+  // no break opportunity and overflows the card horizontally without it.
   return (
-    <div className="whitespace-pre-wrap leading-relaxed">
+    <div className="whitespace-pre-wrap break-words leading-relaxed">
       {segments.map((segment, index) => {
         const { claim, isFallback } = segment;
         if (!claim) {
@@ -166,7 +168,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                     group-hover:opacity-100 group-focus-within:pointer-events-auto
                     group-focus-within:opacity-100"
                 >
-                  <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
+                  <span className="flex flex-col gap-1 break-words rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
                     {isFallback && (
                       // A fallback-tier span's own words aren't a reliable stand-in for the claim

@@ -1,50 +1,12 @@
-// Writes the Stats page's committed snapshot (site spec 004, T011); only the aggregate is
-// committed. NEVER put DATABASE_URL on the Vercel frontend project — build code can read it.
-import { sql } from "drizzle-orm";
+// Writes the Stats page's OFFLINE FALLBACK snapshot (site spec 004, T011). The page reads
+// /api/grounnel/stats live; this is only what it renders when that call fails.
 import { writeFileSync } from "node:fs";
-import { getDb } from "../src/drizzle/config";
+import { buildStatsSnapshot } from "../src/services/stats.service";
 
 const OUT = "../frontend/src/data/stats.ts";
 
-const db = getDb();
-const q = async (s: ReturnType<typeof sql>): Promise<Record<string, unknown>[]> => {
-  const r = (await db.execute(s)) as unknown as { rows?: Record<string, unknown>[] };
-  return Array.isArray(r) ? r : (r.rows ?? []);
-};
-
 async function main() {
-  // The window is the production runs themselves — eval runs are counted over the same dates so the
-  // two numbers are comparable, which is the whole point of publishing the second one (T012 #2).
-  const [win] = await q(sql`
-    SELECT min(created_at)::date AS from_date, max(created_at)::date AS to_date, count(*)::int AS runs
-    FROM grounnel.grounnel_runs WHERE source = 'production'`);
-
-  const [evals] = await q(sql`
-    SELECT count(*)::int AS runs FROM grounnel.grounnel_runs
-    WHERE source = 'eval' AND created_at::date BETWEEN ${win.from_date} AND ${win.to_date}`);
-
-  const verdicts = await q(sql`
-    SELECT coalesce(c.verdict, 'no_verdict') AS verdict, count(*)::int AS n
-    FROM grounnel.grounnel_claims c JOIN grounnel.grounnel_runs r USING (run_id)
-    WHERE r.source = 'production' GROUP BY 1 ORDER BY 2 DESC`);
-
-  const prompts = await q(sql`
-    SELECT DISTINCT prompt_version_extract AS extract, prompt_version_verify AS verify
-    FROM grounnel.grounnel_runs
-    WHERE source = 'production' AND created_at > now() - interval '7 days'
-      AND prompt_version_extract IS NOT NULL
-    ORDER BY 1 DESC, 2 DESC LIMIT 3`);
-
-  const snapshot = {
-    generatedAt: new Date().toISOString(),
-    window: { from: String(win.from_date), to: String(win.to_date) },
-    productionRuns: win.runs,
-    evalRuns: evals.runs,
-    promptVersions: prompts.map((p) => ({ extract: p.extract, verify: p.verify })),
-    verdicts: verdicts.map((v) => ({ verdict: v.verdict, n: v.n })),
-    totalClaims: verdicts.reduce((sum, v) => sum + Number(v.n), 0),
-  };
-
+  const snapshot = await buildStatsSnapshot();
   writeFileSync(
     OUT,
     [
@@ -67,7 +29,6 @@ async function main() {
       "",
     ].join("\n"),
   );
-
   console.log(
     `${snapshot.productionRuns} production runs (${snapshot.window.from}..${snapshot.window.to}), ` +
       `${snapshot.evalRuns} eval runs, ${snapshot.totalClaims} claims → ${OUT}`,

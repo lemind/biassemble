@@ -12,12 +12,12 @@ export interface StatsSnapshot {
 }
 
 const stats: StatsSnapshot = {
-  "generatedAt": "2026-09-09T10:50:01.848Z",
+  "generatedAt": "2026-09-10T18:42:20.442Z",
   "window": {
     "from": "2026-08-07",
-    "to": "2026-09-08"
+    "to": "2026-09-10"
   },
-  "productionRuns": 268,
+  "productionRuns": 281,
   "evalRuns": 3207,
   "promptVersions": [
     {
@@ -32,34 +32,34 @@ const stats: StatsSnapshot = {
   "verdicts": [
     {
       "verdict": "supported",
-      "n": 2692
+      "n": 2809
     },
     {
       "verdict": "unsupported",
-      "n": 459
+      "n": 540
     },
     {
       "verdict": "contradicted",
-      "n": 271
-    },
-    {
-      "verdict": "unverifiable",
-      "n": 183
+      "n": 273
     },
     {
       "verdict": "excluded",
-      "n": 135
+      "n": 210
+    },
+    {
+      "verdict": "unverifiable",
+      "n": 205
     },
     {
       "verdict": "no_verdict",
-      "n": 35
+      "n": 43
     },
     {
       "verdict": "partially_supported",
       "n": 29
     }
   ],
-  "totalClaims": 3804
+  "totalClaims": 4109
 };
 
 export default stats;

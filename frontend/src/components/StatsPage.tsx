@@ -1,4 +1,7 @@
-import stats from '../data/stats';
+import { useEffect, useState } from 'react';
+import fallbackStats from '../data/stats';
+import type { StatsSnapshot } from '../data/stats';
+import { getStats } from '../api/client';
 import { VERDICT_ROWS, INDEFINITE_VERDICTS } from '../lib/verdictRows';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -18,11 +21,42 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export default function StatsPage() {
+  const [stats, setStats] = useState<StatsSnapshot | null>(null);
+  // Distinct from `stats === null`: null is "still asking", this is "asked and failed", which is
+  // what decides whether the page may claim to be live.
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getStats()
+      .then((fresh) => {
+        if (cancelled) return;
+        setStats(fresh);
+        setLive(true);
+      })
+      .catch(() => {
+        if (!cancelled) setStats(fallbackStats);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!stats) {
+    return (
+      <div className="mx-auto max-w-[40rem] px-6 py-16">
+        <span className="loading loading-spinner loading-md text-base-content/30" />
+      </div>
+    );
+  }
+
   const n = (key: string) => stats.verdicts.find((v) => v.verdict === key)?.n ?? 0;
   const total = stats.totalClaims;
   const indefinite = INDEFINITE_VERDICTS.reduce((sum, key) => sum + n(key), 0);
   const failed = n('no_verdict');
   const fmt = (x: number) => x.toLocaleString('en-GB');
+  // Every percentage below divides by it. A database with no production claims is not a crash.
+  const pct = (x: number) => (total === 0 ? 0 : (x / total) * 100);
 
   return (
     <article className="mx-auto max-w-[40rem] px-6 py-16">
@@ -33,13 +67,15 @@ export default function StatsPage() {
         <Meta label="Window">
           {longDate(stats.window.from)} – {longDate(stats.window.to)}
         </Meta>
-        <Meta label="Taken">{longDate(stats.generatedAt)}</Meta>
+        <Meta label={live ? 'Updated' : 'Taken'}>{longDate(stats.generatedAt)}</Meta>
         <Meta label="Prompts">
           {stats.promptVersions.map((p) => `extract ${p.extract} / verify ${p.verify}`).join(' · ')}
         </Meta>
       </dl>
       <p className="mt-3 text-sm text-base-content/55">
-        These figures are fixed at the date above. They are not a live counter.
+        {live
+          ? 'These figures are read from the database each time this page loads, cached for up to an hour.'
+          : 'Live figures were unavailable, so these are fixed at the date above and may be out of date.'}
         {stats.promptVersions.length > 1 &&
           ' These runs span more than one extraction prompt version; the figures below combine them.'}
       </p>
@@ -63,7 +99,7 @@ export default function StatsPage() {
 
       <div className="mt-5 flex h-2 overflow-hidden rounded bg-base-100">
         {VERDICT_ROWS.filter((r) => n(r.key) > 0).map((r) => (
-          <div key={r.key} className={r.bar} style={{ width: `${(n(r.key) / total) * 100}%` }} />
+          <div key={r.key} className={r.bar} style={{ width: `${pct(n(r.key))}%` }} />
         ))}
       </div>
 
@@ -84,7 +120,7 @@ export default function StatsPage() {
       </table>
 
       <p className="mt-6 leading-relaxed text-base-content/80">
-        {fmt(indefinite)} of them — {Math.round((indefinite / total) * 100)}% — did not receive a
+        {fmt(indefinite)} of them — {Math.round(pct(indefinite))}% — did not receive a
         definitive factual verdict: {fmt(n('excluded'))} were excluded from checking and{' '}
         {fmt(n('unverifiable'))} were unverifiable from the evidence found. That is deliberate
         behaviour, not a shortfall. The other {failed} are different again: verification failed

@@ -63,9 +63,13 @@ export function middleware(request: NextRequest) {
   for (const [k, v] of Object.entries(corsHeaders(origin))) response.headers.set(k, v);
   // Blanket, not per-route: /api/* is proxied through the site's edge, so every route under it
   // sits behind a shared CDN — including /api/result and /api/session. Next's default is `public`.
-  response.headers.set("Cache-Control", "no-store");
+  if (!CACHEABLE.has(request.nextUrl.pathname)) response.headers.set("Cache-Control", "no-store");
   return response;
 }
+
+// The only routes allowed to set their own Cache-Control: public aggregates with no per-person
+// content. Exact paths, never a prefix — a prefix would exempt anything added beneath it later.
+const CACHEABLE = new Set(["/api/grounnel/stats"]);
 
 function corsHeaders(origin: string | null): Record<string, string> {
   return {

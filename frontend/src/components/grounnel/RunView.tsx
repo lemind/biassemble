@@ -1,3 +1,4 @@
+import ArticleScores from './ArticleScores';
 import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
@@ -16,6 +17,9 @@ export default function RunView({
   return (
     <>
       <GrounnelProgress status={status} articleText={articleText} />
+      {/* Finished runs only: mid-run the numbers swing on every claim, and a failed run scores
+          what it happened to finish rather than what the article says. */}
+      {status?.status === 'done' && <ArticleScores claims={claims} />}
       <div className="card bg-base-100 shadow">
         <div className="card-body">
           <HighlightedArticle articleText={articleText} claims={claims} />

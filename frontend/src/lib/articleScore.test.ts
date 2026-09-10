@@ -1,0 +1,78 @@
+/**
+ * Plain assert-based checks — no test framework (T040). Run: npx tsx src/lib/articleScore.test.ts
+ * Covers T049's two guards and the A/B separation the formula exists to produce.
+ */
+import assert from 'node:assert/strict';
+import { articleScore } from './articleScore';
+import type { Claim, ClaimVerdict } from '../types/grounnel';
+
+function claims(spec: Partial<Record<ClaimVerdict | 'no_verdict' | 'pending', number>>): Claim[] {
+  const out: Claim[] = [];
+  let i = 0;
+  const make = (verdict: ClaimVerdict | null, status: Claim['status']): Claim => ({
+    id: `c${i++}`, text: 't', status, verdict, evidence: null, confidence: null,
+    reason: null, sources: [], citations: [], sourceExcerpt: null,
+  });
+  for (const [key, n] of Object.entries(spec)) {
+    for (let k = 0; k < (n ?? 0); k++) {
+      if (key === 'no_verdict') out.push(make(null, 'failed'));
+      else if (key === 'pending') out.push(make(null, 'pending'));
+      else out.push(make(key as ClaimVerdict, 'done'));
+    }
+  }
+  return out;
+}
+
+// The acceptance criterion: an article with 10 refuted claims must not read like one with 10
+// merely unverified claims. A plain supported/checked ratio scores both 50.
+const a = articleScore(claims({ supported: 18, unsupported: 2 }));
+assert.equal(a.groundedness, 90);
+assert.equal(a.completeness, 100);
+
+const b = articleScore(claims({ supported: 10, contradicted: 10 }));
+assert.equal(b.groundedness, 25);
+assert.equal(b.completeness, 100);
+assert.ok(a.groundedness! - b.groundedness! > 60, 'A and B must not be close');
+
+// C — mostly opinion. Groundedness fine, completeness must fall.
+const c = articleScore(claims({ supported: 4, unsupported: 2, excluded: 14 }));
+assert.equal(c.groundedness, 67);
+assert.equal(c.completeness, 58);
+
+// Guard 1 — below five checked claims one verdict moves the score 20+ points.
+const few = articleScore(claims({ supported: 3, unsupported: 1 }));
+assert.equal(few.groundedness, null);
+assert.equal(few.suppressed, 'too-few');
+
+// Guard 2 — nothing decisive. The formula would return 0, which reads as "refuted" for an
+// article whose sources were merely unfindable.
+const nothing = articleScore(claims({ unsupported: 20 }));
+assert.equal(nothing.groundedness, null);
+assert.equal(nothing.suppressed, 'no-direction');
+assert.equal(nothing.completeness, 100);
+
+// Partial support alone is not a direction (prose of the 2026-09-10 review; its code sample
+// disagreed with its own reasoning and would have scored this 50).
+const partialOnly = articleScore(claims({ partially_supported: 10 }));
+assert.equal(partialOnly.groundedness, null);
+assert.equal(partialOnly.suppressed, 'no-direction');
+
+// All refuted still scores — it has a direction, and it is 0.
+const refuted = articleScore(claims({ contradicted: 20 }));
+assert.equal(refuted.groundedness, 0);
+
+// Our own failures never lower groundedness, only completeness.
+const failed = articleScore(claims({ supported: 18, unsupported: 2, no_verdict: 5 }));
+assert.equal(failed.groundedness, 90, 'engine failures must not change the article score');
+assert.ok(failed.completeness < 100, 'engine failures must lower completeness');
+
+// A claim left pending on a finished run resolved no more than a failed one.
+assert.equal(articleScore(claims({ supported: 18, unsupported: 2, pending: 5 })).completeness,
+             failed.completeness);
+
+// Degenerate inputs must not divide by zero.
+assert.deepEqual(articleScore([]).completeness, 0);
+assert.equal(articleScore(claims({ excluded: 9 })).completeness, 0);
+assert.equal(articleScore([]).groundedness, null);
+
+console.log('articleScore.test.ts: all assertions passed');

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { countClaims } from '../../lib/articleScore';
 import { assignHomeSentence, matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
 import { VERDICT_DOT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
@@ -173,6 +174,11 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   }
 
   const isTerminal = status.status === 'done' || status.status === 'failed';
+  // Core's `checked` counts every claim that RESOLVED — excluded and failed ones included — so a
+  // finished run read "7 / 7 claims checked" when only 5 were verified. 'done' only: a failed run
+  // never persisted the rest, so any denominator here would understate it.
+  const counts = status.status === 'done' ? countClaims(status.claims) : null;
+  const skipped = counts ? counts.excluded + counts.noVerdict : 0;
   const isStalled =
     !isTerminal &&
     status.elapsed_seconds !== null &&
@@ -182,7 +188,11 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   return (
     <div role="status" className="flex flex-col gap-1.5 text-sm">
       <div className="flex items-center gap-2">
-        {status.progress ? (
+        {counts ? (
+          <span>
+            {counts.checked} of {counts.checked + skipped} claims checked
+          </span>
+        ) : status.progress ? (
           <span className={isTerminal ? '' : 'animate-pulse'}>
             {status.progress.checked} / {status.progress.total} claims checked
           </span>
@@ -197,6 +207,14 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
         )}
         {!isTerminal && <span className="loading loading-spinner loading-xs" />}
       </div>
+      {counts && skipped > 0 && (
+        <p className="text-base-content/50">
+          {[
+            counts.excluded > 0 ? `${counts.excluded} not checkable` : null,
+            counts.noVerdict > 0 ? `${counts.noVerdict} we could not finish` : null,
+          ].filter(Boolean).join(' · ')}
+        </p>
+      )}
       {dotGroups.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {dotGroups.map((group) => (

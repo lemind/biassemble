@@ -72,17 +72,8 @@ function Score({
 // The counts the two scores rest on. Sample size used to be folded into completeness, where it
 // silently capped short articles; showing it is both more honest and more useful.
 function basis(c: Counts): string {
-  const refuted = c.contradicted > 0 ? `, ${c.contradicted} refuted` : '';
-  return `${c.supported} of ${c.checked} checked claims backed by a source${refuted}`;
-}
-
-function coverageNote(c: Counts): string {
-  const skipped = c.excluded > 0 ? `${c.excluded} not checkable` : '';
-  const failed = c.noVerdict > 0 ? `${c.noVerdict} we could not finish` : '';
-  const parts = [skipped, failed].filter(Boolean);
-  return parts.length === 0
-    ? `Every claim we found was checked`
-    : `${c.checked} of ${c.checked + c.excluded + c.noVerdict} claims checked — ${parts.join(', ')}`;
+  const refuted = c.contradicted > 0 ? `, ${c.contradicted} contradicted` : '';
+  return `${c.supported} of ${c.checked} checked claims supported by retrieved evidence${refuted}`;
 }
 
 /** Only rendered for a finished run — mid-run these swing wildly as claims resolve. */
@@ -103,7 +94,6 @@ export default function ArticleScores({ claims }: { claims: Claim[] }) {
             value={score.completeness}
             colorClass={completenessColor(score.completeness)}
             label="Assessment completeness"
-            note={coverageNote(score.counts)}
           />
         </div>
         <p className="text-xs text-base-content/60">

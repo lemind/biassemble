@@ -1,7 +1,5 @@
-/**
- * Plain assert-based checks — no test framework. Run: npx tsx src/lib/routes.test.ts
- * Covers the host x path matrix from tasks.md T004, which is this phase's checkpoint.
- */
+// Plain assert-based checks — no test framework. Run: npx tsx src/lib/routes.test.ts
+// Covers the host x path matrix from tasks.md T004, this phase's checkpoint.
 import assert from 'node:assert/strict';
 import { resolveRoute } from './routes';
 

@@ -1,7 +1,5 @@
-/**
- * T044 — static per-route heads, because scrapers and previews don't run JS.
- * Run: npx tsx scripts/gen-seo-shells.ts   (wired into `npm run build`, after vite build)
- */
+// T044 — static per-route heads, because scrapers and previews don't run JS.
+// Run: npx tsx scripts/gen-seo-shells.ts   (wired into `npm run build`, after vite build)
 import { readFileSync, writeFileSync } from 'node:fs';
 import { getBrand, type BrandId } from '../src/lib/brand';
 import { pageMeta } from '../src/lib/seo';

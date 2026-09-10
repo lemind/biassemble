@@ -1,6 +1,5 @@
-// Semantic order for the Stats page, not count order — the reader moves from judged to unjudged,
-// and the two unjudged kinds sit apart from the five verdicts. Aggregate presentation only; claim
-// rendering has its own map in verdictStyle.ts, which excludes `excluded` by design.
+// Semantic order for the Stats page, not count order — judged before unjudged. Aggregate
+// presentation only; claim rendering has its own map in verdictStyle.ts.
 export const VERDICT_ROWS: { key: string; label: string; bar: string }[] = [
   { key: 'supported', label: 'Supported', bar: 'bg-success' },
   { key: 'partially_supported', label: 'Partially supported', bar: 'bg-warning' },
@@ -13,7 +12,6 @@ export const VERDICT_ROWS: { key: string; label: string; bar: string }[] = [
   { key: 'no_verdict', label: 'Verification failed', bar: 'bg-base-content/50' },
 ];
 
-// Claims that reached no definitive factual verdict. NOT "abstentions": `unverifiable` was judged,
-// and the judgement was that the evidence found was insufficient. `no_verdict` is a verification
-// that errored and is never counted here — folding it in would pad the number the principle rests on.
+// Claims that reached no definitive verdict. NOT abstentions: `unverifiable` WAS judged. 
+// `no_verdict` errored and is never counted here — folding it in would pad the number.
 export const INDEFINITE_VERDICTS = ['unverifiable', 'excluded'];

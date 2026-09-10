@@ -1,8 +1,5 @@
-/**
- * Plain assert-based checks — no test framework. Run: npx tsx src/lib/stats.test.ts
- * The Stats page renders a fixed row list; a verdict core starts emitting that isn't in it would
- * vanish from the table and leave the bar short of 100%.
- */
+// Plain assert-based checks — no test framework. Run: npx tsx src/lib/stats.test.ts
+// A verdict core emits that isn't in the fixed row list would vanish and leave the bar short.
 import assert from 'node:assert/strict';
 import stats from '../data/stats';
 import { VERDICT_ROWS, INDEFINITE_VERDICTS } from './verdictRows';

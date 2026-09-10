@@ -1,7 +1,5 @@
-/**
- * Plain assert-based checks — no test framework (frontend has no vitest, plan.md's Testing
- * decision). Run: npx tsx src/lib/brand.test.ts
- */
+// Plain assert-based checks — no test framework (plan.md, Testing decision).
+// Run: npx tsx src/lib/brand.test.ts
 import assert from 'node:assert/strict';
 import { classifyHost, brandForHost, hostNamedBrand, siblingBrand } from './brand';
 

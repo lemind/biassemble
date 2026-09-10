@@ -64,9 +64,8 @@ export interface Claim {
   sourceExcerpt: string | null;
 }
 
-// Core spec 019 — a shared assessment as GET /assessment/:token returns it. Public shape: no run
-// id, no session id, and no claim ids, which is why SharedPage keys claims by position. Citations
-// are not persisted in core, so a shared claim never has any.
+// Core spec 019 — a shared assessment. Public shape: no run id, session id or claim ids, which
+// is why SharedPage keys claims by position. Citations are not persisted in core.
 export interface SharedClaim {
   text: string;
   verdict: ClaimVerdict | null;

@@ -3,10 +3,8 @@ import { handleGetSharedAssessment } from "@/services/grounnel.service";
 import { AppException } from "@/lib/errors";
 import { clientIpFrom, NO_STORE } from "@/lib/http";
 
-// Core answers an unknown token, a malformed one and a deleted run identically (019 FR-010) — and
-// rate-limits reads (019 T014). Both statuses must reach the browser as themselves: aiError wraps
-// every core failure as a 502 AppException, so without this the page would report an outage for a
-// mistyped link.
+// Core answers unknown, malformed and deleted tokens identically (019 FR-010) and rate-limits
+// reads (T014). Both statuses must pass through: aiError would report a mistyped link as 502.
 const PASS_THROUGH = new Set([404, 429]);
 
 function coreStatus(error: AppException): number {
@@ -14,10 +12,8 @@ function coreStatus(error: AppException): number {
   return typeof status === "number" && PASS_THROUGH.has(status) ? status : error.statusCode;
 }
 
-/**
- * Required, not optional (site spec 004, T022): biassemble-core is key-gated for every other route
- * and sends no CORS headers, so the browser cannot call it directly. Mirrors the status proxy.
- */
+// Required, not optional (site spec 004, T022): core is key-gated and sends no CORS headers,
+// so the browser cannot call it directly. Mirrors the status proxy.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ token: string }> }

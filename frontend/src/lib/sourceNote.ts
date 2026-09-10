@@ -1,10 +1,7 @@
 import type { Claim } from '../types/grounnel';
 
-/**
- * The one line of wording above a claim's source links. One exhaustive function rather than four
- * independent booleans: T015 was a claim that matched none of them and fell through to bare,
- * unexplained links. A single return makes "no note at all" a deliberate case, not an accident.
- */
+// The one line of wording above a claim's source links. One exhaustive function, not four
+// booleans: T015 was a claim matching none of them that fell through to bare links.
 export type SourceNote =
   | 'no-sources-found'
   | 'searched-unconfirmed'

@@ -3,10 +3,8 @@ import HighlightedArticle from './HighlightedArticle';
 import ClaimSourceList from './ClaimSourceList';
 import workedExample from '../../data/workedExample';
 
-// A frozen real run, not a live one — no API call per visitor, and nothing here can break. Lives
-// at the end of About, not on the tool page: it is reference material, and in the middle of the
-// product it sat between a person and the thing they came to do. Regenerated from the database,
-// never hand-edited (see the fixture's own header).
+// A frozen real run: no API call per visitor, nothing here can break. Lives at the end of About
+// because it is reference material. Regenerated from the database, never hand-edited.
 export default function WorkedExample() {
   const [open, setOpen] = useState(false);
   const { text, claims, ranAt, promptVersionExtract, promptVersionVerify } = workedExample;

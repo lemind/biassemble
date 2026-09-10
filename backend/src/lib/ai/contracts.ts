@@ -145,9 +145,8 @@ export const grounnelStatusResponseSchema = z.object({
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
 
-// Core spec 019 — the shared assessment, as GET /assessment/:token returns it. Public shape: no
-// run id, no session id, no telemetry, and no claim ids (which is why the page keys claims by
-// position). Citations are not persisted in core, so a shared claim has none.
+// Core spec 019 — the shared assessment. Public shape: no run id, session id or claim ids,
+// which is why the page keys claims by position. Citations are not persisted in core.
 export const sharedClaimSchema = z.object({
   text: z.string(),
   verdict: grounnelVerdictSchema.nullable(),

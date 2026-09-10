@@ -144,10 +144,8 @@ export function createCoreClient(): AiClient {
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
       return getCore(`/status/${id}`, grounnelStatusResponseSchema);
     },
-    // Core's /assessment/:token is itself unauthenticated, but the browser still cannot reach it:
-    // core is key-gated for everything else and sends no CORS headers. Proxying keeps the key here.
-    // Every viewer of every shared link reaches core through THIS server, so without a forwarded
-    // IP core's read limit is one bucket for the whole site: one busy reader 429s everyone else.
+    // Core's /assessment/:token is unauthenticated but unreachable from the browser (no CORS), so
+    // this proxy holds the key. Forwarding the viewer IP keeps core's read limit per-reader.
     async getSharedAssessment(token: string, clientIp?: string): Promise<SharedAssessment> {
       return getCore(`/assessment/${encodeURIComponent(token)}`, sharedAssessmentSchema, clientIp);
     },

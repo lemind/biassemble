@@ -20,10 +20,8 @@ export function normalizePath(pathname: string): string {
   return pathname.length > 1 && pathname.endsWith('/') ? pathname.replace(/\/+$/, '') : pathname;
 }
 
-/**
- * The whole host x path matrix. `/grounnel` stays the tool on the Biassemble host because those
- * links already exist and we promised not to break them (FR-002/SC-002).
- */
+// The whole host x path matrix. `/grounnel` stays the tool on the Biassemble host because those
+// links already exist and we promised not to break them (FR-002/SC-002).
 export function resolveRoute(pathname: string, brand: BrandId): Route {
   const path = normalizePath(pathname);
   const fixed = path.toLowerCase();

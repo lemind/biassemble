@@ -1,13 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * CORS for /api/* — a strict allowlist, never `*` and never a reflected origin.
- *
- * What this does: stops another website's JavaScript from calling this API with a visitor's
- * browser. What it does NOT do: stop `curl`, or any non-browser client. CORS is enforced by the
- * browser, not here, so it is not an access control — the ceiling on abuse is the per-IP rate
- * limit in core plus the cloud budget cap (site spec 004, T017).
- */
+// CORS for /api/* — a strict allowlist, never `*` and never reflected. Browser-enforced, so it
+// stops other sites' JS, not curl; the real ceiling is core's rate limit plus the budget cap.
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((o) => o.trim())
@@ -22,9 +16,8 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "[::1]"]);
 /** Any http loopback origin, on any port. Dev only — vite walks the port forward when one is
  *  taken, and `<brand>.localhost` is how the two brands are told apart locally (brand.ts). */
 function isDevOrigin(origin: string): boolean {
-  // VERCEL_ENV, not NODE_ENV: `next build` only DEFAULTS NODE_ENV to production and accepts
-  // "development", so one env var on the project would open this on a real deploy. Vercel sets
-  // VERCEL_ENV itself on every deployment and it cannot be set locally by accident.
+  // VERCEL_ENV, not NODE_ENV: `next build` only DEFAULTS NODE_ENV to production, so one env var
+  // would open this on a real deploy. Vercel sets VERCEL_ENV itself and it cannot be faked locally.
   if (process.env.VERCEL_ENV || process.env.NODE_ENV === "production") return false;
   try {
     const { protocol, hostname } = new URL(origin);
@@ -44,20 +37,14 @@ function isAllowed(origin: string | null): boolean {
 export function middleware(request: NextRequest) {
   const origin = request.headers.get("origin");
 
-  // A browser sends Origin on every cross-origin request and on same-origin POSTs. Present but
-  // not allowlisted is a site we do not serve — refuse before the route runs, so a disallowed
-  // origin cannot spend anything even if it ignores the missing CORS header on the way back.
-  // Absent is NOT rejected: same-origin GETs omit it, and so may the frontend's own proxy hop.
+  // Present but not allowlisted is a site we do not serve — refuse before the route spends
+  // anything. Absent is NOT rejected: same-origin GETs omit it, and so may our own proxy hop.
   if (origin !== null && !isAllowed(origin)) {
     return new NextResponse(null, { status: 403 });
   }
 
-  // The remaining hole is a client that sends no Origin at all — `curl` — which is what actually
-  // spends money. A browser always sends Origin on a POST, same-origin included, so requiring it
-  // on writes blocks naive scripts (a forged header still passes; only the budget cap is a real
-  // ceiling). Behind a flag because it is unverified whether Vercel forwards Origin across the
-  // frontend's /api rewrite: if it does not, turning this on refuses every real submission.
-  // Enable with REQUIRE_ORIGIN_ON_WRITES=1 once production traffic shows Origin arriving.
+  // A client sending no Origin at all (curl) is the remaining hole; only the budget cap is a real
+  // ceiling. Flagged off because it is unverified that Vercel forwards Origin across the rewrite.
   if (
     process.env.REQUIRE_ORIGIN_ON_WRITES === "1" &&
     request.method !== "GET" &&
@@ -74,9 +61,8 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   for (const [k, v] of Object.entries(corsHeaders(origin))) response.headers.set(k, v);
-  // Blanket, not per-route: /api/* is now proxied through the site's Vercel edge, so EVERY route
-  // under it is behind a shared CDN — including /api/result and /api/session, which return one
-  // person's story and answers. Next's default there is `public`.
+  // Blanket, not per-route: /api/* is proxied through the site's edge, so every route under it
+  // sits behind a shared CDN — including /api/result and /api/session. Next's default is `public`.
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

@@ -25,8 +25,6 @@ export function logIpHeaderProbe(request: Request, chosen: { header?: string }):
   console.log(`[grounnel:ip-probe] chose=${chosen.header ?? "none"} present=${present.join(",") || "none"}`);
 }
 
-// Every API response here is dynamic and often per-person. Next's default on a route handler is
-// `public, max-age=0, must-revalidate`, and Vercel's CDN respects upstream Cache-Control on
-// rewrites — so once the frontend proxies /api/*, `public` would let a shared cache hold someone's
-// assessment or run status. `no-store` is the only correct answer for all of them.
+// Every response here is dynamic and often per-person. Vercel's CDN respects upstream
+// Cache-Control on rewrites, so Next's default `public` would let a shared cache hold it.
 export const NO_STORE = { "Cache-Control": "no-store" } as const;

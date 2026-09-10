@@ -1,6 +1,5 @@
-// Generated from production run bb62670f-1f82-49d4-8316-1c1265f5ddc1 (1.7.0/4.6.0, 2026-09-07)
-// by biassemble-core scripts/gen-worked-example.ts. Verbatim pipeline output, nothing hand-edited.
-// Regenerate, don't edit.
+// Generated from production run bb62670f (1.7.0/4.6.0, 2026-09-07) by biassemble-core
+// scripts/gen-worked-example.ts. Verbatim pipeline output — regenerate, don't edit.
 import type { Claim } from '../types/grounnel';
 
 export interface WorkedExample {

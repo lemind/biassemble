@@ -1,6 +1,5 @@
-// Brand is identity only — name, logo, tagline, nav. It never carries a component reference:
-// the path table (routes.ts) decides what renders. Keeping them orthogonal is what lets the
-// Biassemble host keep the reflection flow at `/` while the Grounnel host puts the tool there.
+// Brand is identity only — name, logo, tagline, nav, never a component reference; routes.ts
+// decides what renders. That orthogonality is what lets each host put its own tool at `/`.
 
 export type BrandId = 'grounnel' | 'biassemble';
 
@@ -72,10 +71,8 @@ const BIASSEMBLE: Brand = {
 
 const BRANDS: Record<BrandId, Brand> = { grounnel: GROUNNEL, biassemble: BIASSEMBLE };
 
-/**
- * Three cases, not two — an unknown host is not the same as a development host. Explicit lists
- * win over the `.vercel.app` suffix so `grounnel.vercel.app` classifies as Grounnel, not preview.
- */
+// Three cases, not two — an unknown host is not a development host. Explicit lists beat the
+// `.vercel.app` suffix so `grounnel.vercel.app` classifies as Grounnel, not preview.
 export function classifyHost(hostname: string): HostKind {
   const host = hostname.toLowerCase();
   if (GROUNNEL_HOSTS.includes(host)) return 'grounnel';
@@ -86,13 +83,8 @@ export function classifyHost(hostname: string): HostKind {
   return 'unknown';
 }
 
-/**
- * Pure: hostname → brand. Unknown and development hosts both fall back to Biassemble (FR-006),
- * except that a development host may NAME the brand it wants as its first label —
- * `grounnel.localhost` renders Grounnel. That is the only way to see the Grounnel brand without a
- * deploy: browsers HSTS-preload `*.vercel.app`, so the real host can't be pointed at a dev server.
- * It cannot leak into production: `.localhost` is reserved and never resolves off this machine.
- */
+// Pure: hostname → brand. Unknown and dev hosts fall back to Biassemble (FR-006), except a dev
+// host may name its brand in the first label — `grounnel.localhost`, reserved, never public.
 /** The brand a dev hostname names in its first label, e.g. `grounnel.localhost`, or null. */
 export function hostNamedBrand(hostname: string): BrandId | null {
   const named = hostname.toLowerCase().split('.')[0];
@@ -122,15 +114,8 @@ let announced = false;
 
 const OVERRIDE_KEY = 'grounnel.devBrand';
 
-/**
- * Development-only brand switch for a NEUTRAL dev host: `?brand=grounnel` once on `localhost`,
- * and it sticks for the tab. Ignored entirely on a host that already names its brand — there
- * `grounnel.localhost` IS the answer, and a stored value silently outranking it was a bug.
- *
- * It exists because the hostname conventions need DNS to cooperate: `grounnel.localhost` fails
- * behind an HTTP proxy that only exempts bare `localhost`, and the real host cannot be pointed
- * at a dev server because browsers HSTS-preload `*.vercel.app`.
- */
+// Dev-only brand switch for a NEUTRAL dev host: `?brand=grounnel` on `localhost`, sticky for the
+// tab. Ignored where the host already names its brand — `grounnel.localhost` IS the answer.
 function devBrandOverride(kind: HostKind, hostNamesBrand: boolean): Brand | null {
   // Not read AND not written on a brand-naming host: writing a value that can never be read back
   // left dead state behind and made the "it sticks for the tab" contract false there.

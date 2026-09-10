@@ -1,7 +1,5 @@
-/**
- * Plain assert-based checks — no test framework (T040). Run: npx tsx src/lib/articleScore.test.ts
- * Covers T049's two guards and the A/B separation the formula exists to produce.
- */
+// Plain assert-based checks — no test framework (T040). Run: npx tsx src/lib/articleScore.test.ts
+// Covers T049's two guards and the A/B separation the formula exists to produce.
 import assert from 'node:assert/strict';
 import { articleScore, completenessColor, groundednessColor } from './articleScore';
 import type { Claim, ClaimVerdict } from '../types/grounnel';
@@ -117,9 +115,8 @@ unknown.push({ ...unknown[0], id: 'x', verdict: 'mixed' as never });
 assert.equal(articleScore(unknown).counts.checked, 6);
 assert.equal(articleScore(unknown).counts.noVerdict, 1, 'unknown verdict falls back to noVerdict');
 
-// A shared assessment whose claim rows are SHORT must not score higher than the run it came from.
-// Postgres writes are best-effort: a dropped row vanishes from the denominator rather than
-// lowering the score, so the forwarded link would always be the flattering one.
+// A shared assessment with SHORT claim rows must not outscore the run it came from: a dropped
+// best-effort row vanishes from the denominator rather than lowering the score.
 const fullRun = articleScore(claims({ supported: 16, excluded: 4 }));
 const droppedRows = claims({ supported: 16 }); // the 4 excluded inserts failed
 assert.equal(articleScore(droppedRows).completeness, 100, 'without the snapshot it reads higher');

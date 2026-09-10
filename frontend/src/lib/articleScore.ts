@@ -83,11 +83,8 @@ export function countClaims(claims: Claim[]): Counts {
   return c;
 }
 
-/**
- * `authoritative` wins over the claims when given. A shared assessment's claim rows are written
- * best-effort, so a dropped row does not lower a score — it vanishes from every denominator, and
- * the shared link (the one that gets forwarded) would read higher than the run its owner saw.
- */
+// `authoritative` wins over the claims when given: a shared assessment's rows are best-effort,
+// so a dropped one vanishes from every denominator and the forwarded link would read higher.
 export function articleScore(
   claims: Claim[],
   capsHit = false,
@@ -125,9 +122,8 @@ export function articleScore(
   // One claim moves a 5-claim score by 20 points; below that the number is noise.
   if (N < MIN_CHECKED) return { ...base, groundedness: null, suppressed: 'too-few' };
 
-  // A groundedness score is shown only when the assessment contains at least one decisive
-  // verdict. Otherwise the article has no evidence direction to summarise, and a computed 0
-  // would read as "refuted" for something merely unfindable. Partial support is not decisive.
+  // Shown only with at least one decisive verdict. Otherwise there is no evidence direction, and
+  // a computed 0 would read as "refuted" for something merely unfindable. Partial isn't decisive.
   if (S + C === 0) return { ...base, groundedness: null, suppressed: 'no-direction' };
 
   // Contradiction multiplies rather than subtracts, so "a source refutes this" lands materially

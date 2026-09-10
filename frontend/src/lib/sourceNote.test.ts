@@ -1,8 +1,5 @@
-/**
- * Plain assert-based checks — no test framework. Run: npx tsx src/lib/sourceNote.test.ts
- * Covers T014 (a contradicted claim must not label refuting evidence as supporting) and T015
- * (a claim with no verdict must not render bare, unexplained links).
- */
+// Plain assert-based checks — no test framework. Run: npx tsx src/lib/sourceNote.test.ts
+// Covers T014 (refuting evidence not labelled supporting) and T015 (no bare unexplained links).
 import assert from 'node:assert/strict';
 import { sourceNote } from './sourceNote';
 import type { Claim, ClaimVerdict } from '../types/grounnel';

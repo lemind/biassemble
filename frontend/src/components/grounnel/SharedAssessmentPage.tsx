@@ -11,9 +11,8 @@ const POLL_INTERVAL_MS = 5000;
 // the life of the tab and burns the viewer's whole read budget. 120 ticks ≈ 10 minutes.
 const MAX_POLLS = 120;
 
-// A shared claim carries no id (core 019 FR-009 keeps internal identifiers out) and no citations
-// (core never persisted them), so both are synthesised. Position is a stable key for one
-// assessment; a shared page therefore shows no inline citation numbers where a live run does.
+// A shared claim carries no id (core 019 FR-009) and no citations (never persisted), so both
+// are synthesised. Position is a stable key; a shared page shows no inline citation numbers.
 function toClaim(claim: SharedClaim, index: number, runStatus: SharedAssessment['status']): Claim {
   const unfinished = runStatus === 'extracting' || runStatus === 'verifying';
   return {
@@ -43,8 +42,7 @@ function toRunProgress(assessment: SharedAssessment): RunProgress {
     status: assessment.status,
     claims,
     // Core writes a claim row only once that claim finishes, so `claims.length` is the number DONE,
-    // not the number there will be — reported as the total it read "3 / 3 checked" on a run with
-    // seventeen still to go.
+    // not the number there will be — it read "3 / 3 checked" on a run with seventeen to go.
     progress: totalKnown
       ? { checked: claims.filter((c) => c.status !== 'pending').length, total: claims.length }
       : null,

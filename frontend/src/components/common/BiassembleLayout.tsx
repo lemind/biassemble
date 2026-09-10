@@ -1,6 +1,5 @@
-// Legacy filename: Grounnel is now the umbrella and Biassemble a separate related project, so the
-// name no longer describes the hierarchy. Renaming is pure churn; do it when this file is next
-// touched substantially (plan.md, Project Structure).
+// Legacy filename: Grounnel is now the umbrella and Biassemble a separate project. Renaming is
+// churn; do it when this file is next touched substantially (plan.md, Project Structure).
 import type { ReactNode } from 'react';
 import type { Brand } from '../../lib/brand';
 import { normalizePath } from '../../lib/routes';
@@ -35,9 +34,8 @@ function NavLink({ href, active, children }: NavLinkProps) {
 }
 
 export default function BiassembleLayout({ brand, activePath, children }: BiassembleLayoutProps) {
-  // overflow-x-clip, not hidden: a claim tooltip is `absolute w-max` and stays in layout even at
-  // opacity-0, so one near the right edge widened the page into a horizontal scrollbar. `clip`
-  // leaves the vertical axis visible, so tooltips still hang below their claim.
+  // overflow-x-clip, not hidden: a claim tooltip is `absolute w-max` and stays in layout at
+  // opacity-0, widening the page. `clip` leaves the vertical axis visible so tooltips still hang.
   const active = normalizePath(activePath);
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip bg-base-200">

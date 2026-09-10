@@ -1,12 +1,5 @@
-/**
- * Writes the Stats page's committed snapshot (site spec 004, T011).
- *
- * Runs in a trusted environment that holds DATABASE_URL; only the aggregate is committed, so the
- * frontend build never sees a database or a secret. NEVER add DATABASE_URL to the Vercel frontend
- * project — VITE_* is public and even a non-VITE_ var is readable by build code.
- *
- *   npx tsx --env-file=.env.local scripts/generate-stats.ts
- */
+// Writes the Stats page's committed snapshot (site spec 004, T011); only the aggregate is
+// committed. NEVER put DATABASE_URL on the Vercel frontend project — build code can read it.
 import { sql } from "drizzle-orm";
 import { writeFileSync } from "node:fs";
 import { getDb } from "../src/drizzle/config";

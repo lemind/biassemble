@@ -617,17 +617,34 @@ calls per run, 0.2 Tavily searches per run. Token spend is **$0.0063/run** (~$9.
 fortnight at `gemini-2.0-flash` list price). Grounding is billed per REQUEST, not per token, and
 is the only line that can matter — see T055.
 
-- [ ] T055 **Establish what grounding actually costs.** Billing → Reports, group by SKU, filter to
-  the Generative Language / Gemini service. Does a "Grounding with Google Search" SKU appear, and
-  at what unit price? At the headline $35/1k it would be 94% of all spend ($187 per fortnight at
-  current volume); the repo's own record of ~$0.036/run and ~$2/day says it is not being billed
-  that way, so one of the two is wrong. **Nothing below can be sized until this is answered.**
-  Console-only; nobody can read this from code.
+- [x] T055 **Grounding is FREE — answered 2026-09-10 from the September invoice.** The SKU is
+  `Generate content search query gemini 2.5 free`: 5,585 searches, **$0.00**. The $35/1k scenario
+  is dead, and with it the idea that grounding calls are the budget. Two corrections fell out:
+  production runs **gemini-2.5-flash-lite**, not the `gemini-2.0-flash` default in `env.ts`; and
+  the whole account cost **$9.46 for Sept 1-10** (~$0.95/day) *including* eval runs.
+
+  Price table, derived from the invoice, not from a docs page:
+
+  | | per 1M tokens |
+  |---|---|
+  | input | $0.10 |
+  | cached input | $0.01 |
+  | output | $0.40 |
+  | search query | $0.00 (free tier) |
+
+- [ ] T056a **Log the grounding calls' tokens — they are 37% of the bill and currently invisible.**
+  `discoverUrls` in `hybrid-provider.ts` calls Gemini with `fetch` directly, bypassing
+  `callLlmForJson`, so nothing lands in `grounnel_llm_calls`. Reconciled against the September
+  invoice: **3.9M input and 7.7M output tokens unaccounted for**, ~707 in / ~1,388 out per
+  grounding call, **$3.49 of the $9.46 bill**. The *search* is free; its *tokens* are not. A meter
+  built only on the existing rows would run 26% light and throttle too late.
 
 - [ ] T056 **Self-metering.** Price table for the models in use, applied to the `input_tokens` /
   `output_tokens` already recorded on every `grounnel_llm_calls` row, plus a per-request charge for
   each grounding call and each Tavily search. Running total in Redis (Upstash is already wired),
-  key `spend:YYYY-MM` to match a monthly budget. Postgres stays the audit trail; Redis is the gate.
+  key `spend:YYYY-MM` to match a monthly budget. Depends on T056a. Cached input bills at 1/10th
+  of normal input, and we do not record `cachedContentTokenCount` separately — counting it as
+  ordinary input overestimates by ~11%, which errs toward throttling early and is acceptable. Postgres stays the audit trail; Redis is the gate.
   Zero latency and no Google dependency — the reason we do not read spend from Google is that
   there is no low-latency spend API, only a BigQuery export delayed by hours.
 

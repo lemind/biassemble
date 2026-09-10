@@ -131,7 +131,7 @@ export function createDevMockClient(): AiClient {
       return {
         id,
         status,
-        progress: { checked: status === "done" ? 3 : 0, total: 3 },
+        progress: { checked: status === "done" ? 7 : 0, total: 7 },
         claims: status === "done" ? [
           {
             id: "00000000-0000-4000-8000-000000000001",
@@ -178,10 +178,73 @@ export function createDevMockClient(): AiClient {
             citations: [],
             sourceExcerpt: "[dev-mock] Mount Everest is the tallest mountain above sea level.",
           },
+          // Four more, so the run clears articleScore's N >= 5 guard and exercises every band:
+          // a contradiction (the multiplicative penalty), a partial (the 0.5 weight), an
+          // unsupported, and an engine failure (must lower completeness, never groundedness).
+          {
+            id: "00000000-0000-4000-8000-000000000004",
+            text: "[dev-mock] The Statue of Liberty was a gift from Canada.",
+            status: "done",
+            verdict: "contradicted",
+            evidence: "[dev-mock] The statue was a gift from the people of France.",
+            confidence: 0.93,
+            reason: "[dev-mock] The source names France, not Canada.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/liberty", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [
+              { source: "A", sentence: 1, url: "https://example.com/liberty", text: "[dev-mock] The statue was a gift from the people of France." },
+            ],
+            sourceExcerpt: "[dev-mock] The Statue of Liberty was a gift from Canada.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000005",
+            text: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
+            status: "done",
+            verdict: "partially_supported",
+            evidence: "[dev-mock] Hopper led the team that invented COBOL.",
+            confidence: 0.71,
+            reason: "[dev-mock] Leading a team is not the same as primary personal authorship.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/cobol", status: "ok", retrievalMethod: "diy_fetch" },
+            ],
+            citations: [
+              { source: "A", sentence: 2, url: "https://example.com/cobol", text: "[dev-mock] Hopper led the team that invented COBOL." },
+            ],
+            sourceExcerpt: "[dev-mock] COBOL was designed primarily by Grace Hopper.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000006",
+            text: "[dev-mock] The village hall was repainted in the spring of 1974.",
+            status: "done",
+            verdict: "unsupported",
+            evidence: null,
+            confidence: 0.8,
+            reason: "[dev-mock] None of the retrieved sentences mention the village hall.",
+            sources: [
+              { kind: "web", title: "[dev-mock] Source", domain: "example.com", url: "https://example.com/village", status: "ok", retrievalMethod: "tavily_fallback" },
+            ],
+            citations: [],
+            sourceExcerpt: "[dev-mock] The village hall was repainted in the spring of 1974.",
+          },
+          {
+            id: "00000000-0000-4000-8000-000000000007",
+            text: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
+            status: "failed",
+            verdict: null,
+            evidence: null,
+            confidence: null,
+            reason: null,
+            sources: [],
+            citations: [],
+            sourceExcerpt: "[dev-mock] The bridge carries roughly 40,000 vehicles a day.",
+          },
         ] : [],
-        // `eligible` stays 2 with 3 claims: excluded claims are deliberately dropped from the
-        // denominator (core's grounnel-store), so the mock teaches the same arithmetic as prod.
-        score: { grounded_pct: status === "done" ? 100 : 0, grounded_n: status === "done" ? 2 : 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 1, eligible: 2 },
+        // `eligible` drops the one excluded claim but keeps the failed one, matching core's
+        // grounnel-store, so the mock teaches the same arithmetic as production.
+        score: status === "done"
+          ? { grounded_pct: 33, grounded_n: 2, unclear_n: 1, no_evidence_n: 1, contradicted_n: 1, not_checked_n: 1, eligible: 6 }
+          : { grounded_pct: 0, grounded_n: 0, unclear_n: 0, no_evidence_n: 0, contradicted_n: 0, not_checked_n: 0, eligible: 6 },
         caps_hit: false,
         started_at: new Date().toISOString(),
         elapsed_seconds: 3,

@@ -8,10 +8,6 @@ import { NextResponse, type NextRequest } from "next/server";
  * browser, not here, so it is not an access control — the ceiling on abuse is the per-IP rate
  * limit in core plus the cloud budget cap (site spec 004, T017).
  */
-const DEV_ORIGINS = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"].flatMap((host) =>
-  [5173, 4173].map((port) => `http://${host}:${port}`)
-);
-
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((o) => o.trim())
@@ -19,17 +15,27 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .concat([
     "https://grounnel.vercel.app",
     "https://frontend-topaz-eight-10.vercel.app",
-    // Dev only. In production this would let any page a visitor happens to have on Vite's default
-    // port read this API cross-origin. Every loopback spelling the app itself accepts as a dev
-    // host (frontend/src/lib/brand.ts DEV_HOSTS), on both vite's dev and preview ports.
-    ...(process.env.NODE_ENV === "production" ? [] : DEV_ORIGINS),
   ]);
+
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "[::1]"]);
+
+/** Any http loopback origin, on any port. Dev only — vite walks the port forward when one is
+ *  taken, and `<brand>.localhost` is how the two brands are told apart locally (brand.ts). */
+function isDevOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  try {
+    const { protocol, hostname } = new URL(origin);
+    return protocol === "http:" && (LOOPBACK_HOSTS.has(hostname) || hostname.endsWith(".localhost"));
+  } catch {
+    return false;
+  }
+}
 
 // Vercel previews are 403'd here deliberately (site spec 004, T037) — no fixed allowlist matches
 // a per-deployment hostname, and previews must not spend production budget. CORS_ORIGINS admits one.
 
 function isAllowed(origin: string | null): boolean {
-  return origin !== null && ALLOWED_ORIGINS.includes(origin);
+  return origin !== null && (ALLOWED_ORIGINS.includes(origin) || isDevOrigin(origin));
 }
 
 export function middleware(request: NextRequest) {

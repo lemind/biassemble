@@ -5,7 +5,8 @@ import { applyPageMeta } from '../../lib/seo';
 import ArticleInput from './ArticleInput';
 import RunView from './RunView';
 
-// Per-browser, not per-tab: a notice you dismissed should stay dismissed on the next visit.
+// Per-browser, not per-tab: a notice you collapsed should stay collapsed on the next visit.
+// It is never removed, only folded into the badge — the limits still apply to every run.
 const ALPHA_NOTICE_KEY = 'grounnel.alphaNoticeDismissed';
 
 
@@ -14,7 +15,7 @@ export default function GrounnelApp() {
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
   const [articleText, setArticleText] = useState('');
-  const [alphaNotice, setAlphaNotice] = useState(() => {
+  const [alphaOpen, setAlphaOpen] = useState(() => {
     try {
       return localStorage.getItem(ALPHA_NOTICE_KEY) !== '1';
     } catch {
@@ -22,12 +23,13 @@ export default function GrounnelApp() {
     }
   });
 
-  const dismissAlphaNotice = () => {
-    setAlphaNotice(false);
+  const toggleAlphaNotice = () => {
+    const next = !alphaOpen;
+    setAlphaOpen(next);
     try {
-      localStorage.setItem(ALPHA_NOTICE_KEY, '1');
+      localStorage.setItem(ALPHA_NOTICE_KEY, next ? '0' : '1');
     } catch {
-      // Storage blocked — it just comes back next visit, which is not worth failing the click over.
+      // Storage blocked — it just reopens next visit, not worth failing the click over.
     }
   };
 
@@ -58,21 +60,25 @@ export default function GrounnelApp() {
           </p>
         </div>
 
-        {alphaNotice && (
+        {alphaOpen ? (
           <div className="alert alert-info items-start py-3 text-sm">
             <span>
               <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
               about 2,000 characters, or 350 words. Longer texts are checked in part, so run them
               a few paragraphs at a time.
             </span>
-            <button
-              className="btn btn-ghost btn-xs"
-              aria-label="Dismiss"
-              onClick={dismissAlphaNotice}
-            >
+            <button className="btn btn-ghost btn-xs" aria-label="Hide details" onClick={toggleAlphaNotice}>
               ✕
             </button>
           </div>
+        ) : (
+          <button
+            className="btn btn-ghost btn-xs w-fit gap-1 text-info"
+            aria-expanded={false}
+            onClick={toggleAlphaNotice}
+          >
+            <span aria-hidden>ⓘ</span> Alpha version
+          </button>
         )}
 
         <div className="collapse collapse-arrow border border-base-300 bg-base-100">

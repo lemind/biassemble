@@ -11,6 +11,8 @@ interface GrounnelProgressProps {
 }
 
 const SOFT_STALL_THRESHOLD_SECONDS = 60;
+// Mirrors MAX_CLAIMS in biassemble-core's extract.service.ts — shown so "partial" says how partial.
+const MAX_CLAIMS_PER_RUN = 100;
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -229,7 +231,13 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
         </p>
       )}
       {status.caps_hit && (
-        <p className="text-warning">Results are partial — the claim limit for this run was reached.</p>
+        <p className="text-warning">
+          This text had more claims than one check can handle, so only the first {MAX_CLAIMS_PER_RUN} were
+          looked at — the rest were not checked at all.{' '}
+          <span className="text-base-content/70">
+            Run it again a few paragraphs at a time to get everything covered.
+          </span>
+        </p>
       )}
       {isStalled && (
         <p className="text-base-content/60">Widening the search for the trickier claims…</p>

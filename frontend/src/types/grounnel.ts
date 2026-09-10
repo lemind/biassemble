@@ -77,12 +77,25 @@ export interface SharedClaim {
   sourceExcerpt: string | null;
 }
 
+/** Verdict tallies snapshotted from core's authoritative store at completion. Optional: runs
+ *  that finished before it existed have none. */
+export interface SharedCounts {
+  supported: number;
+  partiallySupported: number;
+  unsupported: number;
+  unverifiable: number;
+  contradicted: number;
+  excluded: number;
+  noVerdict: number;
+}
+
 export interface SharedAssessment {
   status: GrounnelRunStatus;
   text: string;
   claims: SharedClaim[];
   createdAt: string;
   completedAt: string | null;
+  counts?: SharedCounts;
 }
 
 /** The subset of a run's state the progress row renders. `GrounnelStatusOutput` satisfies it, and

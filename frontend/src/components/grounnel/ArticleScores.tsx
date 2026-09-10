@@ -1,6 +1,6 @@
 import { articleScore, completenessColor, groundednessColor } from '../../lib/articleScore';
 import type { Counts } from '../../lib/articleScore';
-import type { Claim } from '../../types/grounnel';
+import type { Claim, SharedCounts } from '../../types/grounnel';
 
 const SUPPRESSED_COPY = {
   'too-few': 'Fewer than five claims were checked, so a score would be noise.',
@@ -88,8 +88,16 @@ function basis(c: Counts): string {
 }
 
 /** Only rendered for a finished run — mid-run these swing wildly as claims resolve. */
-export default function ArticleScores({ claims, capsHit }: { claims: Claim[]; capsHit: boolean }) {
-  const score = articleScore(claims, capsHit);
+export default function ArticleScores({
+  claims,
+  capsHit,
+  counts,
+}: {
+  claims: Claim[];
+  capsHit: boolean;
+  counts?: SharedCounts;
+}) {
+  const score = articleScore(claims, capsHit, counts);
 
   return (
     <div className="card border border-base-300 bg-base-100">

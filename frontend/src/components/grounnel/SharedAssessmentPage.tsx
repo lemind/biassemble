@@ -156,7 +156,11 @@ export default function SharedAssessmentPage({ token }: { token: string }) {
             the tab order and make the article unselectable, which is what readOnly exists to fix. */}
         <ArticleInput onSubmit={() => {}} disabled={false} initialText={assessment.text} readOnly />
 
-        <RunView articleText={assessment.text} status={toRunProgress(assessment)} />
+        <RunView
+          articleText={assessment.text}
+          status={toRunProgress(assessment)}
+          counts={assessment.counts}
+        />
       </div>
     </div>
   );

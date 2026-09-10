@@ -117,4 +117,19 @@ unknown.push({ ...unknown[0], id: 'x', verdict: 'mixed' as never });
 assert.equal(articleScore(unknown).counts.checked, 6);
 assert.equal(articleScore(unknown).counts.noVerdict, 1, 'unknown verdict falls back to noVerdict');
 
+// A shared assessment whose claim rows are SHORT must not score higher than the run it came from.
+// Postgres writes are best-effort: a dropped row vanishes from the denominator rather than
+// lowering the score, so the forwarded link would always be the flattering one.
+const fullRun = articleScore(claims({ supported: 16, excluded: 4 }));
+const droppedRows = claims({ supported: 16 }); // the 4 excluded inserts failed
+assert.equal(articleScore(droppedRows).completeness, 100, 'without the snapshot it reads higher');
+const authoritative = {
+  supported: 16, partiallySupported: 0, unsupported: 0, unverifiable: 0,
+  contradicted: 0, excluded: 4, noVerdict: 0,
+};
+const shared = articleScore(droppedRows, false, authoritative);
+assert.equal(shared.completeness, fullRun.completeness, 'snapshot restores the true denominator');
+assert.equal(shared.groundedness, fullRun.groundedness);
+assert.equal(shared.counts.excluded, 4);
+
 console.log('articleScore.test.ts: all assertions passed');

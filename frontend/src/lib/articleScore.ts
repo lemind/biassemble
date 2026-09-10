@@ -33,6 +33,13 @@ const MIN_CHECKED = 5;
  *  at N=5 a single contradiction is exactly 0.2, and one claim should not force the red ring. */
 const REFUTED_SHARE = 0.2;
 
+function withChecked(c: Omit<Counts, 'checked'>): Counts {
+  return {
+    ...c,
+    checked: c.supported + c.partiallySupported + c.unsupported + c.unverifiable + c.contradicted,
+  };
+}
+
 export function countClaims(claims: Claim[]): Counts {
   const c: Counts = {
     supported: 0, partiallySupported: 0, unsupported: 0, unverifiable: 0,
@@ -60,8 +67,17 @@ export function countClaims(claims: Claim[]): Counts {
   return c;
 }
 
-export function articleScore(claims: Claim[], capsHit = false): ArticleScore {
-  const counts = countClaims(claims);
+/**
+ * `authoritative` wins over the claims when given. A shared assessment's claim rows are written
+ * best-effort, so a dropped row does not lower a score — it vanishes from every denominator, and
+ * the shared link (the one that gets forwarded) would read higher than the run its owner saw.
+ */
+export function articleScore(
+  claims: Claim[],
+  capsHit = false,
+  authoritative?: Omit<Counts, 'checked'>
+): ArticleScore {
+  const counts = authoritative ? withChecked(authoritative) : countClaims(claims);
   const { supported: S, partiallySupported: P, contradicted: C, checked: N, noVerdict, excluded } = counts;
 
   const attempted = N + noVerdict;

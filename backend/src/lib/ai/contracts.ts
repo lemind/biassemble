@@ -164,6 +164,17 @@ export const sharedAssessmentSchema = z.object({
   claims: z.array(sharedClaimSchema),
   createdAt: z.string(),
   completedAt: z.string().nullable(),
+  // Authoritative tallies snapshotted at completion. Optional: runs finished before this existed
+  // have none, and the reader falls back to counting the claim rows.
+  counts: z.object({
+    supported: z.number(),
+    partiallySupported: z.number(),
+    unsupported: z.number(),
+    unverifiable: z.number(),
+    contradicted: z.number(),
+    excluded: z.number(),
+    noVerdict: z.number(),
+  }).optional(),
 });
 
 export type SharedAssessment = z.infer<typeof sharedAssessmentSchema>;

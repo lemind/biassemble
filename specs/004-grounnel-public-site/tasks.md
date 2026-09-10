@@ -631,7 +631,8 @@ is the only line that can matter — see T055.
   Zero latency and no Google dependency — the reason we do not read spend from Google is that
   there is no low-latency spend API, only a BigQuery export delayed by hours.
 
-- [ ] T057 **Read the budget amount from Google, do not hardcode it.** Cloud Billing Budget API
+- [ ] T057 **Read the budget amount from Google, do not hardcode it.** Billing account
+  `0191D0-221099-FFFC9B`, project `gen-lang-client-0413377631` ("Biassemble"). Cloud Billing Budget API
   (`billingbudgets.googleapis.com/v1`) returns the budget's amount; cache it for 24h. Changing the
   limit in the console then changes the app's behaviour with no deploy — the explicit ask. Needs a
   service account with `billing.budgets.get` (or `roles/billing.viewer`) on the billing account,

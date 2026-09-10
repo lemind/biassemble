@@ -27,8 +27,8 @@ export interface Counts {
 }
 
 const MIN_CHECKED = 5;
-/** Above this many checked claims, sample size stops adding to completeness. */
-const SAMPLE_SATURATION = 20;
+/** At or above this share of checked claims refuted, the score is driven by refutation. */
+const REFUTED_SHARE = 0.2;
 
 export function countClaims(claims: Claim[]): Counts {
   const c: Counts = {
@@ -60,8 +60,10 @@ export function articleScore(claims: Claim[]): ArticleScore {
   const attempted = N + noVerdict;
   const coverage = attempted + excluded === 0 ? 0 : attempted / (attempted + excluded);
   const completion = attempted === 0 ? 0 : N / attempted;
-  const sample = Math.min(1, N / SAMPLE_SATURATION);
-  const completeness = Math.round(100 * (0.4 * coverage + 0.4 * completion + 0.2 * sample));
+  // Coverage and completion only. A sample-size term used to sit here at 20% weight, which
+  // capped a flawless 5-claim run at 85 — penalising short articles twice, since MIN_CHECKED
+  // already handles "too small to summarise". Sample size is shown as counts, not baked in.
+  const completeness = Math.round(100 * (0.5 * coverage + 0.5 * completion));
 
   // One claim moves a 5-claim score by 20 points; below that the number is noise.
   if (N < MIN_CHECKED) return { groundedness: null, completeness, suppressed: 'too-few', counts };
@@ -77,16 +79,23 @@ export function articleScore(claims: Claim[]): ArticleScore {
   return { groundedness, completeness, suppressed: null, counts };
 }
 
-export function groundednessColor(score: number): string {
+/**
+ * Colour follows WHY the score is low, not just how low. A thin article (nothing found) and a
+ * refuted one can share a score, so height alone would paint "nobody wrote about this" red.
+ * Red is reserved for actual refutation — the same meaning `error` already carries on a claim.
+ */
+export function groundednessColor(score: number, counts: Counts): string {
+  if (counts.checked > 0 && counts.contradicted / counts.checked >= REFUTED_SHARE) return 'text-error';
   if (score >= 75) return 'text-success';
-  if (score >= 50) return 'text-warning';
-  if (score >= 25) return 'text-info';
-  return 'text-error';
+  if (score >= 45) return 'text-warning';
+  // Low but nothing refuted: thin evidence, not a verdict against the article. `info` is the
+  // colour an unverifiable claim already uses.
+  return 'text-info';
 }
 
+/** Never red: an article we could only partly assess is not wrong, just partly assessed. */
 export function completenessColor(score: number): string {
-  if (score >= 80) return 'text-success';
-  if (score >= 60) return 'text-warning';
-  if (score >= 40) return 'text-info';
-  return 'text-error';
+  if (score >= 85) return 'text-success';
+  if (score >= 65) return 'text-warning';
+  return 'text-info';
 }

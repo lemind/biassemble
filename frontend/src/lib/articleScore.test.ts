@@ -3,7 +3,7 @@
  * Covers T049's two guards and the A/B separation the formula exists to produce.
  */
 import assert from 'node:assert/strict';
-import { articleScore } from './articleScore';
+import { articleScore, completenessColor, groundednessColor } from './articleScore';
 import type { Claim, ClaimVerdict } from '../types/grounnel';
 
 function claims(spec: Partial<Record<ClaimVerdict | 'no_verdict' | 'pending', number>>): Claim[] {
@@ -37,7 +37,24 @@ assert.ok(a.groundedness! - b.groundedness! > 60, 'A and B must not be close');
 // C — mostly opinion. Groundedness fine, completeness must fall.
 const c = articleScore(claims({ supported: 4, unsupported: 2, excluded: 14 }));
 assert.equal(c.groundedness, 67);
-assert.equal(c.completeness, 58);
+assert.equal(c.completeness, 65);
+
+// A flawless run scores 100 completeness at ANY size — a sample-size term used to live in this
+// number and capped a perfect 5-claim article at 85, penalising short articles twice.
+assert.equal(articleScore(claims({ supported: 5 })).completeness, 100);
+assert.equal(articleScore(claims({ supported: 20 })).completeness, 100);
+
+// Colour must follow WHY the score is low. These two share a groundedness of 25.
+const thinArticle = articleScore(claims({ supported: 5, unsupported: 15 }));
+const refutedArticle = articleScore(claims({ supported: 10, contradicted: 10 }));
+assert.equal(thinArticle.groundedness, refutedArticle.groundedness);
+assert.equal(groundednessColor(thinArticle.groundedness!, thinArticle.counts), 'text-info');
+assert.equal(groundednessColor(refutedArticle.groundedness!, refutedArticle.counts), 'text-error');
+
+// Completeness is never red — a partly assessed article is not a wrong one.
+for (const n of [0, 20, 50, 64, 65, 84, 85, 100]) {
+  assert.notEqual(completenessColor(n), 'text-error');
+}
 
 // Guard 1 — below five checked claims one verdict moves the score 20+ points.
 const few = articleScore(claims({ supported: 3, unsupported: 1 }));

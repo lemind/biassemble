@@ -8,6 +8,10 @@ import { NextResponse, type NextRequest } from "next/server";
  * browser, not here, so it is not an access control — the ceiling on abuse is the per-IP rate
  * limit in core plus the cloud budget cap (site spec 004, T017).
  */
+const DEV_ORIGINS = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"].flatMap((host) =>
+  [5173, 4173].map((port) => `http://${host}:${port}`)
+);
+
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((o) => o.trim())
@@ -16,8 +20,9 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
     "https://grounnel.vercel.app",
     "https://frontend-topaz-eight-10.vercel.app",
     // Dev only. In production this would let any page a visitor happens to have on Vite's default
-    // port read this API cross-origin.
-    ...(process.env.NODE_ENV === "production" ? [] : ["http://localhost:5173"]),
+    // port read this API cross-origin. Every loopback spelling the app itself accepts as a dev
+    // host (frontend/src/lib/brand.ts DEV_HOSTS), on both vite's dev and preview ports.
+    ...(process.env.NODE_ENV === "production" ? [] : DEV_ORIGINS),
   ]);
 
 // Vercel previews are 403'd here deliberately (site spec 004, T037) — no fixed allowlist matches

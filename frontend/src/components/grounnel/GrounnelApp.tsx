@@ -5,20 +5,34 @@ import { applyPageMeta } from '../../lib/seo';
 import ArticleInput from './ArticleInput';
 import RunView from './RunView';
 
+// Per-browser, not per-tab: a notice you dismissed should stay dismissed on the next visit.
+const ALPHA_NOTICE_KEY = 'grounnel.alphaNoticeDismissed';
+
 
 export default function GrounnelApp() {
   const { runId, shareToken, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
   const [articleText, setArticleText] = useState('');
+  const [alphaNotice, setAlphaNotice] = useState(() => {
+    try {
+      return localStorage.getItem(ALPHA_NOTICE_KEY) !== '1';
+    } catch {
+      return true;
+    }
+  });
 
-  // The address bar IS the share link. replaceState, not push: the empty page is not somewhere to
-  // go back to, and the token exists from creation, so this lands as soon as the run starts.
-  //
-  // This is why `/` no longer restores the previous run (it did under T018, via localStorage): the
-  // URL now persists a run across reloads and tabs, and does it better — it survives the tab
-  // closing and can be handed to someone else. Restoring as well made `/` un-reachable, because a
-  // stored run immediately rewrote the URL back to itself and there was no way to start a new check.
+  const dismissAlphaNotice = () => {
+    setAlphaNotice(false);
+    try {
+      localStorage.setItem(ALPHA_NOTICE_KEY, '1');
+    } catch {
+      // Storage blocked — it just comes back next visit, which is not worth failing the click over.
+    }
+  };
+
+  // The address bar IS the share link. replaceState, not push: the empty page is not somewhere
+  // to go back to, which is also why `/` no longer restores the previous run.
   useEffect(() => {
     if (!shareToken) return;
     const url = `/check/${shareToken}`;
@@ -43,6 +57,23 @@ export default function GrounnelApp() {
             Paste text below to check its claims against the open web.
           </p>
         </div>
+
+        {alphaNotice && (
+          <div className="alert alert-info items-start py-3 text-sm">
+            <span>
+              <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
+              about 2,000 characters, or 350 words. Longer texts are checked in part, so run them
+              a few paragraphs at a time.
+            </span>
+            <button
+              className="btn btn-ghost btn-xs"
+              aria-label="Dismiss"
+              onClick={dismissAlphaNotice}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         <div className="collapse collapse-arrow border border-base-300 bg-base-100">
           {/* No defaultChecked — collapsed by default, same collapse pattern as ResultsView.tsx */}

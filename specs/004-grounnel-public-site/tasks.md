@@ -606,6 +606,59 @@ to 10-supported-10-unsupported, which was the whole reason for a bespoke formula
   `S + P === 0 && C === 0`, which would have let an all-`partially_supported` article score 50.
   Implemented per the prose — partial support is not a decisive direction.
 
+## Phase 8 — Spend ceiling and degraded mode
+
+Designed 2026-09-10. T017 (a Google budget) is an ALERT, not a cap — spend continues past 100% and
+billing data lags by hours. So the enforceable ceiling has to be ours; Google supplies the limit,
+we supply the meter.
+
+Measured baseline, 14 days / 1,550 runs: **3.4 Gemini grounding searches per run**, 15.7 token
+calls per run, 0.2 Tavily searches per run. Token spend is **$0.0063/run** (~$9.80 for the whole
+fortnight at `gemini-2.0-flash` list price). Grounding is billed per REQUEST, not per token, and
+is the only line that can matter — see T055.
+
+- [ ] T055 **Establish what grounding actually costs.** Billing → Reports, group by SKU, filter to
+  the Generative Language / Gemini service. Does a "Grounding with Google Search" SKU appear, and
+  at what unit price? At the headline $35/1k it would be 94% of all spend ($187 per fortnight at
+  current volume); the repo's own record of ~$0.036/run and ~$2/day says it is not being billed
+  that way, so one of the two is wrong. **Nothing below can be sized until this is answered.**
+  Console-only; nobody can read this from code.
+
+- [ ] T056 **Self-metering.** Price table for the models in use, applied to the `input_tokens` /
+  `output_tokens` already recorded on every `grounnel_llm_calls` row, plus a per-request charge for
+  each grounding call and each Tavily search. Running total in Redis (Upstash is already wired),
+  key `spend:YYYY-MM` to match a monthly budget. Postgres stays the audit trail; Redis is the gate.
+  Zero latency and no Google dependency — the reason we do not read spend from Google is that
+  there is no low-latency spend API, only a BigQuery export delayed by hours.
+
+- [ ] T057 **Read the budget amount from Google, do not hardcode it.** Cloud Billing Budget API
+  (`billingbudgets.googleapis.com/v1`) returns the budget's amount; cache it for 24h. Changing the
+  limit in the console then changes the app's behaviour with no deploy — the explicit ask. Needs a
+  service account with `billing.budgets.get` (or `roles/billing.viewer`) on the billing account,
+  its JSON key in core's Vercel env, and the API enabled. **Fallback if that setup is not wanted:**
+  a `MONTHLY_BUDGET_USD` env var, one value to change in one place, no service account.
+
+- [ ] T058 **Degraded mode at 85%.** `spend:YYYY-MM` ÷ budget ≥ 0.85 → cap extraction at **5
+  claims** for the run; everything else unchanged (full retrieval, full verification, escalation
+  on). 5, not 1: `MIN_CHECKED = 5` means a shorter run renders no scores at all, so a 1-claim
+  demo would prove the system runs while displaying nothing.
+
+- [ ] T059 **The banner.** Shown whenever a run was capped: what happened, why, and that it is
+  temporary. Wording must not imply the claims we DID check are lower quality — they are checked
+  exactly as normal; there are simply fewer of them. The `caps_hit` warning already in
+  `GrounnelProgress` is the natural place, and the score panel already suppresses completeness on
+  `caps_hit`, which is the correct behaviour here too: an unknown share went unchecked.
+
+- [ ] T060 **100% — read only.** No new runs; existing share links keep opening, because a shared
+  read touches Postgres only and costs nothing. Banner: new checks resume when the budget rolls
+  over. This is the state T017's alert can only tell you about after the fact.
+
+- [ ] T061 **Google-side backstop.** A quota override on the Generative Language API (IAM & Admin →
+  Quotas → requests/day) is the only ceiling that survives a bug in T056-T060 — it is enforced by
+  Google, refuses over-quota calls with a 429, and costs nothing when it fires. Set it to roughly
+  3x the worst observed day. Tavily is credit-based and stops on its own; **turn off auto-topup**,
+  which would convert its hard cap into an unbounded one.
+
 ## Deliberately not in the MVP
 
 - `/examples` — a curated list of shared links. Cheap once Phase 4 lands, but still later.

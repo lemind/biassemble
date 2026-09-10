@@ -516,6 +516,77 @@ real `<h1>`/`<h2>` structure on About and Stats) — it had only been shown the 
   `frontend/src/lib/runStorage.ts`, `frontend/src/lib/runStorage.test.ts`,
   `frontend/src/data/workedExample.json`. All are unreferenced; `workedExample.ts` is the live one.
 
+## Phase 7 — Article-level scores
+
+Two headline numbers at the top of a finished check, 0–100, rounded, no `%` sign. Designed
+2026-09-10 after two rounds of external review. Both are **policy**, not fitted to any corpus.
+
+### The formulas
+
+Let `N = supported + partially_supported + unsupported + unverifiable + contradicted`.
+`excluded` is outside `N` (never eligible). `no_verdict` / `status === 'failed'` is outside `N`
+too — an engine failure is ours, and must not make the article look less grounded; it lands in
+the second number instead.
+
+```
+groundedness = round(100 * ((S + 0.5*P) / N) * (1 - C/N))
+
+completeness = round(100 * (0.4*coverage + 0.4*completion + 0.2*min(1, N/20)))
+  coverage   = (N + noVerdict) / (N + noVerdict + excluded)
+  completion = N / (N + noVerdict)
+```
+
+Contradiction is multiplicative, not subtractive, so "a source refutes this" lands materially
+below "nobody wrote about this" — a plain `S/N` scores 10-supported-10-contradicted identically
+to 10-supported-10-unsupported, which was the whole reason for a bespoke formula.
+
+- [ ] T048 **`frontend/src/lib/articleScore.ts`** — one pure function, `articleScore(claims)`,
+  returning `{ groundedness, completeness, suppressed } | null`. Computed in the frontend from
+  `claims[]`, not in core: every verdict it needs is already on both `Claim` and `SharedClaim`,
+  so a live run and a shared link get identical numbers with no contract change and no deploy
+  ordering. Core's existing `Score` is left alone — it buckets `partially_supported` together
+  with `unverifiable`, which this needs separated.
+
+- [ ] T049 **Two suppression guards.** Both return "not enough checked to score" instead of a
+  number, never a `0`:
+  1. `N < 5` — one claim moves the score 20+ points below that.
+  2. `S + C === 0` — nothing reached a decisive verdict, so there is no evidence direction to
+     report. **This one is load-bearing:** without it an article whose sources were all
+     paywalled or obscure scores `0 × 1 = 0` for groundedness and ~`100` for completeness, and
+     the pair reads "thoroughly checked, entirely unfounded" for something merely unfindable.
+
+- [ ] T050 **Colour bands**, reusing `verdictStyle.ts`'s palette so the page stays one system.
+  Different cut points per number, because they mean different things:
+  | | green | amber | blue | red |
+  |---|---|---|---|---|
+  | Groundedness | ≥ 75 | 50–74 | 25–49 | 0–24 |
+  | Completeness | ≥ 80 | 60–79 | 40–59 | < 40 |
+
+- [ ] T051 **Presentation.** Large, side by side, above the marked-up article. Labels
+  **Groundedness** and **Assessment completeness** — not "confidence": the number describes how
+  much was assessed, and calling it confidence invites reading it as "Grounnel is 98% sure the
+  article is true". No `%` sign after either figure, to keep them reading as scores rather than
+  calibrated probabilities. Fixed copy beneath the pair:
+
+  > Groundedness reflects how strongly the checked claims are supported by retrieved evidence;
+  > contradictions weigh heavily against it. Assessment completeness reflects how much of the
+  > article Grounnel actually assessed. Neither is a probability that the article is true.
+
+- [ ] T052 **Do not use the model's `confidence` field, in either number.** It is self-reported,
+  and the pipeline already spends it: below 0.6 the verdict is overwritten with `unverifiable`
+  (`CONFIDENCE_THRESHOLD`, pipeline.service.ts), so every other verdict has confidence ≥ 0.6 by
+  construction. The distribution is censored exactly where it would look bad, and T023 has not
+  run, so nothing maps a reported 0.85 to being right 85% of the time.
+
+- [ ] T053 **Never publish a corpus average from `stats.json`.** Its 3,804 claims are mostly
+  **eval** runs against a golden set deliberately seeded with false claims (3,207 eval vs 268
+  production), so the 67 that falls out of it is not a real-world figure. Any published average
+  must be production-only, and no threshold above may be tuned to it.
+
+- [ ] T054 Tests for `articleScore`: both guards, the A/B separation (18-supported/2-unsupported
+  → 90 vs 10-supported/10-contradicted → 25), `excluded`-heavy articles, an all-`no_verdict` run,
+  and `N === 0`. Blocked on T040 — the frontend has no test runner.
+
 ## Deliberately not in the MVP
 
 - `/examples` — a curated list of shared links. Cheap once Phase 4 lands, but still later.

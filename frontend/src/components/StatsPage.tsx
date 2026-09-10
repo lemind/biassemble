@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import fallbackStats from '../data/stats';
-import type { StatsSnapshot } from '../data/stats';
+import type { StatsSnapshot } from '../types/stats';
 import { getStats } from '../api/client';
 import { VERDICT_ROWS, INDEFINITE_VERDICTS } from '../lib/verdictRows';
 
@@ -21,9 +21,9 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export default function StatsPage() {
-  const [stats, setStats] = useState<StatsSnapshot | null>(null);
-  // Distinct from `stats === null`: null is "still asking", this is "asked and failed", which is
-  // what decides whether the page may claim to be live.
+  // Fallback-first: the committed snapshot is already in the bundle, so the page paints real
+  // numbers immediately and upgrades in place. The freshness row is what tells the two apart.
+  const [stats, setStats] = useState<StatsSnapshot>(fallbackStats);
   const [live, setLive] = useState(false);
 
   useEffect(() => {
@@ -35,22 +35,18 @@ export default function StatsPage() {
         setLive(true);
       })
       .catch(() => {
-        if (!cancelled) setStats(fallbackStats);
+        // Nothing to do: the fallback is already what's rendered, and `live` stays false.
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!stats) {
-    return (
-      <div className="mx-auto max-w-[40rem] px-6 py-16">
-        <span className="loading loading-spinner loading-md text-base-content/30" />
-      </div>
-    );
-  }
-
   const n = (key: string) => stats.verdicts.find((v) => v.verdict === key)?.n ?? 0;
+  // A verdict core starts emitting before this page knows about it would otherwise be counted in
+  // the total and shown nowhere, leaving the bar short. Named rather than dropped.
+  const knownKeys = new Set(VERDICT_ROWS.map((r) => r.key));
+  const other = stats.verdicts.reduce((sum, v) => (knownKeys.has(v.verdict) ? sum : sum + v.n), 0);
   const total = stats.totalClaims;
   const indefinite = INDEFINITE_VERDICTS.reduce((sum, key) => sum + n(key), 0);
   const failed = n('no_verdict');
@@ -65,7 +61,9 @@ export default function StatsPage() {
 
       <dl className="mt-8 space-y-1 border-l-2 border-base-300 pl-4 text-sm">
         <Meta label="Window">
-          {longDate(stats.window.from)} – {longDate(stats.window.to)}
+          {stats.window
+            ? `${longDate(stats.window.from)} – ${longDate(stats.window.to)}`
+            : 'No production runs recorded'}
         </Meta>
         <Meta label={live ? 'Updated' : 'Taken'}>{longDate(stats.generatedAt)}</Meta>
         <Meta label="Prompts">
@@ -74,8 +72,8 @@ export default function StatsPage() {
       </dl>
       <p className="mt-3 text-sm text-base-content/55">
         {live
-          ? 'These figures are read from the database each time this page loads, cached for up to an hour.'
-          : 'Live figures were unavailable, so these are fixed at the date above and may be out of date.'}
+          ? 'These figures are refreshed hourly. A cached result may be served while a fresh one is fetched.'
+          : 'Live figures were unavailable, so these are the last committed snapshot and may be out of date.'}
         {stats.promptVersions.length > 1 &&
           ' These runs span more than one extraction prompt version; the figures below combine them.'}
       </p>
@@ -101,6 +99,7 @@ export default function StatsPage() {
         {VERDICT_ROWS.filter((r) => n(r.key) > 0).map((r) => (
           <div key={r.key} className={r.bar} style={{ width: `${pct(n(r.key))}%` }} />
         ))}
+        {other > 0 && <div className="bg-base-content/15" style={{ width: `${pct(other)}%` }} />}
       </div>
 
       <table className="mt-5 w-full text-sm">
@@ -116,6 +115,17 @@ export default function StatsPage() {
               </td>
             </tr>
           ))}
+          {other > 0 && (
+            <tr className="border-b border-base-200 last:border-0">
+              <td className="w-4 py-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-base-content/15" aria-hidden />
+              </td>
+              <td className="py-2 text-base-content/80">Other</td>
+              <td className="py-2 text-right font-mono tabular-nums text-base-content/70">
+                {fmt(other)}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 

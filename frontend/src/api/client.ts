@@ -4,7 +4,7 @@ import type {
   GrounnelStatusOutput,
   SharedAssessment,
 } from "../types/grounnel";
-import type { StatsSnapshot } from "../data/stats";
+import { StatsSnapshotSchema, type StatsSnapshot } from "../types/stats";
 
 // Relative in every environment: vercel.json proxies /api/* in prod, vite.config.ts in dev.
 // That rewrite MUST stay above the SPA catch-all or /api/* returns index.html at 200 (T016).
@@ -61,9 +61,11 @@ export async function getSharedAssessment(token: string): Promise<SharedAssessme
 
 export default apiClient;
 
-// Shorter than the shared client's 120s: the Stats page has a committed snapshot to fall back on,
-// so waiting two minutes to find out the database is unreachable helps nobody.
+// Parsed, not cast: axios resolves a non-JSON 200 as a STRING, so a broken /api rewrite would
+// otherwise be adopted as live data. A throw here is what routes the page to its fallback.
 export async function getStats(): Promise<StatsSnapshot> {
-  const response = await apiClient.get<StatsSnapshot>("/api/grounnel/stats", { timeout: 10_000 });
-  return response.data;
+  // Shorter than the shared client's 120s — the Stats page has a committed snapshot to fall back
+  // on, so waiting two minutes to learn the database is unreachable helps nobody.
+  const response = await apiClient.get("/api/grounnel/stats", { timeout: 10_000 });
+  return StatsSnapshotSchema.parse(response.data);
 }

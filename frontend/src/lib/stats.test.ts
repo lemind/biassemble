@@ -1,5 +1,5 @@
 // Plain assert-based checks — no test framework. Run: npx tsx src/lib/stats.test.ts
-// A verdict core emits that isn't in the fixed row list would vanish and leave the bar short.
+// A verdict core emits that isn't in the fixed row list is shown as 'Other', never dropped.
 import assert from 'node:assert/strict';
 import stats from '../data/stats';
 import { VERDICT_ROWS, INDEFINITE_VERDICTS } from './verdictRows';
@@ -20,7 +20,7 @@ function test(name: string, fn: () => void) {
 test('every verdict in the snapshot has a row on the page', () => {
   const rows = new Set(VERDICT_ROWS.map((r) => r.key));
   for (const v of stats.verdicts) {
-    assert.ok(rows.has(v.verdict), `no row for "${v.verdict}" — it would vanish from the table`);
+    assert.ok(rows.has(v.verdict), `no row for "${v.verdict}" — it belongs in VERDICT_ROWS`);
   }
 });
 
@@ -30,6 +30,20 @@ test('the rows account for every claim, so the bar totals 100%', () => {
     0,
   );
   assert.equal(counted, stats.totalClaims);
+});
+
+// The page renders live data this fixture cannot see, so the guarantee has to be structural: an
+// unknown verdict lands in "Other" and still reaches the total. This asserts the arithmetic.
+test('an unknown verdict is absorbed by Other rather than lost', () => {
+  const known = new Set(VERDICT_ROWS.map((r) => r.key));
+  const verdicts = [...stats.verdicts, { verdict: 'partially_verified', n: 37 }];
+  const other = verdicts.reduce((sum, v) => (known.has(v.verdict) ? sum : sum + v.n), 0);
+  const shown = VERDICT_ROWS.reduce(
+    (sum, r) => sum + (verdicts.find((v) => v.verdict === r.key)?.n ?? 0),
+    other,
+  );
+  assert.equal(other, 37);
+  assert.equal(shown, stats.totalClaims + 37, 'every claim is on the page somewhere');
 });
 
 // The principle paragraph rests on this number, so assert the invariant, not the literal — the

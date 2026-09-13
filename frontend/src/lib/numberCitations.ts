@@ -1,4 +1,4 @@
-import type { Claim, ClaimCitation } from '../types/grounnel';
+import type { Claim, ClaimCitation, ClaimSource } from '../types/grounnel';
 import { numberClaims, type Span } from './matchClaimSpans';
 
 export interface NumberedReference {
@@ -62,4 +62,33 @@ export function numberCitations(
   }
 
   return { claimNumbers, references };
+}
+
+// A shared assessment carries sources but no citations — core never persisted them (spec 019) —
+// so the citation-keyed list above renders nothing there. Numbers the SOURCES the same way.
+export function numberSources(
+  articleText: string,
+  claims: Claim[],
+  precomputedSpans?: Map<string, Span | null>
+): { number: number; url: string; sources: ClaimSource[] }[] {
+  const claimOrder = numberClaims(articleText, claims, precomputedSpans);
+  const ordered = [...claims].sort((a, b) => claimOrder.get(a.id)! - claimOrder.get(b.id)!);
+
+  const urlToNumber = new Map<string, number>();
+  const references: { number: number; url: string; sources: ClaimSource[] }[] = [];
+  for (const claim of ordered) {
+    for (const source of claim.sources) {
+      // Only what a reader can actually open: an unreachable or blocked fetch is not a reference.
+      if (source.kind !== 'web' || source.status !== 'ok') continue;
+      const dedupKey = normalizeForDedup(source.url);
+      let number = urlToNumber.get(dedupKey);
+      if (number === undefined) {
+        number = references.length + 1;
+        urlToNumber.set(dedupKey, number);
+        references.push({ number, url: source.url, sources: [] });
+      }
+      references[number - 1].sources.push(source);
+    }
+  }
+  return references;
 }

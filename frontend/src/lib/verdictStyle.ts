@@ -1,4 +1,4 @@
-import type { ClaimVerdict } from '../types/grounnel';
+import type { ClaimStatus, ClaimVerdict } from '../types/grounnel';
 
 /**
  * Single source of truth for verdict → color, shared by HighlightedArticle (span highlight,
@@ -28,3 +28,10 @@ export const VERDICT_DOT_CLASS: Record<StyledVerdict, string> = {
   unsupported: 'bg-gray-400',
   unverifiable: 'bg-info',
 };
+
+// Whether the article body renders a highlight for this claim at all. Shared with numberCitations
+// so a reference is never numbered for a claim the reader has no inline marker to reach it from.
+export function isStyledClaim(claim: { verdict: ClaimVerdict | null; status: ClaimStatus }): boolean {
+  if (claim.verdict !== null) return claim.verdict !== 'excluded';
+  return claim.status === 'pending' || claim.status === 'failed';
+}

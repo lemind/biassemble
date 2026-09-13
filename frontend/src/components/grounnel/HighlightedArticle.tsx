@@ -1,6 +1,6 @@
 import { matchClaimSpans, MatchTier, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
-import { VERDICT_HIGHLIGHT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
+import { VERDICT_HIGHLIGHT_CLASS, isStyledClaim, type StyledVerdict } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
 import { sourceNote, SOURCE_NOTE_TEXT } from '../../lib/sourceNote';
 import SourceLink from './SourceLink';
@@ -89,13 +89,15 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
           return <span key={index}>{segment.text}</span>;
         }
 
-        const style = claim.verdict
-          ? VERDICT_STYLE[claim.verdict as StyledVerdict]
-          : claim.status === 'pending'
-            ? PENDING_STYLE
-            : claim.status === 'failed'
-              ? FAILED_STYLE
-              : null;
+        // isStyledClaim is the single definition of "this claim gets a mark", shared with
+        // numberCitations so the inline [n] markers and the References list can never disagree.
+        const style = !isStyledClaim(claim)
+          ? null
+          : claim.verdict
+            ? VERDICT_STYLE[claim.verdict as StyledVerdict]
+            : claim.status === 'pending'
+              ? PENDING_STYLE
+              : FAILED_STYLE;
         if (!style) {
           return <span key={index}>{segment.text}</span>;
         }

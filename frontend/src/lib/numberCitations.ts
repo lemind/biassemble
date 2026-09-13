@@ -1,5 +1,6 @@
 import type { Claim, ClaimCitation, ClaimSource } from '../types/grounnel';
-import { numberClaims, type Span } from './matchClaimSpans';
+import { matchClaimSpans, numberClaims, type Span } from './matchClaimSpans';
+import { isStyledClaim } from './verdictStyle';
 
 export interface NumberedReference {
   number: number;
@@ -28,6 +29,21 @@ function normalizeForDedup(url: string): string {
   }
 }
 
+// Real observed bug, 2026-09-13: a References list ending at [2] for an article whose text showed
+// only [1] — the second entry belonged to a claim HighlightedArticle never draws a <mark> for, so
+// nothing on the page pointed at it. Numbering must see exactly the claims the reader can click
+// from: a matched span (buildSegments drops the rest) and a styleable verdict (isStyledClaim).
+function markedInReadingOrder(
+  articleText: string,
+  claims: Claim[],
+  precomputedSpans?: Map<string, Span | null>
+): Claim[] {
+  const spans = precomputedSpans ?? matchClaimSpans(articleText, claims);
+  const marked = claims.filter((claim) => spans.get(claim.id) != null && isStyledClaim(claim));
+  const claimOrder = numberClaims(articleText, marked, spans);
+  return marked.sort((a, b) => claimOrder.get(a.id)! - claimOrder.get(b.id)!);
+}
+
 // Wikipedia-style: one number per unique SOURCE (by url), not per claim and not per citation
 // instance — the same source cited twice (from one claim or from two different claims) reuses
 // its number instead of getting a second entry. Numbers assigned in reading order (numberClaims'
@@ -38,8 +54,7 @@ export function numberCitations(
   claims: Claim[],
   precomputedSpans?: Map<string, Span | null>
 ): CitationNumbering {
-  const claimOrder = numberClaims(articleText, claims, precomputedSpans);
-  const ordered = [...claims].sort((a, b) => claimOrder.get(a.id)! - claimOrder.get(b.id)!);
+  const ordered = markedInReadingOrder(articleText, claims, precomputedSpans);
 
   const urlToNumber = new Map<string, number>();
   const references: NumberedReference[] = [];
@@ -71,8 +86,7 @@ export function numberSources(
   claims: Claim[],
   precomputedSpans?: Map<string, Span | null>
 ): { number: number; url: string; sources: ClaimSource[] }[] {
-  const claimOrder = numberClaims(articleText, claims, precomputedSpans);
-  const ordered = [...claims].sort((a, b) => claimOrder.get(a.id)! - claimOrder.get(b.id)!);
+  const ordered = markedInReadingOrder(articleText, claims, precomputedSpans);
 
   const urlToNumber = new Map<string, number>();
   const references: { number: number; url: string; sources: ClaimSource[] }[] = [];

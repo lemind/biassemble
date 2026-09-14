@@ -10,7 +10,7 @@ Biassemble guides users through a reflective process: write a personal situation
 
 The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
 
-A second consumer product, **Grounnel**, fact-checks arbitrary text against the open web — no source documents required. See `specs/002-grounnel-frontend/` and `specs/003-grounnel-backend/`.
+A second consumer product, **Grounnel**, fact-checks arbitrary text against the open web — no source documents required. It ships from this same codebase as its own brand at [grounnel.vercel.app](https://grounnel.vercel.app): the brand is resolved from the hostname, the page from the path, and the two never consult each other. Public alpha — one check covers up to 40 claims (about 2,000 characters), a finished check leads with two 0–100 scores (**groundedness** and **assessment completeness**), and every run has a permanent share link. See `specs/002-grounnel-frontend/`, `specs/003-grounnel-backend/` and `specs/004-grounnel-public-site/`.
 
 ## Key Features
 
@@ -76,7 +76,7 @@ pnpm build      # production build
 | Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
 | Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables (RLS-enabled) |
 | Private AI Core | Deployed — hosts reflection, B2B audit, and Grounnel pipelines (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging) |
-| Grounnel | In development — frontend (002) + backend (003) specs in progress |
+| Grounnel | Live (alpha) at grounnel.vercel.app — check, shareable results, About and Stats pages; 40 claims per run |
 
 ## License
 

@@ -4,6 +4,8 @@ import usePollGrounnelStatus from './usePollGrounnelStatus';
 
 interface GrounnelRunState {
   runId: string | null;
+  /** The run's public address (core spec 019) — the shareable URL, never runId. */
+  shareToken: string | null;
   error: string | null;
   submitting: boolean;
 }
@@ -17,19 +19,20 @@ interface GrounnelRunState {
 export default function useGrounnelRun() {
   const [state, setState] = useState<GrounnelRunState>({
     runId: null,
+    shareToken: null,
     error: null,
     submitting: false,
   });
   const { status } = usePollGrounnelStatus({ runId: state.runId });
 
   const submit = useCallback(async (text: string) => {
-    setState({ runId: null, error: null, submitting: true });
+    setState({ runId: null, shareToken: null, error: null, submitting: true });
     try {
       const result = await submitGrounnelText(text);
-      setState({ runId: result.id, error: null, submitting: false });
+      setState({ runId: result.id, shareToken: result.shareToken ?? null, error: null, submitting: false });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit text';
-      setState({ runId: null, error: message, submitting: false });
+      setState({ runId: null, shareToken: null, error: message, submitting: false });
     }
   }, []);
 
@@ -52,6 +55,7 @@ export default function useGrounnelRun() {
   const isTerminal = !state.runId || status?.status === 'done' || status?.status === 'failed';
   return {
     runId: state.runId,
+    shareToken: state.shareToken,
     status,
     error: state.error ?? runLevelError,
     isRunInFlight: state.submitting || !isTerminal,

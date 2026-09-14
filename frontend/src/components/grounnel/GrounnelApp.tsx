@@ -1,15 +1,49 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
+import { resolveBrand } from '../../lib/brand';
+import { applyPageMeta } from '../../lib/seo';
 import ArticleInput from './ArticleInput';
-import ClaimSourceList from './ClaimSourceList';
-import GrounnelProgress from './GrounnelProgress';
-import HighlightedArticle from './HighlightedArticle';
+import RunView from './RunView';
+
+// Per-browser, not per-tab: a notice you collapsed should stay collapsed on the next visit.
+// It is never removed, only folded into the badge — the limits still apply to every run.
+const ALPHA_NOTICE_KEY = 'grounnel.alphaNoticeDismissed';
+
 
 export default function GrounnelApp() {
-  const { runId, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
+  const { runId, shareToken, status, error, isRunInFlight, submit, dismissError } = useGrounnelRun();
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
   const [articleText, setArticleText] = useState('');
+  const [alphaOpen, setAlphaOpen] = useState(() => {
+    try {
+      return localStorage.getItem(ALPHA_NOTICE_KEY) !== '1';
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleAlphaNotice = () => {
+    const next = !alphaOpen;
+    setAlphaOpen(next);
+    try {
+      localStorage.setItem(ALPHA_NOTICE_KEY, next ? '0' : '1');
+    } catch {
+      // Storage blocked — it just reopens next visit, not worth failing the click over.
+    }
+  };
+
+  // The address bar IS the share link. replaceState, not push: the empty page is not somewhere
+  // to go back to, which is also why `/` no longer restores the previous run.
+  useEffect(() => {
+    if (!shareToken) return;
+    const url = `/check/${shareToken}`;
+    if (window.location.pathname === url) return;
+    window.history.replaceState(null, '', url);
+    // App resolved the route at mount and never re-renders for this, so the head would keep the
+    // homepage title and canonical on the one URL that must carry neither.
+    applyPageMeta(resolveBrand(), 'check');
+  }, [shareToken]);
 
   const handleSubmit = (text: string) => {
     setArticleText(text);
@@ -17,13 +51,35 @@ export default function GrounnelApp() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 px-4 py-12">
+    <div className="px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold">Grounnel</h1>
           <p className="text-base-content/70">
             Paste text below to check its claims against the open web.
           </p>
+        </div>
+
+        {/* One persistent trigger, not two swapped elements: toggling used to unmount the button
+            under the keyboard user's focus, dropping them back to the top of the document. */}
+        <div className="flex flex-col gap-2">
+          <button
+            className="btn btn-ghost btn-xs w-fit gap-1 text-info"
+            aria-expanded={alphaOpen}
+            aria-controls="alpha-notice"
+            onClick={toggleAlphaNotice}
+          >
+            <span aria-hidden>ⓘ</span> Alpha version
+          </button>
+          {alphaOpen && (
+            <div id="alpha-notice" className="alert alert-info items-start py-3 text-sm">
+              <span>
+                <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
+                about 2,000 characters, or 350 words. Longer texts are checked in part, so run
+                them a few paragraphs at a time.
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="collapse collapse-arrow border border-base-300 bg-base-100">
@@ -36,12 +92,22 @@ export default function GrounnelApp() {
               Paste in an article or any claim-heavy text, and it extracts the individual factual
               claims, searches for evidence, and highlights each one by verdict — supported,
               contradicted, or unclear — so you can see at a glance what&apos;s actually backed by
-              a source and what isn&apos;t.
+              a source and what isn&apos;t.{' '}
+              <a className="link" href="/about">
+                More about how it works
+              </a>
+              .
             </p>
           </div>
         </div>
 
-        <ArticleInput onSubmit={handleSubmit} disabled={isRunInFlight} />
+        {/* `locked`, not `disabled`: the submit lock belongs on the button (ArticleInput sets it
+            there), and a disabled textarea makes the user's own pasted article unselectable. */}
+        <ArticleInput
+          onSubmit={handleSubmit}
+          disabled={isRunInFlight}
+          locked={isRunInFlight}
+        />
 
         {error && (
           <div className="alert alert-error text-sm py-2">
@@ -52,17 +118,7 @@ export default function GrounnelApp() {
           </div>
         )}
 
-        {runId && <GrounnelProgress status={status} articleText={articleText} />}
-
-        {runId && (
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <HighlightedArticle articleText={articleText} claims={status?.claims ?? []} />
-            </div>
-          </div>
-        )}
-
-        {runId && <ClaimSourceList articleText={articleText} claims={status?.claims ?? []} />}
+        {runId && <RunView articleText={articleText} status={status} />}
       </div>
     </div>
   );

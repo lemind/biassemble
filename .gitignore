@@ -35,4 +35,7 @@ Thumbs.db
 npm-debug.log*
 
 # Supabase
-supabase/.temp
+supabase/.temp.vercel
+
+# Vercel CLI project link
+.vercel

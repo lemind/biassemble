@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
+import { countClaims } from '../../lib/articleScore';
 import { assignHomeSentence, matchClaimSpans, type Span } from '../../lib/matchClaimSpans';
-import { numberCitations } from '../../lib/numberCitations';
-import { VERDICT_DOT_CLASS } from '../../lib/verdictStyle';
-import type { Claim, ClaimVerdict, GrounnelStatusOutput } from '../../types/grounnel';
+import { VERDICT_DOT_CLASS, type StyledVerdict } from '../../lib/verdictStyle';
+import type { Claim, ClaimVerdict, RunProgress } from '../../types/grounnel';
 
 interface GrounnelProgressProps {
-  status: GrounnelStatusOutput | null;
+  status: RunProgress | null;
   articleText: string;
 }
 
 const SOFT_STALL_THRESHOLD_SECONDS = 60;
+// Mirrors MAX_CLAIMS in biassemble-core's extract.service.ts — shown so "partial" says how partial.
+const MAX_CLAIMS_PER_RUN = 40;
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -50,38 +52,18 @@ function verdictKeyOf(claim: Claim): VerdictKey {
 // One dot per DISTINCT verdict (or "failed") present — always solid-colored, whether or not
 // matchClaimSpans could locate the claim in the article text. A dashed/outlined variant used to
 // mark the "not located" case, but it read as "no info" at a glance (real user feedback,
-// 2026-08-16) — every resolved claim now gets its verdict's real color; only where the dot links
-// to varies (see `firstSpannedHref`/`unconfirmedRefNumbers`).
-// `refNumbers`, when given, lists every reference this dot's group owns in the title tooltip —
-// real user feedback, 2026-08-18: rendering each number as its own visible `[N]` link (previous
-// version) turned a run with several unspanned claims into a wall of brackets instead of clean
-// dots. Traded back to dot-only + tooltip; the dot's own href still goes to the first (smallest)
-// number, so at least one path into the References list stays a real visible click, not just hover.
-function ResultDot({ verdictKey, href, refNumbers }: { verdictKey: VerdictKey; href?: string; refNumbers?: number[] }) {
+// 2026-08-16) — every resolved claim now gets its verdict's real color.
+function ResultDot({ verdictKey, href }: { verdictKey: VerdictKey; href?: string }) {
   const label = verdictKey === 'failed' ? 'Verification failed' : verdictKey;
-  const refSuffix = refNumbers && refNumbers.length > 0 ? ` (ref ${refNumbers.join(', ')})` : '';
-  const title = href ? `${label} — click to view${refSuffix}` : label;
-  const colorClass = verdictKey === 'failed' ? FAILED_DOT_CLASS : VERDICT_DOT_CLASS[verdictKey];
+  const title = href ? `${label} — click to view` : label;
+  // `excluded` has no dot colour (verdictStyle.ts) — fall back rather than render a classless dot.
+  const colorClass = verdictKey === 'failed' ? FAILED_DOT_CLASS : (VERDICT_DOT_CLASS[verdictKey as StyledVerdict] ?? 'bg-base-300');
   const className = `inline-block h-2.5 w-2.5 rounded-full ${colorClass}` + (href ? ' cursor-pointer' : '');
   return href ? (
     <a href={href} title={title} className={className} />
   ) : (
     <span aria-hidden="true" title={title} className={className} />
   );
-}
-
-// Every distinct reference number cited by this verdict-key group's unspanned claims. The dot
-// alone used to link only to the FIRST claim's first number (see git history) — any other
-// reference number in the group had no click path AND no visible number anywhere on the page,
-// silently orphaning it from the numbered References list below (review finding, 2026-08-18: a
-// live run's References list had entries with no inline marker traceable anywhere in the article
-// body or the progress row). Every number this group owns is now rendered, not just implied by title.
-function unconfirmedRefNumbers(claims: Claim[], claimNumbers: Map<string, number[]>): number[] {
-  const numbers = new Set<number>();
-  for (const claim of claims) {
-    for (const n of claimNumbers.get(claim.id) ?? []) numbers.add(n);
-  }
-  return [...numbers].sort((a, b) => a - b);
 }
 
 // One "how much of the article is checked" row, grouped by which sentence a claim belongs to —
@@ -93,7 +75,6 @@ function unconfirmedRefNumbers(claims: Claim[], claimNumbers: Map<string, number
 function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: string; node: ReactNode }> {
   const spans = matchClaimSpans(articleText, claims);
   const homeSentence = assignHomeSentence(articleText, claims);
-  const { claimNumbers } = numberCitations(articleText, claims, spans);
 
   const bySentence = new Map<number, Claim[]>();
   for (const claim of claims) {
@@ -142,17 +123,11 @@ function buildDotGroups(articleText: string, claims: Claim[]): Array<{ key: stri
       const verdictKey = verdictKeyOf(c);
       if (seenUnspanned.has(verdictKey)) continue;
       seenUnspanned.add(verdictKey);
-      const groupClaimsForKey = unspanned.filter((x) => verdictKeyOf(x) === verdictKey);
-      const refNumbers = unconfirmedRefNumbers(groupClaimsForKey, claimNumbers);
+      // No href: a claim with no highlight owns no reference number any more (numberCitations
+      // numbers only what the article body actually marks), so there is nothing to link to.
       groups.push({
         key: `${sentenceIndex}-unspanned-${verdictKey}`,
-        node: (
-          <ResultDot
-            verdictKey={verdictKey}
-            href={refNumbers.length > 0 ? `#ref-${refNumbers[0]}` : undefined}
-            refNumbers={refNumbers}
-          />
-        ),
+        node: <ResultDot verdictKey={verdictKey} />,
       });
     }
   }
@@ -172,7 +147,10 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   }
 
   const isTerminal = status.status === 'done' || status.status === 'failed';
-  const { checked, total } = status.progress;
+  // Core's `checked` counts every claim that RESOLVED, excluded and failed included. 'done' only:
+  // a failed run never persisted the rest, so any denominator here would understate it.
+  const counts = status.status === 'done' ? countClaims(status.claims) : null;
+  const skipped = counts ? counts.excluded + counts.noVerdict : 0;
   const isStalled =
     !isTerminal &&
     status.elapsed_seconds !== null &&
@@ -182,14 +160,33 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
   return (
     <div role="status" className="flex flex-col gap-1.5 text-sm">
       <div className="flex items-center gap-2">
-        <span className={isTerminal ? '' : 'animate-pulse'}>
-          {checked} / {total} claims checked
-        </span>
+        {counts ? (
+          <span>
+            {counts.checked} of {counts.checked + skipped} claims checked
+          </span>
+        ) : status.progress ? (
+          <span className={isTerminal ? '' : 'animate-pulse'}>
+            {status.progress.checked} / {status.progress.total} claims checked
+          </span>
+        ) : status.status === 'failed' ? (
+          <span>Checked so far ({status.claims.length})</span>
+        ) : (
+          // No fraction when the total is unknown — a made-up denominator reads as "finished".
+          <span className="animate-pulse">Still checking — more claims to come</span>
+        )}
         {status.elapsed_seconds !== null && (
           <span className="text-base-content/50">({formatElapsed(status.elapsed_seconds)})</span>
         )}
         {!isTerminal && <span className="loading loading-spinner loading-xs" />}
       </div>
+      {counts && skipped > 0 && (
+        <p className="text-base-content/50">
+          {[
+            counts.excluded > 0 ? `${counts.excluded} not checkable` : null,
+            counts.noVerdict > 0 ? `${counts.noVerdict} we could not finish` : null,
+          ].filter(Boolean).join(' · ')}
+        </p>
+      )}
       {dotGroups.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {dotGroups.map((group) => (
@@ -197,8 +194,21 @@ export default function GrounnelProgress({ status, articleText }: GrounnelProgre
           ))}
         </div>
       )}
+      {/* The live page surfaces this as an error alert; a shared link had no equivalent, so a run
+          that died partway was indistinguishable from a short successful one. */}
+      {status.status === 'failed' && (
+        <p className="text-warning">
+          This check stopped before it finished — the claims below are only the ones that completed.
+        </p>
+      )}
       {status.caps_hit && (
-        <p className="text-warning">Results are partial — the claim limit for this run was reached.</p>
+        <p className="text-warning">
+          This text has more factual claims than one check covers. The first {MAX_CLAIMS_PER_RUN} were
+          checked; the rest were not looked at.{' '}
+          <span className="text-base-content/70">
+            Checking longer texts in full isn&apos;t supported yet.
+          </span>
+        </p>
       )}
       {isStalled && (
         <p className="text-base-content/60">Widening the search for the trickier claims…</p>

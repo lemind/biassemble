@@ -63,11 +63,17 @@ export interface ExtractClaimsRequest {
 
 export const extractClaimsOutputSchema = z.object({
   id: z.string(),
+  // Core spec 019 — the run's public address, minted at creation so the link can be offered
+  // before the result exists. Never the run id: that value is internal (019 FR-003).
+  shareToken: z.string(),
 });
 
 export type ExtractClaimsOutput = z.infer<typeof extractClaimsOutputSchema>;
 
 const grounnelSourceStatusSchema = z.enum(["ok", "paywalled", "unreachable", "blocked", "rate_limited"]);
+
+// One list, used by both the polled status shape and the shared-assessment shape below.
+const grounnelVerdictSchema = z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable", "excluded"]);
 
 const grounnelClaimSourceSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -100,7 +106,7 @@ const grounnelClaimSchema = z.object({
   id: z.string(),
   text: z.string(),
   status: z.enum(["pending", "done", "failed"]),
-  verdict: z.enum(["supported", "partially_supported", "unsupported", "contradicted", "unverifiable"]).nullable(),
+  verdict: grounnelVerdictSchema.nullable(),
   evidence: z.string().nullable(),
   confidence: z.number().nullable(),
   reason: z.string().nullable(),
@@ -138,3 +144,42 @@ export const grounnelStatusResponseSchema = z.object({
 });
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
+
+// Core spec 019 — the shared assessment. Public shape: no run id, session id or claim ids,
+// which is why the page keys claims by position.
+export const sharedClaimSchema = z.object({
+  text: z.string(),
+  verdict: grounnelVerdictSchema.nullable(),
+  evidence: z.string().nullable(),
+  confidence: z.number().nullable(),
+  reason: z.string().nullable(),
+  sources: z.array(grounnelClaimSourceSchema),
+  // Defaulted: runs from before core persisted citations return none, and the page falls back to
+  // numbering sources — so an old link still renders rather than failing the parse.
+  citations: z.array(grounnelClaimCitationSchema).default([]),
+  // Optional, not required: a core older than this change sends none, and rejecting the payload
+  // over it would take every shared link down rather than degrading one detail of the render.
+  status: z.enum(["done", "failed"]).optional(),
+  sourceExcerpt: z.string().nullable(),
+});
+
+export const sharedAssessmentSchema = z.object({
+  status: z.enum(["extracting", "verifying", "done", "failed"]),
+  text: z.string(),
+  claims: z.array(sharedClaimSchema),
+  createdAt: z.string(),
+  completedAt: z.string().nullable(),
+  // Authoritative tallies snapshotted at completion. Optional: runs finished before this existed
+  // have none, and the reader falls back to counting the claim rows.
+  counts: z.object({
+    supported: z.number(),
+    partiallySupported: z.number(),
+    unsupported: z.number(),
+    unverifiable: z.number(),
+    contradicted: z.number(),
+    excluded: z.number(),
+    noVerdict: z.number(),
+  }).optional(),
+});
+
+export type SharedAssessment = z.infer<typeof sharedAssessmentSchema>;

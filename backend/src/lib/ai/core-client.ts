@@ -10,7 +10,9 @@ import {
   type GenerateAssessmentRequest,
   type GenerateQuestionRequest,
   grounnelStatusResponseSchema,
+  sharedAssessmentSchema,
   type GrounnelStatusOutput,
+  type SharedAssessment,
   questionOutputSchema,
   type QuestionOutput,
 } from "./contracts";
@@ -25,6 +27,22 @@ export function getCoreConfig() {
     );
   }
   return { baseUrl, apiKey };
+}
+
+let warnedNoProxySecret = false;
+
+// Core honors X-Grounnel-Client-IP only when this secret matches (core routes/grounnel.ts,
+// D020 §4). Missing it is silent and looks healthy, so warn once rather than never.
+function proxyHeaders(clientIp?: string): Record<string, string> | undefined {
+  const secret = process.env.GROUNNEL_INTERNAL_PROXY_SECRET;
+  if (!secret && !warnedNoProxySecret) {
+    warnedNoProxySecret = true;
+    console.warn(
+      "[core-client] GROUNNEL_INTERNAL_PROXY_SECRET is unset — core cannot see per-visitor IPs, so every visitor shares ONE rate-limit bucket. Set it to the same value in biassemble-be and biassemble-core."
+    );
+  }
+  if (!clientIp || !secret) return undefined;
+  return { "X-Grounnel-Client-IP": clientIp, "X-Grounnel-Internal-Secret": secret };
 }
 
 async function postCore<T>(
@@ -65,11 +83,11 @@ async function postCore<T>(
 
 // GET-equivalent of postCore (ADR-001 §2 — no such helper existed before Grounnel's
 // GET /status/:id needed one). Same auth/error-handling shape, no body.
-async function getCore<T>(path: string, schema: z.ZodSchema<T>): Promise<T> {
+async function getCore<T>(path: string, schema: z.ZodSchema<T>, clientIp?: string): Promise<T> {
   const { baseUrl, apiKey } = getCoreConfig();
   const res = await fetch(`${baseUrl}${path}`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}` },
+    headers: { Authorization: `Bearer ${apiKey}`, ...proxyHeaders(clientIp) },
   });
 
   if (!res.ok) {
@@ -120,11 +138,16 @@ export function createCoreClient(): AiClient {
         "/extract",
         { text: input.text, sessionId: input.sessionId },
         extractClaimsOutputSchema,
-        input.clientIp ? { "X-Grounnel-Client-IP": input.clientIp } : undefined
+        proxyHeaders(input.clientIp)
       );
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
       return getCore(`/status/${id}`, grounnelStatusResponseSchema);
+    },
+    // Core's /assessment/:token is unauthenticated but unreachable from the browser (no CORS), so
+    // this proxy holds the key. Forwarding the viewer IP keeps core's read limit per-reader.
+    async getSharedAssessment(token: string, clientIp?: string): Promise<SharedAssessment> {
+      return getCore(`/assessment/${encodeURIComponent(token)}`, sharedAssessmentSchema, clientIp);
     },
   };
 }

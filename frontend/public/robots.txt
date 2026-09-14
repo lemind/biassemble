@@ -1,0 +1,7 @@
+# Shared assessments carry X-Robots-Tag: noindex, nofollow as a real response header
+# (vercel.json). Deliberately NOT disallowed here: a blocked URL is never fetched, so the
+# header is never read, and a linked token could still be indexed as a bare URL.
+User-agent: *
+Allow: /
+
+Sitemap: https://grounnel.vercel.app/sitemap.xml

@@ -1,10 +1,11 @@
 import { matchClaimSpans, MatchTier, type Span } from '../../lib/matchClaimSpans';
 import { numberCitations } from '../../lib/numberCitations';
-import { VERDICT_HIGHLIGHT_CLASS } from '../../lib/verdictStyle';
+import { VERDICT_HIGHLIGHT_CLASS, isStyledClaim, type StyledVerdict } from '../../lib/verdictStyle';
 import { citedSources, CITATION_TOOLTIP_MAX } from '../../lib/citedSources';
+import { sourceNote, SOURCE_NOTE_TEXT } from '../../lib/sourceNote';
 import SourceLink from './SourceLink';
 import CitationQuote from './CitationQuote';
-import type { Claim, ClaimVerdict } from '../../types/grounnel';
+import type { Claim } from '../../types/grounnel';
 
 interface HighlightedArticleProps {
   articleText: string;
@@ -12,7 +13,7 @@ interface HighlightedArticleProps {
 }
 
 // Non-color icon per verdict (FR-007) — color is never the only cue.
-const VERDICT_STYLE: Record<ClaimVerdict, { className: string; icon: string; label: string }> = {
+const VERDICT_STYLE: Record<StyledVerdict, { className: string; icon: string; label: string }> = {
   supported: { className: VERDICT_HIGHLIGHT_CLASS.supported, icon: '✓', label: 'Supported' },
   contradicted: { className: VERDICT_HIGHLIGHT_CLASS.contradicted, icon: '✗', label: 'Contradicted' },
   partially_supported: {
@@ -78,42 +79,37 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
   const segments = buildSegments(articleText, claims, spans);
   const { claimNumbers } = numberCitations(articleText, claims, spans);
 
+  // break-words: an unbroken token wider than the container (a 260-digit number, a bare URL) has
+  // no break opportunity and overflows the card horizontally without it.
   return (
-    <div className="whitespace-pre-wrap leading-relaxed">
+    <div className="whitespace-pre-wrap break-words leading-relaxed">
       {segments.map((segment, index) => {
         const { claim, isFallback } = segment;
         if (!claim) {
           return <span key={index}>{segment.text}</span>;
         }
 
-        const style = claim.verdict
-          ? VERDICT_STYLE[claim.verdict]
-          : claim.status === 'pending'
-            ? PENDING_STYLE
-            : claim.status === 'failed'
-              ? FAILED_STYLE
-              : null;
+        // isStyledClaim is the single definition of "this claim gets a mark", shared with
+        // numberCitations so the inline [n] markers and the References list can never disagree.
+        const style = !isStyledClaim(claim)
+          ? null
+          : claim.verdict
+            ? VERDICT_STYLE[claim.verdict as StyledVerdict]
+            : claim.status === 'pending'
+              ? PENDING_STYLE
+              : FAILED_STYLE;
         if (!style) {
           return <span key={index}>{segment.text}</span>;
         }
 
         // Tooltip shown whenever there's something to say (FR-008): real sources, citations, an
-        // approximate-location disclaimer (isFallback), or — for a zero-evidence verdict with
-        // nothing at all found — an explicit "no sources found" note (`noSourcesFound` below,
-        // 2026-08-16; supersedes spec.md's earlier "no tooltip on zero sources" note, see spec.md
-        // update in this same change) instead of a bare, unexplained "?" icon.
+        // approximate-location disclaimer, or a note — including "no sources found", so a
+        // zero-evidence verdict never renders a bare, unexplained "?" icon.
         const sources = citedSources(claim, 2);
-        const noSourcesFound =
-          (claim.verdict === 'unsupported' || claim.verdict === 'unverifiable') &&
-          sources.length === 0 &&
-          claim.citations.length === 0;
-        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback || noSourcesFound;
-        // citedSources() falls back to claim.sources — every page the pipeline attempted,
-        // paywalled/unreachable/irrelevant included — whenever there's no real citation to
-        // resolve against (real observed confusion, 2026-08-12: an `unsupported` claim showed
-        // two source links with nothing indicating they were searched-and-rejected, not
-        // evidence, which reads as if they somehow back a claim the label says has no evidence).
-        const sourcesAreUnconfirmed = claim.citations.length === 0 && sources.length > 0;
+        // One exhaustive note per claim (sourceNote.ts) instead of four independent booleans —
+        // a claim matching none of them used to render bare, unexplained links (T014/T015).
+        const note = sourceNote(claim, sources.length);
+        const hasTooltip = sources.length > 0 || claim.citations.length > 0 || isFallback || note !== null;
         const shownCitations = claim.citations.slice(0, CITATION_TOOLTIP_MAX);
         const shownCitationUrls = new Set(shownCitations.map((citation) => citation.url));
 
@@ -157,9 +153,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                   {style.icon}
                 </span>
               )}
-              {/* Wikipedia-style inline reference markers — one per unique cited source (D027's
-                  citations, deduped by url via numberCitations), each jumping to that source's
-                  numbered entry in the References list below. A claim can carry several. */}
+              {/* Wikipedia-style inline reference markers — one per unique source, deduped by url
+                  via numberCitations (D027 citations when there are any, the claim's own sources
+                  otherwise), each jumping to its numbered entry in the References list below. */}
               {refNumbers.map((n) => (
                 <a key={n} href={`#ref-${n}`} className="ml-0.5 align-super text-xs text-info hover:underline">
                   [{n}]
@@ -167,12 +163,14 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
               ))}
               {hasTooltip && (
                 <span
-                  className="pointer-events-none absolute left-0 top-full z-10 mt-1 w-max max-w-xs
-                    opacity-0 transition-opacity group-hover:pointer-events-auto
+                  // Centred on the badge, not left-anchored: left-anchoring pushed a tooltip on a
+                  // right-edge claim ~100px past the viewport, where the layout now clips it.
+                  className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 w-max max-w-xs
+                    -translate-x-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto
                     group-hover:opacity-100 group-focus-within:pointer-events-auto
                     group-focus-within:opacity-100"
                 >
-                  <span className="flex flex-col gap-1 rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
+                  <span className="flex flex-col gap-1 break-words rounded border border-base-300 bg-base-100 p-2 text-xs text-base-content shadow-lg">
                     <span className="font-semibold">{style.label}</span>
                     {isFallback && (
                       // A fallback-tier span's own words aren't a reliable stand-in for the claim
@@ -196,12 +194,7 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                         <CitationQuote citation={citation} sources={claim.sources} />
                       </span>
                     ))}
-                    {sourcesAreUnconfirmed && (
-                      <span className="text-base-content/60">Searched, found nothing that confirms this:</span>
-                    )}
-                    {noSourcesFound && (
-                      <span className="text-base-content/60">No sources were found to check this claim.</span>
-                    )}
+                    {note && <span className="text-base-content/60">{SOURCE_NOTE_TEXT[note]}</span>}
                     {sources
                       .filter((source) => source.kind !== 'web' || !shownCitationUrls.has(source.url))
                       .map((source) => (

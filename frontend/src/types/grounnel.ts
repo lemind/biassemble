@@ -6,6 +6,9 @@
 
 export interface ExtractGrounnelResponse {
   id: string;
+  // Required, matching core and backend. The run's PUBLIC address; `id` is internal and must
+  // never reach a URL. Callers still guard at runtime — axios does not validate the body.
+  shareToken: string;
 }
 
 export type GrounnelSourceStatus = 'ok' | 'paywalled' | 'unreachable' | 'blocked' | 'rate_limited';
@@ -41,7 +44,10 @@ export type ClaimVerdict =
   | 'partially_supported'
   | 'unsupported'
   | 'contradicted'
-  | 'unverifiable';
+  | 'unverifiable'
+  // D032 — a claim the eligibility filter never searched (opinion, personal, prediction). It has
+  // no highlight style on purpose; it renders as ordinary text.
+  | 'excluded';
 
 export interface Claim {
   id: string;
@@ -56,6 +62,56 @@ export interface Claim {
   // D028 (biassemble-core) — verified verbatim substring of the article text, or null when
   // unproduced/unverified; matchClaimSpans.ts uses this as its primary locator.
   sourceExcerpt: string | null;
+}
+
+// Core spec 019 — a shared assessment. Public shape: no run id, session id or claim ids, which
+// is why SharedPage keys claims by position.
+export interface SharedClaim {
+  text: string;
+  verdict: ClaimVerdict | null;
+  evidence: string | null;
+  confidence: number | null;
+  reason: string | null;
+  sources: ClaimSource[];
+  // Empty for links created before core persisted them; numberCitations then falls back to sources.
+  citations: ClaimCitation[];
+  // Optional: absent from a core older than the field. Distinguishes "verification errored" from
+  // "finished with no verdict" — two states the live page renders differently.
+  status?: 'done' | 'failed';
+  sourceExcerpt: string | null;
+}
+
+/** Verdict tallies snapshotted from core's authoritative store at completion. Optional: runs
+ *  that finished before it existed have none. */
+export interface SharedCounts {
+  supported: number;
+  partiallySupported: number;
+  unsupported: number;
+  unverifiable: number;
+  contradicted: number;
+  excluded: number;
+  noVerdict: number;
+}
+
+export interface SharedAssessment {
+  status: GrounnelRunStatus;
+  text: string;
+  claims: SharedClaim[];
+  createdAt: string;
+  completedAt: string | null;
+  counts?: SharedCounts;
+}
+
+/** The subset of a run's state the progress row renders. `GrounnelStatusOutput` satisfies it, and
+ *  so does a shared assessment adapted for it — which carries no Score. */
+export interface RunProgress {
+  status: GrounnelRunStatus;
+  // null = the total is not knowable yet, so no fraction may be shown. A live run always has it;
+  // a shared run in flight does not, because core persists a claim row only at its final state.
+  progress: { checked: number; total: number } | null;
+  claims: Claim[];
+  caps_hit: boolean;
+  elapsed_seconds: number | null;
 }
 
 export interface Score {

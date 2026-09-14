@@ -1,4 +1,4 @@
-import type { ClaimVerdict } from '../types/grounnel';
+import type { ClaimStatus, ClaimVerdict } from '../types/grounnel';
 
 /**
  * Single source of truth for verdict → color, shared by HighlightedArticle (span highlight,
@@ -7,7 +7,11 @@ import type { ClaimVerdict } from '../types/grounnel';
  * because Tailwind's content scanner only picks up literal class names it can find in source —
  * a dynamically-constructed class name silently produces no CSS in the production build.
  */
-export const VERDICT_HIGHLIGHT_CLASS: Record<ClaimVerdict, string> = {
+// `excluded` is deliberately absent: a claim the eligibility filter never searched is not a verdict
+// to colour. It renders as ordinary text, and the progress dot falls back to a neutral colour.
+export type StyledVerdict = Exclude<ClaimVerdict, 'excluded'>;
+
+export const VERDICT_HIGHLIGHT_CLASS: Record<StyledVerdict, string> = {
   supported: 'bg-success/30',
   contradicted: 'bg-error/30',
   partially_supported: 'bg-warning/30',
@@ -17,10 +21,17 @@ export const VERDICT_HIGHLIGHT_CLASS: Record<ClaimVerdict, string> = {
   unverifiable: 'bg-info/30',
 };
 
-export const VERDICT_DOT_CLASS: Record<ClaimVerdict, string> = {
+export const VERDICT_DOT_CLASS: Record<StyledVerdict, string> = {
   supported: 'bg-success',
   contradicted: 'bg-error',
   partially_supported: 'bg-warning',
   unsupported: 'bg-gray-400',
   unverifiable: 'bg-info',
 };
+
+// Whether the article body renders a highlight for this claim at all. Shared with numberCitations
+// so a reference is never numbered for a claim the reader has no inline marker to reach it from.
+export function isStyledClaim(claim: { verdict: ClaimVerdict | null; status: ClaimStatus }): boolean {
+  if (claim.verdict !== null) return claim.verdict !== 'excluded';
+  return claim.status === 'pending' || claim.status === 'failed';
+}

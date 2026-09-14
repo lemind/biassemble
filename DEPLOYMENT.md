@@ -70,7 +70,7 @@ vercel env add AI_CORE_BASE_URL        https://biassemble-core.vercel.app
 vercel env add AI_CORE_API_KEY         <same-key-as-core>
 vercel env add INNGEST_EVENT_KEY       <from-inngest-dashboard>
 vercel env add INNGEST_SIGNING_KEY     <from-inngest-dashboard>
-vercel env add CORS_ORIGIN             <your-frontend-url>
+vercel env add CORS_ORIGINS            <comma-separated extra origins, usually none>
 
 # Deploy
 pnpm deploy
@@ -149,7 +149,7 @@ pnpm test:integration            # Run vitest integration test suite
 | `AI_CORE_API_KEY` | Bearer token matching Core | `<same-as-core>` |
 | `INNGEST_EVENT_KEY` | Inngest event key | `...` |
 | `INNGEST_SIGNING_KEY` | Inngest signing key | `signkey-prod-...` |
-| `CORS_ORIGIN` | Frontend URL | `https://biassemble.vercel.app` |
+| `CORS_ORIGINS` | Extra allowed origins, comma-separated. The two production hosts are built in; set this only to admit one more, e.g. a specific preview deploy. | `https://frontend-abc123.vercel.app` |
 
 ## Contracts Type Generation
 

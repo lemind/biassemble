@@ -1,7 +1,15 @@
 import axios from "axios";
+import type {
+  ExtractGrounnelResponse,
+  GrounnelStatusOutput,
+  SharedAssessment,
+} from "../types/grounnel";
+import { StatsSnapshotSchema, type StatsSnapshot } from "../types/stats";
 
+// Relative in every environment: vercel.json proxies /api/* in prod, vite.config.ts in dev.
+// That rewrite MUST stay above the SPA catch-all or /api/* returns index.html at 200 (T016).
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL ?? "",
   headers: {
     "Content-Type": "application/json",
   },
@@ -34,14 +42,30 @@ export async function getSession(sessionId: string) {
   return response.data;
 }
 
-export async function submitGrounnelText(text: string) {
-  const response = await apiClient.post("/api/grounnel/extract", { text });
+export async function submitGrounnelText(text: string): Promise<ExtractGrounnelResponse> {
+  const response = await apiClient.post<ExtractGrounnelResponse>("/api/grounnel/extract", { text });
   return response.data;
 }
 
-export async function getGrounnelStatus(id: string) {
-  const response = await apiClient.get(`/api/grounnel/status/${id}`);
+export async function getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {
+  const response = await apiClient.get<GrounnelStatusOutput>(`/api/grounnel/status/${id}`);
+  return response.data;
+}
+
+export async function getSharedAssessment(token: string): Promise<SharedAssessment> {
+  const response = await apiClient.get<SharedAssessment>(
+    `/api/grounnel/assessment/${encodeURIComponent(token)}`,
+  );
   return response.data;
 }
 
 export default apiClient;
+
+// Parsed, not cast: axios resolves a non-JSON 200 as a STRING, so a broken /api rewrite would
+// otherwise be adopted as live data. A throw here is what routes the page to its fallback.
+export async function getStats(): Promise<StatsSnapshot> {
+  // Shorter than the shared client's 120s — the Stats page has a committed snapshot to fall back
+  // on, so waiting two minutes to learn the database is unreachable helps nobody.
+  const response = await apiClient.get("/api/grounnel/stats", { timeout: 10_000 });
+  return StatsSnapshotSchema.parse(response.data);
+}

@@ -17,7 +17,7 @@ export default function LandingPage({
   onDismissError,
 }: LandingPageProps) {
   return (
-    <div className="hero min-h-screen bg-base-200">
+    <div className="hero min-h-[70vh]">
       <div className="hero-content flex-col lg:flex-row-reverse gap-12">
         <div className="text-center lg:text-left max-w-lg">
           <h1 className="text-5xl font-bold">Biassemble</h1>

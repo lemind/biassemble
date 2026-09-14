@@ -153,9 +153,9 @@ export default function HighlightedArticle({ articleText, claims }: HighlightedA
                   {style.icon}
                 </span>
               )}
-              {/* Wikipedia-style inline reference markers — one per unique cited source (D027's
-                  citations, deduped by url via numberCitations), each jumping to that source's
-                  numbered entry in the References list below. A claim can carry several. */}
+              {/* Wikipedia-style inline reference markers — one per unique source, deduped by url
+                  via numberCitations (D027 citations when there are any, the claim's own sources
+                  otherwise), each jumping to its numbered entry in the References list below. */}
               {refNumbers.map((n) => (
                 <a key={n} href={`#ref-${n}`} className="ml-0.5 align-super text-xs text-info hover:underline">
                   [{n}]

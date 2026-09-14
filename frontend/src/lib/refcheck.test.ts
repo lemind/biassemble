@@ -1,7 +1,7 @@
 // Plain assert-based checks — no test framework. Run: npx tsx src/lib/refcheck.test.ts
-// Guards the shared-link regression: sources present, citations absent, References list empty.
+// Guards the shared-link shape: sources present, citations absent — must still number and list.
 import assert from 'node:assert/strict';
-import { numberCitations, numberSources } from './numberCitations';
+import { numberCitations } from './numberCitations';
 import type { Claim, ClaimSource } from '../types/grounnel';
 
 const web = (url: string, title = 'Example'): ClaimSource => ({
@@ -49,29 +49,32 @@ function test(name: string, fn: () => void) {
   console.log(`  ✓ ${name}`);
 }
 
-test('a shared claim set yields no citation-based references', () => {
-  assert.equal(numberCitations(article, shared).references.length, 0);
-});
-
-test('the source fallback lists every unique source instead', () => {
-  const refs = numberSources(article, shared);
-  assert.equal(refs.length, 3, 'three unique sources across two claims');
+test('a shared claim set is numbered from its sources', () => {
+  const { references } = numberCitations(article, shared);
+  assert.equal(references.length, 3, 'three unique sources across two claims');
   assert.deepEqual(
-    refs.map((r) => r.number),
+    references.map((r) => r.number),
     [1, 2, 3]
   );
+  assert.deepEqual(references.map((r) => r.citations.length), [0, 0, 0], 'no citations to deep-link');
+});
+
+test('a shared claim carries inline numbers, same as a live one', () => {
+  const { claimNumbers } = numberCitations(article, shared);
+  assert.deepEqual(claimNumbers.get('shared-0'), [1, 2]);
+  assert.deepEqual(claimNumbers.get('shared-1'), [1, 3], 'reuses [1] for the repeated source');
 });
 
 test('the same url with a trailing slash reuses its number', () => {
-  const refs = numberSources(article, shared);
-  assert.equal(refs.filter((r) => r.url.includes('a.example')).length, 1);
+  const { references } = numberCitations(article, shared);
+  assert.equal(references.filter((r) => r.url.includes('a.example')).length, 1);
 });
 
 test('an unreachable source is not offered as a reference', () => {
   const withDead: Claim[] = [
     { ...shared[0], sources: [{ ...web('https://dead.example/x'), status: 'unreachable' }] },
   ];
-  assert.equal(numberSources(article, withDead).length, 0);
+  assert.equal(numberCitations(article, withDead).references.length, 0);
 });
 
 console.log(`\n${passed} tests passed`);

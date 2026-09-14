@@ -146,7 +146,7 @@ export const grounnelStatusResponseSchema = z.object({
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
 
 // Core spec 019 — the shared assessment. Public shape: no run id, session id or claim ids,
-// which is why the page keys claims by position. Citations are not persisted in core.
+// which is why the page keys claims by position.
 export const sharedClaimSchema = z.object({
   text: z.string(),
   verdict: grounnelVerdictSchema.nullable(),
@@ -154,6 +154,12 @@ export const sharedClaimSchema = z.object({
   confidence: z.number().nullable(),
   reason: z.string().nullable(),
   sources: z.array(grounnelClaimSourceSchema),
+  // Defaulted: runs from before core persisted citations return none, and the page falls back to
+  // numbering sources — so an old link still renders rather than failing the parse.
+  citations: z.array(grounnelClaimCitationSchema).default([]),
+  // Optional, not required: a core older than this change sends none, and rejecting the payload
+  // over it would take every shared link down rather than degrading one detail of the render.
+  status: z.enum(["done", "failed"]).optional(),
   sourceExcerpt: z.string().nullable(),
 });
 

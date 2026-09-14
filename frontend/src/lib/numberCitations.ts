@@ -1,6 +1,7 @@
 import type { Claim, ClaimCitation, ClaimSource } from '../types/grounnel';
 import { matchClaimSpans, numberClaims, type Span } from './matchClaimSpans';
 import { isStyledClaim } from './verdictStyle';
+import { citedSources } from './citedSources';
 
 export interface NumberedReference {
   number: number;
@@ -44,6 +45,33 @@ function markedInReadingOrder(
   return marked.sort((a, b) => claimOrder.get(a.id)! - claimOrder.get(b.id)!);
 }
 
+// Cap on the fallback below. A live claim cites one or two sentences; the raw `sources` list is
+// every page the search touched (up to 14), and numbering all of them buries the article text
+// under a wall of brackets. Matches what the claim's own panel already lists.
+const REFERENCE_SOURCES_MAX = 2;
+
+// What this claim contributes to the References list, as {url, citation}. One rule for both pages:
+// a claim that cites sentences is numbered by those citations; a claim that was grounded but whose
+// quotes weren't stored is numbered by the sources its own panel shows.
+function referenceTargets(claim: Claim): Array<{ url: string; citation: ClaimCitation | null }> {
+  if (claim.citations.length > 0) {
+    return claim.citations.map((citation) => ({ url: citation.url, citation }));
+  }
+  // D027: evidence null ⇒ no citations. So an unsupported or unverifiable claim always lands here,
+  // and a footnote marker beside it would assert the opposite of its own verdict — the panel next
+  // to it reads "Searched, found nothing that confirms this". Only a grounded claim falls back,
+  // which on a link older than core's citations column is every claim the checker did confirm.
+  if (claim.evidence === null) return [];
+  // citedSources, not claim.sources, so a number can only ever point at a source the claim's own
+  // panel already lists; the ok filter then drops what a reader could not open anyway.
+  return citedSources(claim, REFERENCE_SOURCES_MAX)
+    .filter(
+      (source): source is Extract<ClaimSource, { kind: 'web' }> =>
+        source.kind === 'web' && source.status === 'ok'
+    )
+    .map((source) => ({ url: source.url, citation: null }));
+}
+
 // Wikipedia-style: one number per unique SOURCE (by url), not per claim and not per citation
 // instance — the same source cited twice (from one claim or from two different claims) reuses
 // its number instead of getting a second entry. Numbers assigned in reading order (numberClaims'
@@ -62,47 +90,20 @@ export function numberCitations(
 
   for (const claim of ordered) {
     const numbersForClaim: number[] = [];
-    for (const citation of claim.citations) {
-      const dedupKey = normalizeForDedup(citation.url);
+    for (const { url, citation } of referenceTargets(claim)) {
+      const dedupKey = normalizeForDedup(url);
       let number = urlToNumber.get(dedupKey);
       if (number === undefined) {
         number = references.length + 1;
         urlToNumber.set(dedupKey, number);
-        references.push({ number, url: citation.url, citations: [] });
+        references.push({ number, url, citations: [] });
       }
-      references[number - 1].citations.push(citation);
+      // Empty on the shared path: there is no cited sentence to deep-link to, only the page.
+      if (citation) references[number - 1].citations.push(citation);
       if (!numbersForClaim.includes(number)) numbersForClaim.push(number);
     }
     claimNumbers.set(claim.id, numbersForClaim);
   }
 
   return { claimNumbers, references };
-}
-
-// A shared assessment carries sources but no citations — core never persisted them (spec 019) —
-// so the citation-keyed list above renders nothing there. Numbers the SOURCES the same way.
-export function numberSources(
-  articleText: string,
-  claims: Claim[],
-  precomputedSpans?: Map<string, Span | null>
-): { number: number; url: string; sources: ClaimSource[] }[] {
-  const ordered = markedInReadingOrder(articleText, claims, precomputedSpans);
-
-  const urlToNumber = new Map<string, number>();
-  const references: { number: number; url: string; sources: ClaimSource[] }[] = [];
-  for (const claim of ordered) {
-    for (const source of claim.sources) {
-      // Only what a reader can actually open: an unreachable or blocked fetch is not a reference.
-      if (source.kind !== 'web' || source.status !== 'ok') continue;
-      const dedupKey = normalizeForDedup(source.url);
-      let number = urlToNumber.get(dedupKey);
-      if (number === undefined) {
-        number = references.length + 1;
-        urlToNumber.set(dedupKey, number);
-        references.push({ number, url: source.url, sources: [] });
-      }
-      references[number - 1].sources.push(source);
-    }
-  }
-  return references;
 }

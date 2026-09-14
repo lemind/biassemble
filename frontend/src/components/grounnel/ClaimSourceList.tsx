@@ -1,4 +1,4 @@
-import { numberCitations, numberSources } from '../../lib/numberCitations';
+import { numberCitations } from '../../lib/numberCitations';
 import { buildTextFragmentUrl } from '../../lib/textFragment';
 import { sourceLabel } from '../../lib/sourceLabel';
 import type { Claim } from '../../types/grounnel';
@@ -20,19 +20,17 @@ export default function ClaimSourceList({ articleText, claims }: ClaimSourceList
   // body itself (matchClaimSpans' no-threshold fallback), which is where they're visible instead.
   const { references } = numberCitations(articleText, claims);
   const allSources = claims.flatMap((c) => c.sources);
-  // A shared assessment has sources but no citations (core spec 019 never persisted them), so the
-  // citation-keyed list is empty there and the whole section used to vanish. Fall back to sources.
-  const sourceRefs = references.length === 0 ? numberSources(articleText, claims) : [];
-  const entries =
-    references.length > 0
-      ? references.map((r) => ({
-          number: r.number,
-          url: r.url,
-          // Deep-links to the exact cited sentence; only possible when a citation exists.
-          href: buildTextFragmentUrl(r.url, r.citations[0]!.text),
-          title: 'Opens the source at this exact sentence',
-        }))
-      : sourceRefs.map((r) => ({ number: r.number, url: r.url, href: r.url, title: undefined }));
+  // One entry shape for both pages. A reference with a citation deep-links to the exact cited
+  // sentence; one without (every reference on a shared link) opens the page itself.
+  const entries = references.map((r) => {
+    const citation = r.citations[0];
+    return {
+      number: r.number,
+      url: r.url,
+      href: citation ? buildTextFragmentUrl(r.url, citation.text) : r.url,
+      title: citation ? 'Opens the source at this exact sentence' : undefined,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-4">

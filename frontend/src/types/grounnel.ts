@@ -65,7 +65,7 @@ export interface Claim {
 }
 
 // Core spec 019 — a shared assessment. Public shape: no run id, session id or claim ids, which
-// is why SharedPage keys claims by position. Citations are not persisted in core.
+// is why SharedPage keys claims by position.
 export interface SharedClaim {
   text: string;
   verdict: ClaimVerdict | null;
@@ -73,6 +73,11 @@ export interface SharedClaim {
   confidence: number | null;
   reason: string | null;
   sources: ClaimSource[];
+  // Empty for links created before core persisted them; numberCitations then falls back to sources.
+  citations: ClaimCitation[];
+  // Optional: absent from a core older than the field. Distinguishes "verification errored" from
+  // "finished with no verdict" — two states the live page renders differently.
+  status?: 'done' | 'failed';
   sourceExcerpt: string | null;
 }
 

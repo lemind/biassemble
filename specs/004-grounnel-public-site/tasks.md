@@ -105,8 +105,9 @@ Phase 4 depends on biassemble-core spec 019.
 
 ## Known bugs
 
-- Fixed 2026-09-13: a shared check showed no References — the list was built from citations, which a
-  shared claim never has. Falls back to numbering the sources.
+- Fixed 2026-09-13: a shared check showed no reference numbers at all, and the References list
+  disagreed with the article text on both pages. Core now persists citations (spec 019, migration
+  0017); one rule numbers both pages, and a pre-0017 link falls back to the claim's own sources.
 
 ## Not in the MVP
 

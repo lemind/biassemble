@@ -199,8 +199,8 @@ export function createDevMockClient(): AiClient {
       // 32 base64url chars, the shape core's isShareTokenShape accepts.
       return { id, shareToken: "devmockdevmockdevmockdevmockdevm" };
     },
-    // Mirrors what a real shared assessment looks like: no ids, no citations, and a claim the
-    // pipeline refused to judge — without that last one the "Not checked" UI is unreachable here.
+    // Mirrors what a real shared assessment looks like: no ids, and a claim the pipeline refused
+    // to judge — without that last one the "Not checked" UI is unreachable here.
     async getSharedAssessment(token: string, _clientIp?: string): Promise<SharedAssessment> {
       if (token !== "devmockdevmockdevmockdevmockdevm") {
         throw aiError("not_found", { path: `/assessment/${token}`, status: 404 });

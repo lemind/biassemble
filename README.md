@@ -27,10 +27,10 @@ A second consumer product, **Grounnel**, fact-checks arbitrary text against the 
 |-------|-----------|
 | **Frontend** | Vite + React 19, TypeScript 6, DaisyUI + Tailwind CSS v4 |
 | **Backend** | Next.js 15 — API routes, Inngest jobs via `lib/jobs/runJob()` (swap-friendly) |
-| **Validation** | Zod v3 (backend) / Zod v4 (frontend) |
+| **Validation** | Zod v4 (both) |
 | **Database** | Supabase PostgreSQL + Drizzle ORM |
 | **AI** | Private **biassemble-core** service (HTTP); `dev-mock` for local public-repo dev |
-| **Deploy** | Vercel (frontend + backend) |
+| **Deploy** | Vercel (frontend + backend), Vercel Web Analytics |
 | **Package manager** | pnpm |
 
 ## Project Structure

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-// Measured, not guessed: across 161 complete production runs the median article ran 62.8 chars
-// per extracted claim, so the engine's 40-claim ceiling lands at roughly 2,500 — 2,000 is safe.
-const SOFT_LIMIT_CHARS = 2000;
+// Generous on purpose: the real cap is 40 claims, so a low guess costs nothing but a pointless
+// warning. 40 claims is ~2,500 chars at median density; 3,000 keeps the warning honest.
+const SOFT_LIMIT_CHARS = 3000;
 
 interface ArticleInputProps {
   onSubmit: (text: string) => void;
@@ -64,7 +64,7 @@ export default function ArticleInput({
         >
           <span>
             {overSoftLimit
-              ? 'Longer than one check covers — only the first 40 claims will be checked.'
+              ? 'This may be more than one check covers — up to 40 claims are checked.'
               : 'One check covers about 40 claims, roughly this much text.'}
           </span>
           <span className="tabular-nums">

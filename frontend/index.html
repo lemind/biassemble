@@ -37,9 +37,42 @@
       content="Paste an article and see which of its claims hold up. Every verdict comes with the passage and the source behind it."
     />
     <meta name="twitter:image" content="https://grounnel.vercel.app/og-grounnel.png" />
+    <!-- T046 — one WebApplication entity for the whole site; gen-seo-shells copies this template,
+         so every shell carries it. `url` is the site root on purpose, not the per-page canonical. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Grounnel",
+        "url": "https://grounnel.vercel.app/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "description": "Grounnel pulls the factual claims out of a piece of writing and checks each one against the open web, marking them in place with the passage and source behind every verdict.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "isAccessibleForFree": true
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      Crawlers and previews get a real heading, a sentence of copy and working links here; React's
+      createRoot() replaces these children on mount, so nothing needs to match what it renders.
+      gen-seo-shells rewrites this block per page from the same pageMeta() the head uses.
+    -->
+    <div id="root">
+      <div data-seo-shell>
+        <h1>Grounnel — Verify the claims in any text</h1>
+        <p>
+          Grounnel pulls the factual claims out of a piece of writing and checks each one against
+          the open web, marking them in place with the passage and source behind every verdict.
+        </p>
+        <nav>
+          <a href="/">Check a text</a> <a href="/about">How it works</a>
+          <a href="/stats">What we have measured</a>
+        </nav>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

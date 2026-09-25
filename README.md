@@ -10,7 +10,7 @@ Biassemble guides users through a reflective process: write a personal situation
 
 The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
 
-A second consumer product, **Grounnel**, fact-checks arbitrary text against the open web — no source documents required. It ships from this same codebase as its own brand at [grounnel.vercel.app](https://grounnel.vercel.app): the brand is resolved from the hostname, the page from the path, and the two never consult each other. Public alpha — one check covers up to 40 claims (about 2,000 characters), a finished check leads with two 0–100 scores (**groundedness** and **assessment completeness**), and every run has a permanent share link. See `specs/002-grounnel-frontend/`, `specs/003-grounnel-backend/` and `specs/004-grounnel-public-site/`.
+A second consumer product, **Grounnel**, fact-checks arbitrary text against the open web — no source documents required. It ships from this same codebase as its own brand at [grounnel.vercel.app](https://grounnel.vercel.app): the brand is resolved from the hostname, the page from the path, and the two never consult each other. Public alpha — one check covers up to 40 claims (about 3,000 characters), a finished check leads with two 0–100 scores (**groundedness** and **assessment completeness**), and every run has a permanent share link. See `specs/002-grounnel-frontend/`, `specs/003-grounnel-backend/` and `specs/004-grounnel-public-site/`.
 
 ## Key Features
 
@@ -27,10 +27,10 @@ A second consumer product, **Grounnel**, fact-checks arbitrary text against the 
 |-------|-----------|
 | **Frontend** | Vite + React 19, TypeScript 6, DaisyUI + Tailwind CSS v4 |
 | **Backend** | Next.js 15 — API routes, Inngest jobs via `lib/jobs/runJob()` (swap-friendly) |
-| **Validation** | Zod v3 (backend) / Zod v4 (frontend) |
+| **Validation** | Zod v4 (both) |
 | **Database** | Supabase PostgreSQL + Drizzle ORM |
 | **AI** | Private **biassemble-core** service (HTTP); `dev-mock` for local public-repo dev |
-| **Deploy** | Vercel (frontend + backend) |
+| **Deploy** | Vercel (frontend + backend), Vercel Web Analytics |
 | **Package manager** | pnpm |
 
 ## Project Structure

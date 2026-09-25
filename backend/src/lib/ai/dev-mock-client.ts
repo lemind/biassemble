@@ -199,8 +199,8 @@ export function createDevMockClient(): AiClient {
       // 32 base64url chars, the shape core's isShareTokenShape accepts.
       return { id, shareToken: "devmockdevmockdevmockdevmockdevm" };
     },
-    // Mirrors what a real shared assessment looks like: no ids, no citations, and a claim the
-    // pipeline refused to judge — without that last one the "Not checked" UI is unreachable here.
+    // Mirrors what a real shared assessment looks like: no ids, and a claim the pipeline refused
+    // to judge — without that last one the "Not checked" UI is unreachable here.
     async getSharedAssessment(token: string, _clientIp?: string): Promise<SharedAssessment> {
       if (token !== "devmockdevmockdevmockdevmockdevm") {
         throw aiError("not_found", { path: `/assessment/${token}`, status: 404 });
@@ -210,10 +210,8 @@ export function createDevMockClient(): AiClient {
         text: MOCK_RUN_TEXT,
         createdAt: "2026-09-09T00:00:00.000Z",
         completedAt: "2026-09-09T00:03:20.000Z",
-        // Core persists no claim ids for a shared assessment (019 FR-009); citations it now does,
-        // so the mock carries them and dev renders the same page prod does.
-        // Core writes a grounnel_claims row only once a claim reaches a terminal state, so a real
-        // shared payload never carries a pending one — the mock must not either.
+        // No claim ids (019 FR-009), but citations now persist, so the mock carries them. Core writes
+        // a row only at a terminal state, so a real shared payload never has a pending claim.
         claims: MOCK_RUN_CLAIMS.filter(
           (c): c is (typeof MOCK_RUN_CLAIMS)[number] & { status: "done" | "failed" } => c.status !== "pending"
         ).map((c) => ({

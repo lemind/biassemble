@@ -20,14 +20,14 @@ The core rule: **a false accusation is worse than a missed detection.** When the
 3. **Search** the web for sources.
 4. **Verify**: the model classifies each claim against numbered source sentences. It can only cite sentences by number; the quoted text is looked up in code, so it cannot invent a quote.
 5. **Gates**: 12 deterministic checks run after every model answer. They compare the verdict with the model's own explanation, require cited evidence for `contradicted` and `supported`, and compare numbers and years with the evidence.
-6. **Escalate**: claims that are still unresolved are searched again with more sources (3, then 5, then 8).
+6. **Escalate**: every claim not marked `supported` is searched again with a wider pool — 8, then 11 usable pages, up from 5 in the first pass.
 
 Steps 4 and 5 are explained in detail in the [article](https://dev.to/lemind/the-models-explanation-had-the-right-answer-its-verdict-didnt-2ji0).
 
 ## Key Features
 
 - **Inline verdicts** – `supported`, `partially_supported`, `contradicted`, `unsupported`, `unverifiable` or `excluded`, marked in the original text
-- **Sources for every verdict** – the exact source sentences, with links
+- **Sources behind the verdicts** – `supported`, `partially_supported` and `contradicted` show the exact source sentences, with links
 - **Two scores** – a finished check shows **groundedness** and **assessment completeness** (0–100)
 - **Share links** – every run gets a permanent link that anyone can open
 - **Public measurements** – the [Stats](https://grounnel.vercel.app/stats) page shows the verdict mix and what the numbers do and do not show
@@ -63,7 +63,7 @@ biassemble/
 └── specs/004-grounnel-public-site/
 ```
 
-The pipeline itself (prompts, gates, search) lives in the private [biassemble-core](../biassemble-core/README.md) repo. This repo never calls the model directly.
+The pipeline itself (prompts, gates, search) lives in the private biassemble-core repo. This repo never calls the model directly.
 
 ## Status
 

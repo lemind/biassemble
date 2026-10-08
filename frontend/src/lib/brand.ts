@@ -26,8 +26,9 @@ export interface Brand {
   nav: NavItem[];
 }
 
-// One explicit list, not a regex, not repeated across files. Add `grounnel.com` here when bought.
-const GROUNNEL_HOSTS = ['grounnel.vercel.app'];
+// One explicit list, not a regex, not repeated across files. The first entry is the canonical origin;
+// grounnel.vercel.app stays listed but 308s to it (vercel.json).
+const GROUNNEL_HOSTS = ['grounnel.n30sk.cc', 'grounnel.vercel.app'];
 const BIASSEMBLE_HOSTS = ['frontend-topaz-eight-10.vercel.app'];
 const DEV_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
 

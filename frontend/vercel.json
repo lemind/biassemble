@@ -13,6 +13,12 @@
     { "source": "/check/:token", "destination": "/index.html" }
   ],
   "redirects": [
+    {
+      "source": "/:path(.*)",
+      "has": [{ "type": "host", "value": "grounnel.vercel.app" }],
+      "destination": "https://grounnel.n30sk.cc/:path*",
+      "permanent": true
+    },
     { "source": "/about/", "destination": "/about", "permanent": true },
     { "source": "/stats/", "destination": "/stats", "permanent": true }
   ],

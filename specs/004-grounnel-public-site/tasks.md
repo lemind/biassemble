@@ -103,6 +103,7 @@ Phase 4 depends on biassemble-core spec 019.
 
 - [x] T062 Vercel Web Analytics.
 - [x] T063 Serve Stats live from `/api/grounnel/stats`, snapshot as fallback, zod-parsed at the boundary.
+- [x] T065 Move Grounnel to `grounnel.n30sk.cc`: canonical host, CORS origin, canonical/og/sitemap URLs, 308 from `grounnel.vercel.app`. Root redirect needs `/:path(.*)`; `/:path*` skips `/`.
 
 ## Known bugs
 

@@ -71,10 +71,11 @@ Phase 4 depends on biassemble-core spec 019.
 
 - [x] T042 Per-route, per-brand head at runtime.
 - [x] T043 `X-Robots-Tag` on `/check/*` via `vercel.json`.
-- [x] T044 Static per-route shells for `/`, `/about`, `/stats`.
+- [x] T044 Static per-route shells for `/`, `/about`, `/stats`. Each carries a real `h1`, a sentence of copy and the nav links, filled from the same `pageMeta()` as the head — crawlers saw 0 characters of body before.
 - [x] T047 SEO round 2: drop the self-defeating `Disallow: /check/`, enumerate routes, real 404s.
 - [ ] T045 Custom domain. Move canonical, `og:url`, sitemap and robots together; 301 the Vercel host.
-- [ ] T046 `WebApplication` JSON-LD. Optional.
+- [ ] T064 Google Search Console: verify, submit the sitemap, request indexing on the three URLs. Console only. The site was never submitted, so it is not indexed at all — an exact-name search returns nothing. Every on-page tag has been correct and unread.
+- [x] T046 `WebApplication` JSON-LD in `index.html`; every shell inherits it.
 - [x] T038 Delete four orphaned files.
 
 ## Phase 7 — Article-level scores
@@ -105,8 +106,9 @@ Phase 4 depends on biassemble-core spec 019.
 
 ## Known bugs
 
-- Fixed 2026-09-13: a shared check showed no References — the list was built from citations, which a
-  shared claim never has. Falls back to numbering the sources.
+- Fixed 2026-09-13: a shared check showed no reference numbers at all, and the References list
+  disagreed with the article text on both pages. Core now persists citations (spec 019, migration
+  0017); one rule numbers both pages, and a pre-0017 link falls back to the claim's own sources.
 
 ## Not in the MVP
 

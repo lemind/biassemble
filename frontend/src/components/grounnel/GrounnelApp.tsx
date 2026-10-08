@@ -75,7 +75,7 @@ export default function GrounnelApp() {
             <div id="alpha-notice" className="alert alert-info items-start py-3 text-sm">
               <span>
                 <span className="font-semibold">Alpha.</span> One check covers up to 40 claims —
-                about 2,000 characters, or 350 words. Longer texts are checked in part, so run
+                about 3,000 characters, or 500 words. Longer texts are checked in part, so run
                 them a few paragraphs at a time.
               </span>
             </div>

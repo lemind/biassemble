@@ -32,6 +32,7 @@
 
 - Commit atomically: one logical change per commit.
 - Keep commit messages short and descriptive. Example: `feat: add retry logic` — not `feat: add retry logic to syncQueue with exponential backoff and timeout`. If you need details, put them in the body.
+- Task ref, when there is one: spec number + task, e.g. `feat(004-T012): …` (bare T0XX repeats in every spec).
 - Never force-push or rewrite history without explicit approval.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 - **NEVER push to `main` directly.** All work goes to feature branches (e.g. `phase-4-versioning`). Pushing to `main` is strictly forbidden without explicit human approval.

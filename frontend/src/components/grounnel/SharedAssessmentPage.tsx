@@ -11,19 +11,15 @@ const POLL_INTERVAL_MS = 5000;
 // the life of the tab and burns the viewer's whole read budget. 120 ticks ≈ 10 minutes.
 const MAX_POLLS = 120;
 
-// A shared claim carries no id (core 019 FR-009), so position is a stable key. Citations come
-// through for anything run since core gained the column; a link older than that arrives with none
-// and numberCitations falls back to numbering sources, so the page still renders either way.
+// No id (core 019 FR-009), so position is the key. Citations arrive only for runs since core gained
+// the column; older links have none and numberCitations falls back to sources.
 function toClaim(claim: SharedClaim, index: number, runStatus: SharedAssessment['status']): Claim {
   const unfinished = runStatus === 'extracting' || runStatus === 'verifying';
   return {
     id: `shared-${index}`,
     text: claim.text,
-    // The claim's own status when core sends it: guessing "failed" for any verdict-less claim on a
-    // finished run contradicted the live page, which reports that same claim as done-with-no-verdict
-    // — a different highlight and a different reference numbering for the identical run.
-    // Falls back to the old guess for a link served by a core that predates the field. On a run
-    // still verifying, a claim with no verdict is pending, not failed.
+    // Core's own status: guessing "failed" for a verdict-less claim contradicted the live page,
+    // which calls it done. Falls back to the guess when an older core omits the field.
     status: claim.status ?? (claim.verdict !== null ? 'done' : unfinished ? 'pending' : 'failed'),
     verdict: claim.verdict,
     evidence: claim.evidence,

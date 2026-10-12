@@ -17,6 +17,8 @@ function test(name: string, fn: () => void) {
 }
 
 test('known Grounnel host resolves to Grounnel', () => {
+  assert.equal(classifyHost('grounnel.n30sk.cc'), 'grounnel');
+  assert.equal(brandForHost('grounnel.n30sk.cc').id, 'grounnel');
   assert.equal(classifyHost('grounnel.vercel.app'), 'grounnel');
   assert.equal(brandForHost('grounnel.vercel.app').id, 'grounnel');
 });

@@ -2,7 +2,7 @@
 
 Paste any text and check its factual claims against the open web.
 
-**Live**: https://grounnel.vercel.app
+**Live**: https://grounnel.n30sk.cc
 **Article**: [The model's explanation had the right answer. Its verdict didn't.](https://dev.to/lemind/the-models-explanation-had-the-right-answer-its-verdict-didnt-2ji0) — how the verdict checks work, and where they fail
 
 ## Overview
@@ -30,7 +30,7 @@ Steps 4 and 5 are explained in detail in the [article](https://dev.to/lemind/the
 - **Sources behind the verdicts** – `supported`, `partially_supported` and `contradicted` show the exact source sentences, with links
 - **Two scores** – a finished check shows **groundedness** and **assessment completeness** (0–100)
 - **Share links** – every run gets a permanent link that anyone can open
-- **Public measurements** – the [Stats](https://grounnel.vercel.app/stats) page shows the verdict mix and what the numbers do and do not show
+- **Public measurements** – the [Stats](https://grounnel.n30sk.cc/stats) page shows the verdict mix and what the numbers do and do not show
 
 ## Limits
 

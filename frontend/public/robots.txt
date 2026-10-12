@@ -4,4 +4,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://grounnel.vercel.app/sitemap.xml
+Sitemap: https://grounnel.n30sk.cc/sitemap.xml

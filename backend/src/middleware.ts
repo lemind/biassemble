@@ -7,6 +7,7 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "")
   .map((o) => o.trim())
   .filter(Boolean)
   .concat([
+    "https://grounnel.n30sk.cc",
     "https://grounnel.vercel.app",
     "https://frontend-topaz-eight-10.vercel.app",
   ]);

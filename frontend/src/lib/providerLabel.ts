@@ -1,10 +1,10 @@
+import type { GrounnelProviderId } from "../types/grounnel";
+
 const PROVIDER_NAMES = {
   gemini: "Gemini",
   deepseek: "DeepSeek",
   qwen: "Qwen",
-} as const;
-
-export type GrounnelProviderId = keyof typeof PROVIDER_NAMES;
+} as const satisfies Record<GrounnelProviderId, string>;
 
 /** Display name for the judge. An unknown value stays Gemini and is not echoed (D033). */
 export function checkedWithLabel(provider: string | null | undefined): string {

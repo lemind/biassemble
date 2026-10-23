@@ -119,6 +119,8 @@ const grounnelClaimSchema = z.object({
   sourceExcerpt: z.string().nullable().default(null),
 });
 
+const grounnelProviderSchema = z.enum(["gemini", "deepseek", "qwen"]);
+
 export const grounnelStatusResponseSchema = z.object({
   id: z.string(),
   status: z.enum(["extracting", "verifying", "done", "failed"]),
@@ -141,6 +143,9 @@ export const grounnelStatusResponseSchema = z.object({
   // silently stripped by Zod's default parse. Lets a future poller show elapsed time/ETA.
   started_at: z.string().datetime().nullable(),
   elapsed_seconds: z.number().int().nonnegative().nullable(),
+  // Optional: a core older than T2011 omits them. An unknown provider is rejected, not shown (D033).
+  provider: grounnelProviderSchema.optional(),
+  model: z.string().nullable().optional(),
 });
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
@@ -180,6 +185,8 @@ export const sharedAssessmentSchema = z.object({
     excluded: z.number(),
     noVerdict: z.number(),
   }).optional(),
+  provider: grounnelProviderSchema.optional(),
+  model: z.string().nullable().optional(),
 });
 
 export type SharedAssessment = z.infer<typeof sharedAssessmentSchema>;

@@ -51,6 +51,7 @@ function toRunProgress(assessment: SharedAssessment): RunProgress {
     // Not carried by the shared shape, so a shared view of a capped run omits that warning.
     caps_hit: false,
     elapsed_seconds: Number.isNaN(started) ? null : Math.round((ended - started) / 1000),
+    provider: assessment.provider,
   };
 }
 

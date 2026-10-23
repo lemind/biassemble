@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { CORS_ALLOW_HEADERS } from "@/lib/ai/own-key";
 
 // CORS for /api/* — a strict allowlist, never `*` and never reflected. Browser-enforced, so it
 // stops other sites' JS, not curl; the real ceiling is core's rate limit plus the budget cap.
@@ -79,7 +80,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     Vary: "Origin",
     ...(isAllowed(origin) ? { "Access-Control-Allow-Origin": origin! } : {}),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": CORS_ALLOW_HEADERS,
     "Access-Control-Max-Age": "86400",
   };
 }

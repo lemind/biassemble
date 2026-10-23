@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import useGrounnelRun from '../../hooks/useGrounnelRun';
 import { resolveBrand } from '../../lib/brand';
+import { EMPTY_OWN_KEY, type OwnKeyChoice } from '../../lib/providerKey';
 import { applyPageMeta } from '../../lib/seo';
 import ArticleInput from './ArticleInput';
 import RunView from './RunView';
@@ -15,6 +16,7 @@ export default function GrounnelApp() {
   // Kept separately from useGrounnelRun's own state — the hook only tracks the run's id/status/
   // error, not the submitted text itself, which HighlightedArticle needs to redisplay (FR-006).
   const [articleText, setArticleText] = useState('');
+  const [ownKey, setOwnKey] = useState<OwnKeyChoice>(EMPTY_OWN_KEY);
   const [alphaOpen, setAlphaOpen] = useState(() => {
     try {
       return localStorage.getItem(ALPHA_NOTICE_KEY) !== '1';
@@ -47,7 +49,7 @@ export default function GrounnelApp() {
 
   const handleSubmit = (text: string) => {
     setArticleText(text);
-    submit(text);
+    submit(text, ownKey);
   };
 
   return (
@@ -107,6 +109,8 @@ export default function GrounnelApp() {
           onSubmit={handleSubmit}
           disabled={isRunInFlight}
           locked={isRunInFlight}
+          ownKey={ownKey}
+          onOwnKeyChange={setOwnKey}
         />
 
         {error && (

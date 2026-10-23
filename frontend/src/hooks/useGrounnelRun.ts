@@ -1,6 +1,16 @@
+import axios from 'axios';
 import { useCallback, useState } from 'react';
 import { submitGrounnelText } from '../api/client';
+import type { OwnKeyChoice } from '../lib/providerKey';
 import usePollGrounnelStatus from './usePollGrounnelStatus';
+
+function submitErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as { error?: unknown } | undefined;
+    if (typeof data?.error === 'string' && data.error.trim().length > 0) return data.error;
+  }
+  return err instanceof Error ? err.message : 'Failed to submit text';
+}
 
 interface GrounnelRunState {
   runId: string | null;
@@ -25,14 +35,14 @@ export default function useGrounnelRun() {
   });
   const { status } = usePollGrounnelStatus({ runId: state.runId });
 
-  const submit = useCallback(async (text: string) => {
+  const submit = useCallback(async (text: string, ownKey?: OwnKeyChoice) => {
     setState({ runId: null, shareToken: null, error: null, submitting: true });
     try {
-      const result = await submitGrounnelText(text);
+      const result = await submitGrounnelText(text, ownKey);
       setState({ runId: result.id, shareToken: result.shareToken ?? null, error: null, submitting: false });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to submit text';
-      setState({ runId: null, shareToken: null, error: message, submitting: false });
+      // The axios error object carries the key header. Keep the sentence only (D033).
+      setState({ runId: null, shareToken: null, error: submitErrorMessage(err), submitting: false });
     }
   }, []);
 

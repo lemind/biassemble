@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { OwnKeyChoice } from '../../lib/providerKey';
+import ProviderPicker from './ProviderPicker';
 
 // Generous on purpose: the real cap is 40 claims, so a low guess costs nothing but a pointless
 // warning. 40 claims is ~2,500 chars at median density; 3,000 keeps the warning honest.
@@ -14,6 +16,9 @@ interface ArticleInputProps {
   readOnly?: boolean;
   /** This viewer's own run is in flight: keep the text selectable, just not editable. */
   locked?: boolean;
+  /** Absent on a shared page. The key stays in the parent, which is page memory (D033). */
+  ownKey?: OwnKeyChoice;
+  onOwnKeyChange?: (next: OwnKeyChoice) => void;
 }
 
 export default function ArticleInput({
@@ -22,6 +27,8 @@ export default function ArticleInput({
   initialText = '',
   readOnly = false,
   locked = false,
+  ownKey,
+  onOwnKeyChange,
 }: ArticleInputProps) {
   const [text, setText] = useState(initialText);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +39,10 @@ export default function ArticleInput({
     // Client-side rejection of empty/whitespace-only text before any request (FR-002).
     if (text.trim().length === 0) {
       setError('Paste some text to fact-check.');
+      return;
+    }
+    if (ownKey?.enabled && ownKey.apiKey.trim().length === 0) {
+      setError('Paste an API key.');
       return;
     }
     setError(null);
@@ -73,6 +84,9 @@ export default function ArticleInput({
         </div>
       )}
       {error && <div className="alert alert-error text-sm py-2">{error}</div>}
+      {!readOnly && ownKey && onOwnKeyChange && (
+        <ProviderPicker value={ownKey} onChange={onOwnKeyChange} disabled={disabled} />
+      )}
       {!readOnly && (
       <>
       <button type="submit" className="btn btn-primary w-full" disabled={disabled}>

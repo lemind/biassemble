@@ -9,7 +9,11 @@ import { validationError } from "@/lib/errors";
  * lifecycle to track here — the full lifecycle lives in biassemble-core's own Redis/Postgres,
  * polled directly via getGrounnelStatus, never read back by this repo (ADR-003 §2).
  */
-export async function handleCreateGrounnelExtract(text: string, clientIp?: string) {
+export async function handleCreateGrounnelExtract(
+  text: string,
+  clientIp?: string,
+  ownKey?: { provider?: string | null; providerKey?: string | null },
+) {
   const result = grounnelTextSchema.safeParse({ text });
   if (!result.success) {
     // AppException (VALIDATION_ERROR, 400), not a plain Error — so the route's
@@ -27,7 +31,13 @@ export async function handleCreateGrounnelExtract(text: string, clientIp?: strin
   const session = await createSession();
 
   const ai = getAiClient();
-  const aiResult = await ai.extractClaims({ sessionId: session.id, text, clientIp });
+  const aiResult = await ai.extractClaims({
+    sessionId: session.id,
+    text,
+    clientIp,
+    provider: ownKey?.provider,
+    providerKey: ownKey?.providerKey,
+  });
 
   // aiResult.id is biassemble-core's own grounnel run id — the frontend polls with THIS id,
   // not the local session id (ADR-002 §4).

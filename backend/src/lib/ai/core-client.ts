@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { aiError } from "@/lib/errors";
+import { aiError, AppException } from "@/lib/errors";
+import { ownKeyForwardHeaders, safeProviderMessage } from "@/lib/ai/own-key";
 import type { AiClient } from "./client";
 import {
   assessmentOutputSchema,
@@ -64,6 +65,11 @@ async function postCore<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    const safe = safeProviderMessage(text);
+    if (safe) {
+      // Classified provider failure. The raw body stays off the error object (D033).
+      throw new AppException("AI_ERROR", safe, { statusCode: res.status });
+    }
     // Try to extract the actual error message from Core's JSON response
     let message = `AI Core request failed: ${res.status}`;
     try {
@@ -138,7 +144,10 @@ export function createCoreClient(): AiClient {
         "/extract",
         { text: input.text, sessionId: input.sessionId },
         extractClaimsOutputSchema,
-        proxyHeaders(input.clientIp)
+        {
+          ...proxyHeaders(input.clientIp),
+          ...ownKeyForwardHeaders(input.provider, input.providerKey),
+        },
       );
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {

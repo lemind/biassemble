@@ -59,6 +59,10 @@ export interface ExtractClaimsRequest {
    * limiter sees the actual user, not this server's own egress IP. Optional so a caller without
    * one (e.g. a background job) still works; Core falls back to its own request.ip. */
   clientIp?: string;
+  /** Visitor provider. Absent keeps the site Gemini client (D033). */
+  provider?: string | null;
+  /** Visitor key. Header only on the way to core. Not logged. */
+  providerKey?: string | null;
 }
 
 export const extractClaimsOutputSchema = z.object({

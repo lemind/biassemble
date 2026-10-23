@@ -4,7 +4,7 @@ import { createDevMockClient } from "@/lib/ai/dev-mock-client";
 
 // parseJsonFromAi THROWS (502) on an unknown verdict, failing the whole poll — not just one claim.
 
-function statusResponseWithVerdict(verdict: string): unknown {
+function statusResponseWithVerdict(verdict: string): Record<string, unknown> {
   return {
     id: "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
     status: "done",

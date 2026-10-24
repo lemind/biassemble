@@ -11,6 +11,13 @@ const CATEGORY_MESSAGE: Record<string, string> = {
 };
 
 const KEY_MATERIAL = /sk-[A-Za-z0-9._-]+|AIza[0-9A-Za-z_-]{10,}|AQ\.[A-Za-z0-9._-]+|bearer\s+\S+/i;
+const KEY_MATERIAL_GLOBAL = /sk-[A-Za-z0-9._-]+|AIza[0-9A-Za-z_-]{10,}|AQ\.[A-Za-z0-9._-]+|bearer\s+\S+/gi;
+
+/** Strip every key-shaped substring. A fresh lastIndex so the shared /g pattern cannot skip a later match. */
+export function scrubKeyMaterial(text: string): string {
+  KEY_MATERIAL_GLOBAL.lastIndex = 0;
+  return text.replace(KEY_MATERIAL_GLOBAL, "[REDACTED]");
+}
 
 export function ownKeyForwardHeaders(
   provider: string | null | undefined,

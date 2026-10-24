@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { aiError, AppException } from "@/lib/errors";
-import { ownKeyForwardHeaders, safeProviderMessage } from "@/lib/ai/own-key";
+import { ownKeyForwardHeaders, safeProviderMessage, scrubKeyMaterial } from "@/lib/ai/own-key";
 import type { AiClient } from "./client";
 import {
   assessmentOutputSchema,
@@ -50,7 +50,8 @@ async function postCore<T>(
   path: string,
   body: unknown,
   schema: z.ZodSchema<T>,
-  extraHeaders?: Record<string, string>
+  extraHeaders?: Record<string, string>,
+  options: { interpretProviderError?: boolean } = {},
 ): Promise<T> {
   const { baseUrl, apiKey } = getCoreConfig();
   const res = await fetch(`${baseUrl}${path}`, {
@@ -65,10 +66,13 @@ async function postCore<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    const safe = safeProviderMessage(text);
-    if (safe) {
-      // Classified provider failure. The raw body stays off the error object (D033).
-      throw new AppException("AI_ERROR", safe, { statusCode: res.status });
+    // Only an /extract that forwarded a visitor key. Core's own 429/503 stay on the 502 path (D033).
+    if (options.interpretProviderError) {
+      const safe = safeProviderMessage(text);
+      if (safe) {
+        // Classified provider failure. The raw body stays off the error object (D033).
+        throw new AppException("AI_ERROR", safe, { statusCode: res.status });
+      }
     }
     // Try to extract the actual error message from Core's JSON response
     let message = `AI Core request failed: ${res.status}`;
@@ -80,7 +84,8 @@ async function postCore<T>(
     } catch {
       // text is not JSON — use the generic message
     }
-    throw aiError(message, { path, body: text, status: res.status });
+    if (typeof message === "string") message = scrubKeyMaterial(message);
+    throw aiError(message, { path, body: scrubKeyMaterial(text), status: res.status });
   }
 
   const raw = await res.text();
@@ -107,7 +112,8 @@ async function getCore<T>(path: string, schema: z.ZodSchema<T>, clientIp?: strin
     } catch {
       // text is not JSON — use the generic message
     }
-    throw aiError(message, { path, body: text, status: res.status });
+    if (typeof message === "string") message = scrubKeyMaterial(message);
+    throw aiError(message, { path, body: scrubKeyMaterial(text), status: res.status });
   }
 
   const raw = await res.text();
@@ -140,14 +146,17 @@ export function createCoreClient(): AiClient {
     ): Promise<ExtractClaimsOutput> {
       // No /v1/ prefix — Grounnel's routes are their own top-level surface in Core, not under
       // reflection's versioned path (biassemble-core/src/routes/grounnel.ts).
+      const ownKeyHeaders = ownKeyForwardHeaders(input.provider, input.providerKey);
       return postCore(
         "/extract",
         { text: input.text, sessionId: input.sessionId },
         extractClaimsOutputSchema,
         {
           ...proxyHeaders(input.clientIp),
-          ...ownKeyForwardHeaders(input.provider, input.providerKey),
+          ...ownKeyHeaders,
         },
+        // Core's own rate limit is a sentence, not error:"rate_limited". Preflight is the category body, and only when a key was sent.
+        { interpretProviderError: Object.keys(ownKeyHeaders).length > 0 },
       );
     },
     async getGrounnelStatus(id: string): Promise<GrounnelStatusOutput> {

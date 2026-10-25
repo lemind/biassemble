@@ -1,4 +1,6 @@
 import axios from "axios";
+import type { OwnKeyChoice } from "../lib/providerKey";
+import { ownKeyHeaders } from "../lib/providerKey";
 import type {
   ExtractGrounnelResponse,
   GrounnelStatusOutput,
@@ -42,8 +44,10 @@ export async function getSession(sessionId: string) {
   return response.data;
 }
 
-export async function submitGrounnelText(text: string): Promise<ExtractGrounnelResponse> {
-  const response = await apiClient.post<ExtractGrounnelResponse>("/api/grounnel/extract", { text });
+export async function submitGrounnelText(text: string, ownKey?: OwnKeyChoice): Promise<ExtractGrounnelResponse> {
+  // The key rides in headers. The JSON body stays the article only (D033).
+  const headers = ownKey ? ownKeyHeaders(ownKey) : undefined;
+  const response = await apiClient.post<ExtractGrounnelResponse>("/api/grounnel/extract", { text }, { headers });
   return response.data;
 }
 

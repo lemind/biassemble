@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { grounnelStatusResponseSchema } from "@/lib/ai/contracts";
+import { grounnelStatusResponseSchema, sharedAssessmentSchema } from "@/lib/ai/contracts";
 import { createDevMockClient } from "@/lib/ai/dev-mock-client";
 
 // parseJsonFromAi THROWS (502) on an unknown verdict, failing the whole poll — not just one claim.
 
-function statusResponseWithVerdict(verdict: string): unknown {
+function statusResponseWithVerdict(verdict: string): Record<string, unknown> {
   return {
     id: "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
     status: "done",
@@ -78,5 +78,47 @@ describe("dev-mock client satisfies the same contract the real client is validat
     // The point of the mock claim added with T23 (D032 §12 Finding A): a citation-less `supported`
     // claim exercises the sourcesUncited path without spending live API quota.
     expect(status.claims.some((claim) => claim.verdict === "supported" && claim.citations.length === 0 && claim.sources.length > 0)).toBe(true);
+  });
+});
+
+describe("provider on status and share (T2012)", () => {
+  it("keeps a known provider and drops key_source", () => {
+    const parsed = grounnelStatusResponseSchema.parse({
+      ...statusResponseWithVerdict("supported"),
+      provider: "deepseek",
+      model: "deepseek-flash",
+      key_source: "own",
+    });
+    expect(parsed.provider).toBe("deepseek");
+    expect(parsed.model).toBe("deepseek-flash");
+    expect(parsed).not.toHaveProperty("key_source");
+  });
+
+  it("still accepts a core response that has no provider yet", () => {
+    const parsed = grounnelStatusResponseSchema.parse(statusResponseWithVerdict("supported"));
+    expect(parsed.provider).toBeUndefined();
+  });
+
+  it("rejects an unknown provider instead of passing the raw string through", () => {
+    const parsed = grounnelStatusResponseSchema.safeParse({
+      ...statusResponseWithVerdict("supported"),
+      provider: "sk-pasted-into-provider-slot",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts the same provider fields on a shared assessment", () => {
+    const parsed = sharedAssessmentSchema.parse({
+      status: "done",
+      text: "A short article.",
+      claims: [],
+      createdAt: "2026-09-09T00:00:00.000Z",
+      completedAt: "2026-09-09T00:03:20.000Z",
+      provider: "qwen",
+      model: "qwen3.7-flash",
+      key_source: "site",
+    });
+    expect(parsed.provider).toBe("qwen");
+    expect(parsed).not.toHaveProperty("key_source");
   });
 });

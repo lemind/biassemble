@@ -13,7 +13,11 @@ export async function POST(request: Request) {
     // that service-level validation unreachable in practice (2026-08-11 fix, T015).
     const chosen = clientIpWithSource(request);
     logIpHeaderProbe(request, chosen);
-    const result = await handleCreateGrounnelExtract(text, chosen.ip);
+    // The key stays in this argument. logIpHeaderProbe above records IP header names only (D033).
+    const result = await handleCreateGrounnelExtract(text, chosen.ip, {
+      provider: request.headers.get("x-grounnel-provider"),
+      providerKey: request.headers.get("x-grounnel-provider-key"),
+    });
     return NextResponse.json(result, { status: 202, headers: NO_STORE });
   } catch (error) {
     if (error instanceof AppException) {

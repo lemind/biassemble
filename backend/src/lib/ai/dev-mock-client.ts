@@ -210,6 +210,8 @@ export function createDevMockClient(): AiClient {
         text: MOCK_RUN_TEXT,
         createdAt: "2026-09-09T00:00:00.000Z",
         completedAt: "2026-09-09T00:03:20.000Z",
+        provider: "gemini",
+        model: "gemini-2.0-flash",
         // No claim ids (019 FR-009), but citations now persist, so the mock carries them. Core writes
         // a row only at a terminal state, so a real shared payload never has a pending claim.
         claims: MOCK_RUN_CLAIMS.filter(
@@ -249,6 +251,8 @@ export function createDevMockClient(): AiClient {
         caps_hit: false,
         started_at: new Date().toISOString(),
         elapsed_seconds: 3,
+        provider: "gemini",
+        model: "gemini-2.0-flash",
       };
     },
   };

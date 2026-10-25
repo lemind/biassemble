@@ -207,6 +207,8 @@ entity-agreement work are deliberately out — see `tasks.md` § Deliberately no
 **biassemble-core** repo's `specs/018-…/FINDINGS.md` for the measured findings behind them.
 **Shareable assessment links are IN** (Phase 4), tracked in core spec **019** — they moved out of
 018 and are no longer parked.
+**Own-key provider choice is IN** (Phase 10), tracked in core spec **020**. The visitor-facing
+behavior is User Story 6 in `spec.md`. The site tasks are T066 and T067.
 
 ## Sequencing
 
@@ -218,6 +220,7 @@ entity-agreement work are deliberately out — see `tasks.md` § Deliberately no
 | 2b | Metadata / link previews (T024–T031) | Phase 1 |
 | 3 | Stats (T011–T013) | T011's read-path decision |
 | 4 | Session persistence + share links (T018–T022) | core spec **019** |
+| 10 | Own-key provider (T066–T067) | core spec **020** |
 | — | T016 `vercel.json` | **done** — removed 2026-09-09, never committed or deployed |
 
 Phase 1 carries the only real risk. Phases 2 and 3 are content on top of it.

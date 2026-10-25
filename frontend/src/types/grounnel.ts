@@ -93,6 +93,8 @@ export interface SharedCounts {
   noVerdict: number;
 }
 
+export type GrounnelProviderId = "gemini" | "deepseek" | "qwen";
+
 export interface SharedAssessment {
   status: GrounnelRunStatus;
   text: string;
@@ -100,6 +102,9 @@ export interface SharedAssessment {
   createdAt: string;
   completedAt: string | null;
   counts?: SharedCounts;
+  // Absent from a core older than T2011. The page then says Gemini (D033).
+  provider?: GrounnelProviderId;
+  model?: string | null;
 }
 
 /** The subset of a run's state the progress row renders. `GrounnelStatusOutput` satisfies it, and
@@ -112,6 +117,7 @@ export interface RunProgress {
   claims: Claim[];
   caps_hit: boolean;
   elapsed_seconds: number | null;
+  provider?: GrounnelProviderId;
 }
 
 export interface Score {
@@ -138,4 +144,6 @@ export interface GrounnelStatusOutput {
   caps_hit: boolean;
   started_at: string | null;
   elapsed_seconds: number | null;
+  provider?: GrounnelProviderId;
+  model?: string | null;
 }

@@ -127,6 +127,40 @@ thing you can use" rather than attribution.
 
 ---
 
+### User Story 6 - A visitor checks with their own key (Priority: P2)
+
+A visitor who already has an account with a model provider can run the check on that account.
+Without a key, the check is unchanged and runs on Gemini. The page names the provider that ran it.
+
+**Why this priority**: The default check must stay the same for everyone who does not bring a key.
+The own-key path is how a visitor pays for a different provider without Grounnel spending its own
+account.
+
+**Independent Test**: Submit once with no key and once with a key for each offered provider. The
+no-key result names Gemini. Each own-key result names the provider that was chosen. The share page
+names the same provider and does not ask for a key.
+
+**Acceptance Scenarios**:
+
+1. **Given** a visitor who has not chosen to use their own key, **When** they submit text, **Then**
+   the check runs as before and the result says it was checked with Gemini.
+2. **Given** a visitor who turns on their own key, **When** the form is shown, **Then** they can
+   choose Gemini, DeepSeek, or Qwen, and they cannot choose a check that Grounnel pays for on
+   another provider.
+3. **Given** that choice, **When** they have not yet submitted, **Then** the page states which
+   company processes the model calls, that Grounnel uses the key for this check and does not save
+   it, that web search still runs on Grounnel's account, and that anyone with the share link can
+   open the result.
+4. **Given** the own-key choice with an empty key, **When** they submit, **Then** the check does
+   not start.
+5. **Given** a key the provider rejects, **When** the check is refused, **Then** the visitor sees
+   an authentication error.
+6. **Given** a finished check, **When** the visitor or someone with the share link opens the
+   result, **Then** the page names Gemini, DeepSeek, or Qwen. A missing or unknown provider is
+   shown as Gemini and the raw value is not repeated. The share page does not offer a key field.
+
+---
+
 ### Edge Cases
 
 - A visitor arrives on a host that is neither known domain (a preview deployment, `localhost`, or a
@@ -138,6 +172,11 @@ thing you can use" rather than attribution.
 - A claim's verdict is unavailable (verification failed or still pending) while sources were already
   retrieved — the interface must not imply those sources support anything.
 - A refuted claim's sources must not be described in language implying they support the claim.
+- A visitor turns on their own key and submits without pasting one. The check does not start.
+- A provider rejects the visitor's key. The message is an authentication error, and the check does
+  not fall back to Grounnel's account.
+- A stored result names a provider the page does not recognise. The page says Gemini and does not
+  echo the unrecognised value.
 
 ## Requirements *(mandatory)*
 
@@ -179,6 +218,14 @@ thing you can use" rather than attribution.
 - **FR-016**: A false-positive *rate* MUST NOT be published until it has a labelled denominator.
 - **FR-014**: Grounnel MUST link to Biassemble as a separate related project, describing what it
   does, without implying Biassemble is a parent or that Grounnel is a component of it.
+- **FR-020**: A check with no visitor key MUST run on Gemini, and the result and the share page
+  MUST name the provider that ran the check. A missing or unknown provider MUST be shown as Gemini.
+- **FR-021**: A visitor MAY supply their own key and choose Gemini, DeepSeek, or Qwen for that
+  check. The site MUST NOT offer a control that spends Grounnel's account on another provider. The
+  key MUST be used for that check only and MUST NOT be saved. Before the first such check the page
+  MUST say which company processes the model calls, that the key is not saved, that web search
+  still uses Grounnel's account, and that the share link is public. An empty key MUST NOT start a
+  check. A rejected key MUST be reported as an authentication error.
 
 ### Key Entities
 
@@ -186,6 +233,8 @@ thing you can use" rather than attribution.
 - **Page**: one of the tool, About, or Stats. Determined by path, not brand.
 - **Published statistic**: a value plus its denominator, window and definition. Never a bare number.
 - **Claim presentation**: a verdict, its sources, and the wording that describes their relationship.
+- **Own-key choice**: optional, off unless the visitor turns it on. A provider plus a key used for
+  that check only. Absent on a shared result.
 
 ## Success Criteria *(mandatory)*
 
@@ -202,11 +251,15 @@ thing you can use" rather than attribution.
 - **SC-008**: A first-time visitor can see a complete worked example without submitting anything.
 - **SC-009**: A link pasted into a chat application renders a preview card, not a bare URL.
 - **SC-007**: No claim displays source links whose wording conflicts with its verdict.
+- **SC-010**: A check with no visitor key names Gemini on the result. A check with a visitor key
+  names the provider the visitor chose, on the result and on the share page.
 
 ## Assumptions
 
 - A domain for Grounnel is acquired separately; obtaining it is an input to this work, not part of it.
 - The checking pipeline ships unchanged — no modification to extraction, verification, or gates.
+  Choosing the judge is the exception in Phase 10: the default check stays on Gemini, and another
+  provider runs only when the visitor brings a key (core spec 020).
 - Both sites are served by a single frontend deployment; the frontend and the backend remain
   separate deployments and remain cross-origin, exactly as today.
 - Statistics are drawn from existing telemetry; no new measurement is introduced.

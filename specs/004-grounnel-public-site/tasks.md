@@ -105,6 +105,13 @@ Phase 4 depends on biassemble-core spec 019.
 - [x] T063 Serve Stats live from `/api/grounnel/stats`, snapshot as fallback, zod-parsed at the boundary.
 - [x] T065 Move Grounnel to `grounnel.n30sk.cc`: canonical host, CORS origin, canonical/og/sitemap URLs, 308 from `grounnel.vercel.app`. Root redirect needs `/:path(.*)`; `/:path*` skips `/`.
 
+## Phase 10 — Own key (core spec 020)
+
+The site half of biassemble-core spec 020. A check with no key stays on Gemini. A visitor key selects the judge. Both tasks already shipped on `grounnel-domain`.
+
+- [x] T066 [US6] The result and the share page name the provider. A missing or unknown value is shown as Gemini and is not echoed. Shipped as core spec 020 T2012.
+- [x] T067 [US6] "Use my own key" offers Gemini, DeepSeek, and Qwen, and no site-paid choice. The key stays in page memory, is cleared when the control is turned off, and is not placed in the article. The notice before the first check names the company, says the key is not saved, says web search still uses Grounnel's account, and says anyone with the share link can open the result. An empty key does not submit. A rejected key is an authentication error. The share page has no control. Shipped as core spec 020 T2014.
+
 ## Known bugs
 
 - Fixed 2026-09-13: a shared check showed no reference numbers at all, and the References list

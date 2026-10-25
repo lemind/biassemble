@@ -125,3 +125,7 @@ The site half of biassemble-core spec 020. A check with no key stays on Gemini. 
 ## After launch
 
 - [ ] T023 Contradiction precision audit — label 50–100 contradicted claims by hand to get a real rate.
+
+## Own-key token readout
+
+- [ ] T068 [US6] After an own-key check finishes, the result page and the public share page show one line: approximate input and output tokens charged to that key (`This check used ~{input} input / {output} output tokens on your key.`). A site-paid check and a check that is still running show no line. The count is judging calls only. Web search stays on Grounnel's account and is not included. The notice before the check says the number is shown here afterwards. The key is not shown.

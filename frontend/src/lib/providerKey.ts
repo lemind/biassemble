@@ -19,7 +19,7 @@ export const EMPTY_OWN_KEY: OwnKeyChoice = { enabled: false, provider: "gemini",
 /** Shown before an own-key check. Names the company, the key, Google search, and the public link. */
 export function ownKeyNotice(provider: GrounnelProviderId): string {
   const row = OWN_KEY_PROVIDERS.find((item) => item.id === provider) ?? OWN_KEY_PROVIDERS[0];
-  return `${row.label} calls are processed by ${row.company}. Grounnel uses the key for this check and does not save it. Google still searches the web on Grounnel's account. Anyone with the share link can open the result.`;
+  return `${row.label} calls are processed by ${row.company}. Grounnel uses the key for this check and does not save it. Google still searches the web on Grounnel's account. After the check, this page shows how many input and output tokens were charged to the key. Anyone with the share link can open the result.`;
 }
 
 /** Request headers only. A blank key is omitted so the check is not sent, and the key is not a body field. */

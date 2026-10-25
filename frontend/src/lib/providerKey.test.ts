@@ -15,6 +15,7 @@ for (const item of OWN_KEY_PROVIDERS) {
   assert.equal(notice.includes("does not save it"), true);
   assert.equal(notice.includes("Google still searches"), true);
   assert.equal(notice.includes("share link"), true);
+  assert.equal(notice.includes("this page shows how many input and output tokens"), true);
   assert.equal(notice.includes(pasted), false);
 }
 

@@ -11,7 +11,7 @@ assert.deepEqual(
 
 assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "gemini")?.keyUrl, "https://aistudio.google.com/apikey");
 assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "deepseek")?.keyUrl, "https://platform.deepseek.com/api_keys");
-assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "qwen")?.keyUrl, "https://home.qwencloud.com");
+assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "qwen")?.keyUrl, "https://home.qwencloud.com/api-keys");
 
 for (const item of OWN_KEY_PROVIDERS) {
   const notice = ownKeyNotice(item.id);

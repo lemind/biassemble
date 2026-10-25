@@ -10,7 +10,7 @@ export const OWN_KEY_PROVIDERS: readonly {
 }[] = [
   { id: "gemini", label: "Gemini", company: "Google", keyUrl: "https://aistudio.google.com/apikey", keyLinkLabel: "Google AI Studio" },
   { id: "deepseek", label: "DeepSeek", company: "DeepSeek", keyUrl: "https://platform.deepseek.com/api_keys", keyLinkLabel: "DeepSeek API keys" },
-  { id: "qwen", label: "Qwen", company: "Alibaba Cloud", keyUrl: "https://home.qwencloud.com", keyLinkLabel: "Qwen Cloud" },
+  { id: "qwen", label: "Qwen", company: "Alibaba Cloud", keyUrl: "https://home.qwencloud.com/api-keys", keyLinkLabel: "Qwen API keys" },
 ];
 
 /** Page memory only. Callers keep this in component state and do not write storage (D033). */
@@ -31,7 +31,6 @@ export function ownKeyTransparency(provider: GrounnelProviderId): readonly strin
     "We do not write the key to our database. Key-shaped text is removed from errors we store.",
     "The key pays the provider directly. Grounnel does not bill you through it and does not hold a balance on it.",
     "Your key is used for the model calls on this check, including reading the text and judging the claims. Web search still runs on Grounnel's Google account, at no cost to you.",
-    "You can see what this check used in the provider's own usage dashboard.",
     "Anyone with the share link can open the result.",
   ];
 }

@@ -25,7 +25,12 @@ const hidden = renderToStaticMarkup(
     onChange: () => {},
   }),
 );
-assert.doesNotMatch(hidden, /API key/);
+assert.match(html, /Run this check on my own AI account/);
+assert.match(html, /How your key is used/);
+assert.match(html, /https:\/\/aistudio\.google\.com\/apikey/);
+assert.match(html, /this page shows how many input and output tokens/);
+assert.doesNotMatch(hidden, /aria-label="API key"/);
 assert.doesNotMatch(hidden, /Show API key/);
+assert.doesNotMatch(hidden, /How your key is used/);
 
 console.log("ProviderPicker show/hide ok");

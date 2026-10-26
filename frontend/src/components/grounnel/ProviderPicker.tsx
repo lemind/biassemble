@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { OWN_KEY_PROVIDERS, ownKeyNotice, type OwnKeyChoice } from "../../lib/providerKey";
+import { OWN_KEY_PROVIDERS, ownKeyTransparency, type OwnKeyChoice } from "../../lib/providerKey";
 
 /** Own-key control only. Off means no provider choice, and the key is not written to storage (D033). */
 export default function ProviderPicker({
@@ -28,27 +28,42 @@ export default function ProviderPicker({
             onChange({ enabled: false, provider: "gemini", apiKey: "" });
           }}
         />
-        Use my own key
+        Run this check on my own AI account
       </label>
-      {!value.enabled && (
-        <p className="text-xs text-base-content/60">Model calls are processed by Google.</p>
-      )}
+      <p className="text-xs text-base-content/60">
+        Grounnel normally uses our Google Gemini account. Instead, you can paste an API key from an
+        AI provider and the fact-check runs on yours.
+      </p>
       {value.enabled && (
         <>
-          <div className="flex flex-wrap gap-4 text-sm" role="radiogroup" aria-label="Provider">
+          <div className="flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:gap-6" role="radiogroup" aria-label="Provider">
             {OWN_KEY_PROVIDERS.map((item) => (
-              <label key={item.id} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="grounnel-own-provider"
-                  className="radio radio-sm"
-                  checked={value.provider === item.id}
-                  onChange={() => onChange({ ...value, provider: item.id })}
-                />
-                {item.label}
-              </label>
+              <div key={item.id} className="flex flex-col gap-1">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="grounnel-own-provider"
+                    className="radio radio-sm"
+                    checked={value.provider === item.id}
+                    onChange={() => onChange({ ...value, provider: item.id })}
+                  />
+                  {item.label}
+                </label>
+                <a
+                  href={item.keyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link link-hover ml-6 text-xs"
+                >
+                  {item.keyLinkLabel}
+                </a>
+              </div>
             ))}
           </div>
+          <p className="text-xs text-base-content/60">
+            An API key is the secret string (like sk-… or AIza…) the provider&apos;s API uses — not
+            your login or password.
+          </p>
           <div className="relative">
             <input
               type={keyVisible ? "text" : "password"}
@@ -71,7 +86,14 @@ export default function ProviderPicker({
               {keyVisible ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
-          <p className="text-xs text-base-content/70">{ownKeyNotice(value.provider)}</p>
+          <details open className="rounded-lg border border-base-300 bg-base-100 p-3">
+            <summary className="cursor-pointer text-sm font-medium">How your key is used</summary>
+            <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs text-base-content/70">
+              {ownKeyTransparency(value.provider).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </details>
         </>
       )}
     </fieldset>

@@ -9,13 +9,20 @@ assert.deepEqual(
   ["gemini", "deepseek", "qwen"],
 );
 
+assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "gemini")?.keyUrl, "https://aistudio.google.com/apikey");
+assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "deepseek")?.keyUrl, "https://platform.deepseek.com/api_keys");
+assert.equal(OWN_KEY_PROVIDERS.find((item) => item.id === "qwen")?.keyUrl, "https://home.qwencloud.com/api-keys");
+
 for (const item of OWN_KEY_PROVIDERS) {
   const notice = ownKeyNotice(item.id);
   assert.equal(notice.includes(item.company), true);
   assert.equal(notice.includes("does not save it"), true);
   assert.equal(notice.includes("Google still searches"), true);
+  assert.equal(notice.includes("Grounnel's Google account"), true);
   assert.equal(notice.includes("share link"), true);
   assert.equal(notice.includes("this page shows how many input and output tokens"), true);
+  assert.equal(notice.includes(item.keyLinkLabel), false);
+  assert.equal(item.keyUrl.startsWith("https://"), true);
   assert.equal(notice.includes(pasted), false);
 }
 

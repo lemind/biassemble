@@ -150,7 +150,8 @@ names the same provider and does not ask for a key.
 3. **Given** that choice, **When** they have not yet submitted, **Then** the page states which
    company processes the model calls, that Grounnel uses the key for this check and does not save
    it, that web search still runs on Grounnel's account, and that anyone with the share link can
-   open the result.
+   open the result. The control also says, in plain language, what an API key is and where to get
+   one for the chosen provider.
 4. **Given** the own-key choice with an empty key, **When** they submit, **Then** the check does
    not start.
 5. **Given** a key the provider rejects, **When** the check is refused, **Then** the visitor sees
@@ -224,9 +225,10 @@ names the same provider and does not ask for a key.
   check. The site MUST NOT offer a control that spends Grounnel's account on another provider. The
   key MUST be used for that check only and MUST NOT be saved. Before the first such check the page
   MUST say which company processes the model calls, that the key is not saved, that web search
-  still uses Grounnel's account, and that the share link is public. An empty key MUST NOT start a
-  check. A rejected key MUST be reported as an authentication error. The notice also says that,
-  after the check, this page shows how many input and output tokens were charged to the key.
+  still uses Grounnel's account, and that the share link is public. The control MUST explain what
+  an API key is and where to get one. An empty key MUST NOT start a check. A rejected key MUST be
+  reported as an authentication error. The notice also says that, after the check, this page shows
+  how many input and output tokens were charged to the key.
 - **FR-022**: After an own-key check finishes, the result page and the share page MUST show the
   approximate input and output tokens charged to that key. A site-paid check, and a check that is
   still running, MUST show no token line. Web-search tokens MUST NOT be included. The key itself

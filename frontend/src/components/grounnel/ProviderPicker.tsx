@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { OWN_KEY_PROVIDERS, ownKeyTransparency, type OwnKeyChoice } from "../../lib/providerKey";
+import { OWN_KEY_PROVIDERS, type OwnKeyChoice } from "../../lib/providerKey";
 
 /** Own-key control only. Off means no provider choice, and the key is not written to storage (D033). */
 export default function ProviderPicker({
@@ -86,14 +86,17 @@ export default function ProviderPicker({
               {keyVisible ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
-          <details open className="rounded-lg border border-base-300 bg-base-100 p-3">
-            <summary className="cursor-pointer text-sm font-medium">How your key is used</summary>
-            <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-xs text-base-content/70">
-              {ownKeyTransparency(value.provider).map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </details>
+          <div className="rounded-lg border border-base-300 bg-base-100 p-3 text-xs text-base-content/70">
+            <p>
+              Your key is used for this one check, over HTTPS, then dropped —{" "}
+              <strong className="font-medium">never saved to our database, not even hashed</strong>. It
+              pays only for reading and judging; web search stays on Grounnel&apos;s account. Revoke it
+              anytime from your provider.
+            </p>
+            <a href="/about" className="link link-hover mt-1 inline-block">
+              How your key is used →
+            </a>
+          </div>
         </>
       )}
     </fieldset>

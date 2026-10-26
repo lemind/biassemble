@@ -93,7 +93,7 @@ export default function ProviderPicker({
               pays only for reading and judging; web search stays on Grounnel&apos;s account. Revoke it
               anytime from your provider.
             </p>
-            <a href="/about" className="link link-hover mt-1 inline-block">
+            <a href="/about#own-key" className="link link-hover mt-1 inline-block">
               How your key is used →
             </a>
           </div>

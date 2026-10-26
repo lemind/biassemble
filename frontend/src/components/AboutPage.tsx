@@ -42,8 +42,8 @@ function Eyebrow({ children }: { children: string }) {
   return <p className="text-xs uppercase tracking-widest text-base-content/50">{children}</p>;
 }
 
-function Heading({ children }: { children: string }) {
-  return <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">{children}</h2>;
+function Heading({ children, id }: { children: string; id?: string }) {
+  return <h2 id={id} className="mt-14 scroll-mt-24 text-sm uppercase tracking-widest text-base-content/50">{children}</h2>;
 }
 
 // Each host gets its own About: on the Biassemble domain, a page about Grounnel would be a page
@@ -103,7 +103,7 @@ function GrounnelAbout({ biassemble }: { biassemble: Brand }) {
         <WorkedExample />
       </div>
 
-      <Heading>Using your own key</Heading>
+      <Heading id="own-key">Using your own key</Heading>
       <p className="mt-4 leading-relaxed text-base-content/80">
         Grounnel normally runs on our Google Gemini account. You can instead run a check on your own
         Gemini, DeepSeek, or Qwen key.

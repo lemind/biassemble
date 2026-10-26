@@ -42,7 +42,7 @@ export default function ArticleInput({
       return;
     }
     if (ownKey?.enabled && ownKey.apiKey.trim().length === 0) {
-      setError('Paste an API key.');
+      setError('Paste an API key from your provider.');
       return;
     }
     setError(null);

@@ -112,6 +112,8 @@ The site half of biassemble-core spec 020. A check with no key stays on Gemini. 
 - [x] T066 [US6] The result and the share page name the provider. A missing or unknown value is shown as Gemini and is not echoed. Shipped as core spec 020 T2012.
 - [x] T067 [US6] "Use my own key" offers Gemini, DeepSeek, and Qwen, and no site-paid choice. The key stays in page memory, is cleared when the control is turned off, and is not placed in the article. The notice before the first check names the company, says the key is not saved, says web search still uses Grounnel's account, and says anyone with the share link can open the result. An empty key does not submit. A rejected key is an authentication error. The share page has no control. Shipped as core spec 020 T2014.
 
+The own-key control copy follows T067 and does not change how the key is sent. The label is "Run this check on my own AI account", with a one-line explanation, a link to each provider's API-key page, and a transparency block before the first check: this check only, not saved, model calls on the visitor's account, web search on Grounnel's account, share link public.
+
 ## Known bugs
 
 - Fixed 2026-09-13: a shared check showed no reference numbers at all, and the References list
@@ -125,3 +127,7 @@ The site half of biassemble-core spec 020. A check with no key stays on Gemini. 
 ## After launch
 
 - [ ] T023 Contradiction precision audit — label 50–100 contradicted claims by hand to get a real rate.
+
+## Own-key token readout
+
+- [ ] T068 [US6] After an own-key check finishes, the result page and the public share page show one line: approximate input and output tokens charged to that key (`This check used ~{input} input / {output} output tokens on your key.`). A site-paid check and a check that is still running show no line. The count is judging calls only. Web search stays on Grounnel's account and is not included. The notice before the check says the number is shown here afterwards. The key is not shown.

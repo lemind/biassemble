@@ -122,3 +122,47 @@ describe("provider on status and share (T2012)", () => {
     expect(parsed).not.toHaveProperty("key_source");
   });
 });
+
+describe("ownKeyTokens (T2018)", () => {
+  it("accepts the optional totals, null, and a core that omits the field", () => {
+    const withTotals = grounnelStatusResponseSchema.parse({
+      ...statusResponseWithVerdict("supported"),
+      ownKeyTokens: { input: 58786, output: 1200 },
+    });
+    expect(withTotals.ownKeyTokens).toEqual({ input: 58786, output: 1200 });
+
+    const sitePaid = grounnelStatusResponseSchema.parse({
+      ...statusResponseWithVerdict("supported"),
+      ownKeyTokens: null,
+      key_source: "site",
+    });
+    expect(sitePaid.ownKeyTokens).toBeNull();
+    expect(sitePaid).not.toHaveProperty("key_source");
+
+    const older = grounnelStatusResponseSchema.parse(statusResponseWithVerdict("supported"));
+    expect(older.ownKeyTokens).toBeUndefined();
+
+    expect(grounnelStatusResponseSchema.safeParse({
+      ...statusResponseWithVerdict("supported"),
+      ownKeyTokens: { input: -1, output: 1 },
+    }).success).toBe(false);
+
+    const shared = sharedAssessmentSchema.parse({
+      status: "done",
+      text: "A short article.",
+      claims: [],
+      createdAt: "2026-09-09T00:00:00.000Z",
+      completedAt: "2026-09-09T00:03:20.000Z",
+      ownKeyTokens: { input: 10, output: 2 },
+    });
+    expect(shared.ownKeyTokens).toEqual({ input: 10, output: 2 });
+    expect(sharedAssessmentSchema.parse({
+      status: "done",
+      text: "A short article.",
+      claims: [],
+      createdAt: "2026-09-09T00:00:00.000Z",
+      completedAt: null,
+      ownKeyTokens: null,
+    }).ownKeyTokens).toBeNull();
+  });
+});

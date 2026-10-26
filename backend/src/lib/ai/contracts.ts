@@ -150,6 +150,11 @@ export const grounnelStatusResponseSchema = z.object({
   // Optional: a core older than T2011 omits them. An unknown provider is rejected, not shown (D033).
   provider: grounnelProviderSchema.optional(),
   model: z.string().nullable().optional(),
+  // Optional: a core older than T2018 omits it. Null means site-paid or not finished. Counts only.
+  ownKeyTokens: z.object({
+    input: z.number().int().nonnegative(),
+    output: z.number().int().nonnegative(),
+  }).nullable().optional(),
 });
 
 export type GrounnelStatusOutput = z.infer<typeof grounnelStatusResponseSchema>;
@@ -191,6 +196,11 @@ export const sharedAssessmentSchema = z.object({
   }).optional(),
   provider: grounnelProviderSchema.optional(),
   model: z.string().nullable().optional(),
+  // Same as status: optional so an older core still parses. Null means nothing to show.
+  ownKeyTokens: z.object({
+    input: z.number().int().nonnegative(),
+    output: z.number().int().nonnegative(),
+  }).nullable().optional(),
 });
 
 export type SharedAssessment = z.infer<typeof sharedAssessmentSchema>;

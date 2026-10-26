@@ -42,8 +42,8 @@ function Eyebrow({ children }: { children: string }) {
   return <p className="text-xs uppercase tracking-widest text-base-content/50">{children}</p>;
 }
 
-function Heading({ children }: { children: string }) {
-  return <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">{children}</h2>;
+function Heading({ children, id }: { children: string; id?: string }) {
+  return <h2 id={id} className="mt-14 scroll-mt-24 text-sm uppercase tracking-widest text-base-content/50">{children}</h2>;
 }
 
 // Each host gets its own About: on the Biassemble domain, a page about Grounnel would be a page
@@ -102,6 +102,28 @@ function GrounnelAbout({ biassemble }: { biassemble: Brand }) {
       <div className="mt-14">
         <WorkedExample />
       </div>
+
+      <Heading id="own-key">Using your own key</Heading>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        Grounnel normally runs on our Google Gemini account. You can instead run a check on your own
+        Gemini, DeepSeek, or Qwen key.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">Safe by design.</strong> Your key is sent over HTTPS and held
+        in memory only while the check runs. It is never written to our database — not even hashed —
+        and key-shaped text is stripped from any error we store. When you close the tab, it is gone.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">You only pay for your part.</strong> The key pays the provider
+        directly; Grounnel never bills through it or holds a balance on it. It covers reading the
+        article and judging the claims. Web search runs on Grounnel&apos;s account, at no cost to you.
+        After the check, Grounnel shows exactly how many input and output tokens it used.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">You stay in control.</strong> Revoke the key anytime from your
+        provider&apos;s console and this check can never touch it again — a key dedicated to Grounnel
+        is the safest option. Note that the result&apos;s share link is public.
+      </p>
 
       <Heading>Related</Heading>
       <p className="mt-4 leading-relaxed text-base-content/80">

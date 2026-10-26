@@ -2,6 +2,7 @@ import ArticleScores from './ArticleScores';
 import ClaimSourceList from './ClaimSourceList';
 import GrounnelProgress from './GrounnelProgress';
 import HighlightedArticle from './HighlightedArticle';
+import { ownKeyTokenLine } from '../../lib/ownKeyTokens';
 import { checkedWithLabel } from '../../lib/providerLabel';
 import type { RunProgress, SharedCounts } from '../../types/grounnel';
 
@@ -21,9 +22,11 @@ export default function RunView({
   requireCounts?: boolean;
 }) {
   const claims = status?.claims ?? [];
+  const tokenLine = ownKeyTokenLine(status?.ownKeyTokens);
   return (
     <>
       {status && <p className="text-sm text-base-content/70">{checkedWithLabel(status.provider)}</p>}
+      {tokenLine && <p className="text-sm text-base-content/70">{tokenLine}</p>}
       <GrounnelProgress status={status} articleText={articleText} />
       {/* Finished runs only: mid-run the numbers swing on every claim, and a failed run scores
           what it happened to finish rather than what the article says. */}

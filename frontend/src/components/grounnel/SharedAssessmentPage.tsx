@@ -52,6 +52,8 @@ function toRunProgress(assessment: SharedAssessment): RunProgress {
     caps_hit: false,
     elapsed_seconds: Number.isNaN(started) ? null : Math.round((ended - started) / 1000),
     provider: assessment.provider,
+    // Public counts, same line as the live result. TODO(T2018): drop this to hide them on the share page.
+    ownKeyTokens: assessment.ownKeyTokens,
   };
 }
 

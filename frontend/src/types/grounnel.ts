@@ -95,6 +95,12 @@ export interface SharedCounts {
 
 export type GrounnelProviderId = "gemini" | "deepseek" | "qwen";
 
+/** Judging tokens the provider reported against the visitor's key. */
+export interface OwnKeyTokenCounts {
+  input: number;
+  output: number;
+}
+
 export interface SharedAssessment {
   status: GrounnelRunStatus;
   text: string;
@@ -105,6 +111,8 @@ export interface SharedAssessment {
   // Absent from a core older than T2011. The page then says Gemini (D033).
   provider?: GrounnelProviderId;
   model?: string | null;
+  // Absent until a finished own-key check. Null for a site-paid run — the page shows no line.
+  ownKeyTokens?: OwnKeyTokenCounts | null;
 }
 
 /** The subset of a run's state the progress row renders. `GrounnelStatusOutput` satisfies it, and
@@ -118,6 +126,7 @@ export interface RunProgress {
   caps_hit: boolean;
   elapsed_seconds: number | null;
   provider?: GrounnelProviderId;
+  ownKeyTokens?: OwnKeyTokenCounts | null;
 }
 
 export interface Score {
@@ -146,4 +155,5 @@ export interface GrounnelStatusOutput {
   elapsed_seconds: number | null;
   provider?: GrounnelProviderId;
   model?: string | null;
+  ownKeyTokens?: OwnKeyTokenCounts | null;
 }

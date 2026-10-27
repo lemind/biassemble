@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from '../../lib/decodeHtml';
 import { buildTextFragmentUrl, normalizePunctuationSpacing } from '../../lib/textFragment';
 import { sourceLabel } from '../../lib/sourceLabel';
 import type { ClaimCitation, ClaimSource } from '../../types/grounnel';
@@ -26,7 +27,7 @@ export default function CitationQuote({ citation, sources }: CitationQuoteProps)
       {/* Same normalization the link itself uses (textFragment.ts) — passage extraction upstream
           leaves stray spaces before punctuation; showing the raw artifact here while the link
           quietly fixes it for matching purposes would make the two visibly disagree. */}
-      “{normalizePunctuationSpacing(citation.text)}”
+      “{normalizePunctuationSpacing(decodeHtmlEntities(citation.text))}”
     </a>
   );
 }

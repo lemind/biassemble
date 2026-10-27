@@ -76,6 +76,12 @@ test('siblingBrand points each brand at the other, by its canonical origin', () 
   assert.equal(siblingBrand(sibling).id, 'grounnel');
 });
 
+test('Grounnel nav and footer do not link to the Biassemble preview host', () => {
+  const nav = brandForHost('grounnel.n30sk.cc').nav;
+  assert.equal(nav.some((item) => item.label === 'Biassemble'), false);
+  assert.equal(nav.some((item) => item.href.includes('vercel.app')), false);
+});
+
 console.log(`\n${passed} tests passed`);
 
 // hostNamedBrand — the first-label convention both brandForHost and resolveBrand key on.

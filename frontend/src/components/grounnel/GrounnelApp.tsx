@@ -52,6 +52,10 @@ export default function GrounnelApp() {
     submit(text, ownKey);
   };
 
+  // The button and the timer both key off this. A finished run must not keep Checking...
+  const runSettled = status?.status === 'done' || status?.status === 'failed';
+  const checking = isRunInFlight && !runSettled;
+
   return (
     <div className="px-4 py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -107,8 +111,8 @@ export default function GrounnelApp() {
             there), and a disabled textarea makes the user's own pasted article unselectable. */}
         <ArticleInput
           onSubmit={handleSubmit}
-          disabled={isRunInFlight}
-          locked={isRunInFlight}
+          disabled={checking}
+          locked={checking}
           ownKey={ownKey}
           onOwnKeyChange={setOwnKey}
         />

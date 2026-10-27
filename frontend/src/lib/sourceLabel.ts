@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from './decodeHtml';
 import type { ClaimSource } from '../types/grounnel';
 
 // "domain - title" (2026-08-12, revised again — the prior domain-only version dropped the title
@@ -28,8 +29,9 @@ export function sourceLabel(url: string, sources: ClaimSource[]): string {
   const withTitle = sources.find((s) => s.kind === 'web' && s.url === url && s.title);
   const match = withTitle ?? sources.find((s) => s.kind === 'web' && s.url === url);
   if (match && match.kind === 'web') {
-    const hasRealTitle = match.title && !isBareDomainRestated(match.title, match.domain);
-    return hasRealTitle ? `${match.domain} - ${match.title}` : match.domain;
+    const title = decodeHtmlEntities(match.title);
+    const hasRealTitle = title && !isBareDomainRestated(title, match.domain);
+    return hasRealTitle ? `${match.domain} - ${title}` : match.domain;
   }
   try {
     return new URL(url).hostname.replace(/^www\./, '');

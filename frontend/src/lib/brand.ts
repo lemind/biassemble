@@ -32,8 +32,8 @@ const GROUNNEL_HOSTS = ['grounnel.n30sk.cc', 'grounnel.vercel.app'];
 const BIASSEMBLE_HOSTS = ['frontend-topaz-eight-10.vercel.app'];
 const DEV_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
 
-// Each brand's canonical public URL, written once. The two nav bars cross-link to each other's
-// SITE, not to a path on the current host — they are separate products at separate addresses.
+// Each brand's canonical public URL, written once. Biassemble's nav links to Grounnel's real
+// address. Grounnel does not link back: Biassemble has no confirmed public address.
 const GROUNNEL_ORIGIN = `https://${GROUNNEL_HOSTS[0]}`;
 const BIASSEMBLE_ORIGIN = `https://${BIASSEMBLE_HOSTS[0]}`;
 
@@ -45,11 +45,12 @@ const GROUNNEL: Brand = {
   origin: GROUNNEL_ORIGIN,
   logoHeightClass: 'h-12',
   logoIncludesName: false,
+  // No Biassemble entry: the only address on file is a Vercel preview host, and a guessed
+  // production domain would be worse. The product still renders on that host for anyone who has it.
   nav: [
     { href: '/', label: 'Check' },
     { href: '/about', label: 'About' },
     { href: '/stats', label: 'Stats' },
-    { href: BIASSEMBLE_ORIGIN, label: 'Biassemble' },
   ],
 };
 

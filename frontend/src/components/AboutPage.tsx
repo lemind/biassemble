@@ -74,7 +74,7 @@ function BiassembleAbout({ grounnel }: { grounnel: Brand }) {
   );
 }
 
-function GrounnelAbout({ biassemble }: { biassemble: Brand }) {
+function GrounnelAbout() {
   return (
     <>
       <Eyebrow>Claim checking</Eyebrow>
@@ -127,11 +127,8 @@ function GrounnelAbout({ biassemble }: { biassemble: Brand }) {
 
       <Heading>Related</Heading>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        <a className="link font-medium" href={biassemble.origin} rel="noopener">
-          {biassemble.name}
-        </a>{' '}
-        looks for cognitive biases in text. It is a separate project at its own address. The two do
-        not share a pipeline. Running both on the same document is planned; nothing about that has
+        Biassemble looks for cognitive biases in text. It is a separate project. The two do not
+        share a pipeline. Running both on the same document is planned; nothing about that has
         shipped.
       </p>
     </>
@@ -143,7 +140,7 @@ export default function AboutPage({ brand }: { brand: Brand }) {
   return (
     <article className="mx-auto max-w-[40rem] px-6 py-16">
       {brand.id === 'grounnel' ? (
-        <GrounnelAbout biassemble={sibling} />
+        <GrounnelAbout />
       ) : (
         <BiassembleAbout grounnel={sibling} />
       )}

@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from '../../lib/decodeHtml';
 import { sourceLabel } from '../../lib/sourceLabel';
 import type { ClaimSource } from '../../types/grounnel';
 
@@ -27,5 +28,5 @@ export default function SourceLink({ source }: SourceLinkProps) {
 
   // Attached-document sources carry no retrievable URL yet (not produced in this phase, per
   // backend contract) — render the title as plain text rather than risk a broken link.
-  return <span className="text-base-content/60">{source.title}</span>;
+  return <span className="text-base-content/60">{decodeHtmlEntities(source.title)}</span>;
 }

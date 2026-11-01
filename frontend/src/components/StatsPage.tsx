@@ -87,8 +87,9 @@ export default function StatsPage() {
       </h2>
       <p className="mt-4 leading-relaxed text-base-content/80">
         {fmt(stats.productionRuns)} production runs were recorded in this window. Evaluation runs
-        are excluded from the verdict mix below; the test-set sections further down are only those. Over the same dates we also ran {fmt(stats.evalRuns)}{' '}
-        internal evals against fixed tests.
+        are excluded from the verdict mix below. Over the same dates we also ran{' '}
+        {fmt(stats.evalRuns)} internal evals against fixed tests; the test-set sections further
+        down are evaluation-only and carry their own dates.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
         Almost all {fmt(stats.productionRuns)} were our own test articles while building the system.
@@ -163,9 +164,10 @@ export default function StatsPage() {
       </table>
       <p className="mt-6 leading-relaxed text-base-content/80">
         {consistency.alwaysCorrect} of the {consistency.testClaims} claims got the same correct
-        verdict every time. The hardest, “{consistency.hardest.claim}”, was caught{' '}
-        {consistency.hardest.caught} times in {consistency.hardest.runs}, came back “can't verify”{' '}
-        {consistency.hardest.cantVerify} times, and slipped through {consistency.hardest.slipped}{' '}
+        verdict every time. The one most often let through as true, “{consistency.mostLetThrough.claim}”,
+        was caught{' '}
+        {consistency.mostLetThrough.caught} times in {consistency.mostLetThrough.runs}, came back “can't verify”{' '}
+        {consistency.mostLetThrough.cantVerify} times, and slipped through {consistency.mostLetThrough.slipped}{' '}
         times. When Grounnel is unsure, it mostly says so rather than guessing.
       </p>
 

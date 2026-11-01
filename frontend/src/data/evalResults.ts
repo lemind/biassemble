@@ -14,7 +14,7 @@ export const consistency = {
     { label: 'Passed a false claim as true', n: 11 },
     { label: 'Called a true claim false', n: 5 },
   ],
-  hardest: {
+  mostLetThrough: {
     claim: 'The first computer mouse was wireless.',
     runs: 42,
     caught: 26,

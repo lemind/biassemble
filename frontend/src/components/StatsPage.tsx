@@ -3,6 +3,7 @@ import fallbackStats from '../data/stats';
 import type { StatsSnapshot } from '../types/stats';
 import { getStats } from '../api/client';
 import { VERDICT_ROWS, INDEFINITE_VERDICTS, bucketVerdicts } from '../lib/verdictRows';
+import { consistency, consistencyPct, modelComparison } from '../data/evalResults';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -86,8 +87,9 @@ export default function StatsPage() {
       </h2>
       <p className="mt-4 leading-relaxed text-base-content/80">
         {fmt(stats.productionRuns)} production runs were recorded in this window. Evaluation runs
-        are excluded from every number below. Over the same dates we also ran {fmt(stats.evalRuns)}{' '}
-        internal evals against fixed tests.
+        are excluded from the verdict mix below. Over the same dates we also ran{' '}
+        {fmt(stats.evalRuns)} internal evals against fixed tests; the test-set sections further
+        down are evaluation-only and carry their own dates.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
         Almost all {fmt(stats.productionRuns)} were our own test articles while building the system.
@@ -138,6 +140,72 @@ export default function StatsPage() {
         {fmt(n('unverifiable'))} were unverifiable from the evidence found. That is deliberate
         behaviour, not a shortfall. The other {failed} are different again: verification failed
         rather than reaching any judgement.
+      </p>
+
+      <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">
+        How consistent the verdicts are
+      </h2>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        We re-run a fixed set of {consistency.testClaims} test claims, most of them traps, after
+        every change. Since {longDate(consistency.since)} that is {fmt(consistency.checks)} checks
+        across three models.
+      </p>
+      <table className="mt-5 w-full text-sm">
+        <tbody>
+          {consistency.outcomes.map((o) => (
+            <tr key={o.label} className="border-b border-base-200 last:border-0">
+              <td className="py-2 text-base-content/80">{o.label}</td>
+              <td className="py-2 text-right font-mono tabular-nums text-base-content/70">
+                {consistencyPct(o.n)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-6 leading-relaxed text-base-content/80">
+        {consistency.alwaysCorrect} of the {consistency.testClaims} claims got the same correct
+        verdict every time. The one most often let through as true, “{consistency.mostLetThrough.claim}”,
+        was caught{' '}
+        {consistency.mostLetThrough.caught} times in {consistency.mostLetThrough.runs}, came back “can't verify”{' '}
+        {consistency.mostLetThrough.cantVerify} times, and slipped through {consistency.mostLetThrough.slipped}{' '}
+        times. When Grounnel is unsure, it mostly says so rather than guessing.
+      </p>
+
+      <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">
+        Three models, same test
+      </h2>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        On {longDate(modelComparison.date)} we ran all {modelComparison.cases} test cases{' '}
+        {modelComparison.repeats} times on each model Grounnel supports: {modelComparison.checks}{' '}
+        scored checks per model.
+      </p>
+      <table className="mt-5 w-full text-sm">
+        <thead>
+          <tr className="border-b border-base-300 text-left text-base-content/50">
+            <th className="py-2 font-normal">Model</th>
+            <th className="py-2 text-right font-normal">Expected verdicts</th>
+            <th className="py-2 text-right font-normal">False accusations</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modelComparison.models.map((m) => (
+            <tr key={m.name} className="border-b border-base-200 last:border-0">
+              <td className="py-2 text-base-content/80">
+                {m.name} <span className="text-base-content/45">{m.model}</span>
+              </td>
+              <td className="py-2 text-right font-mono tabular-nums text-base-content/70">
+                {m.correct} / {modelComparison.checks}
+              </td>
+              <td className="py-2 text-right font-mono tabular-nums text-base-content/70">
+                {m.falseAccusations}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-6 leading-relaxed text-base-content/80">
+        A fixed test set is not a real-world accuracy rate. It shows how the models behave on known
+        traps, and a re-run can change the order.
       </p>
 
       <h2 className="mt-14 text-sm uppercase tracking-widest text-base-content/50">

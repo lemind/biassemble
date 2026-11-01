@@ -34,14 +34,14 @@ function replaceAttr(html: string, match: RegExp, value: string): string {
 
 // The one block a crawler reads without JS. Replaces the block's CONTENT, same contract as
 // replaceAttr — index.html stays the single source of which elements exist.
-function replaceSeoShell(html: string, heading: string, description: string): string {
+function replaceSeoShell(html: string, heading: string, description: string, summary: string[] = []): string {
   const block = /<div data-seo-shell>[\s\S]*?<\/div>\s*<\/div>/;
   if (!block.test(html)) throw new Error('gen-seo-shells: no [data-seo-shell] block — index.html changed?');
   return html.replace(
     block,
     `<div data-seo-shell>
         <h1>${escapeText(heading)}</h1>
-        <p>${escapeText(description)}</p>
+        <p>${escapeText(description)}</p>${summary.map((p) => `\n        <p>${escapeText(p)}</p>`).join('')}
         <nav>
           <a href="/">Check a text</a> <a href="/about">How it works</a>
           <a href="/stats">What we have measured</a>
@@ -75,7 +75,7 @@ for (const { file, page, brand: brandId } of SHELLS) {
   html = replaceAttr(html, /<meta\s+property="og:image:alt"[^>]*>/, meta.title);
   html = replaceAttr(html, /<meta\s+name="twitter:title"[^>]*>/, meta.title);
   html = replaceAttr(html, /<meta\s+name="twitter:description"[^>]*>/, meta.description);
-  html = replaceSeoShell(html, meta.title, meta.description);
+  html = replaceSeoShell(html, meta.title, meta.description, meta.summary);
 
   if (meta.canonical === null) {
     html = removeTag(html, /\s*<link\s+rel="canonical"[^>]*>/);

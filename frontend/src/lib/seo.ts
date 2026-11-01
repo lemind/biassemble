@@ -2,6 +2,7 @@
 // static head (Grounnel's homepage) was served on every URL of both domains.
 import { getBrand, type Brand } from './brand';
 import type { PageId } from './routes';
+import { evalSummary } from '../data/evalResults';
 
 export interface PageMeta {
   title: string;
@@ -10,6 +11,8 @@ export interface PageMeta {
    *  content belongs to the other brand canonicalises to where that content really lives. */
   canonical: string | null;
   noindex: boolean;
+  /** Extra paragraphs for the no-JS crawler shell; only text the rendered page also shows. */
+  summary?: string[];
 }
 
 const GROUNNEL_ORIGIN = getBrand('grounnel').origin;
@@ -73,9 +76,10 @@ export function pageMeta(brand: Brand, page: PageId): PageMeta {
       return {
         title: 'What we have measured — Grounnel',
         description:
-          'Measured results from real Grounnel runs: verdict mix, false accusations, and what the numbers do and do not show.',
+          'Measured results from real Grounnel runs and fixed test sets: verdict mix, how consistent verdicts are, three models compared, and what the numbers do and do not show.',
         canonical: `${GROUNNEL_ORIGIN}/stats`,
         noindex: !isGrounnel,
+        summary: evalSummary,
       };
     case 'check':
       return CHECK;

@@ -1,7 +1,7 @@
 // Plain assert-based checks — no test framework (plan.md, Testing decision).
 // Run: npx tsx src/lib/brand.test.ts
 import assert from 'node:assert/strict';
-import { classifyHost, brandForHost, hostNamedBrand, siblingBrand } from './brand';
+import { classifyHost, brandForHost, hostNamedBrand, siblingBrand, getBrand } from './brand';
 
 let passed = 0;
 
@@ -76,10 +76,10 @@ test('siblingBrand points each brand at the other, by its canonical origin', () 
   assert.equal(siblingBrand(sibling).id, 'grounnel');
 });
 
-test('Grounnel nav and footer do not link to the Biassemble preview host', () => {
+test('Grounnel nav and footer link to Biassemble and to Contacts', () => {
   const nav = brandForHost('grounnel.n30sk.cc').nav;
-  assert.equal(nav.some((item) => item.label === 'Biassemble'), false);
-  assert.equal(nav.some((item) => item.href.includes('vercel.app')), false);
+  assert.ok(nav.some((item) => item.label === 'Biassemble' && item.href === getBrand('biassemble').origin));
+  assert.ok(nav.some((item) => item.href === '/contacts'));
 });
 
 console.log(`\n${passed} tests passed`);

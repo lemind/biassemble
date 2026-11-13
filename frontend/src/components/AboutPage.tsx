@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { siblingBrand, type Brand } from '../lib/brand';
 import WorkedExample from './grounnel/WorkedExample';
 
@@ -143,7 +144,7 @@ function GrounnelAbout() {
         is the safest option. Note that the result&apos;s share link is public.
       </p>
 
-      <Heading id="assistant">Use Grounnel from your assistant</Heading>
+      <Heading id="mcp">Use Grounnel from your assistant</Heading>
       <p className="mt-4 leading-relaxed text-base-content/80">
         Grounnel is also an MCP server, so an AI assistant can fact-check text for you and read back
         every claim with its verdict and sources. It runs on your own key only. Add this address once,
@@ -188,6 +189,11 @@ function GrounnelAbout() {
 
 export default function AboutPage({ brand }: { brand: Brand }) {
   const sibling = siblingBrand(brand);
+  // The page is lazy-loaded, so the browser's own jump to #section runs before the section exists.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (id) document.getElementById(id)?.scrollIntoView();
+  }, []);
   return (
     <article className="mx-auto max-w-[40rem] px-6 py-16">
       {brand.id === 'grounnel' ? (

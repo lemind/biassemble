@@ -2,7 +2,7 @@
 // different problem and a boolean can't express it. A path table is enough — no router dependency.
 import type { BrandId } from './brand';
 
-export type PageId = 'tool' | 'reflection' | 'about' | 'stats' | 'check' | 'not-found';
+export type PageId = 'tool' | 'reflection' | 'about' | 'stats' | 'contacts' | 'check' | 'not-found';
 
 export interface Route {
   page: PageId;
@@ -32,6 +32,7 @@ export function resolveRoute(pathname: string, brand: BrandId): Route {
   }
   if (fixed === '/about') return { page: 'about' };
   if (fixed === '/stats') return { page: 'stats' };
+  if (fixed === '/contacts') return { page: 'contacts' };
 
   if (fixed.startsWith(CHECK_PREFIX)) {
     const token = path.slice(CHECK_PREFIX.length);

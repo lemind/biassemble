@@ -84,11 +84,6 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
             <a href="mailto:grounnel@gmail.com" className="link link-hover">
               grounnel@gmail.com
             </a>
-            <span aria-hidden="true">&middot;</span>
-            <span>
-              Site v{__SITE_VERSION__}
-              {engineVersion && ` · Engine v${engineVersion}`}
-            </span>
           </p>
           <nav className="flex gap-5">
             {brand.nav
@@ -104,6 +99,10 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
                 </a>
               ))}
           </nav>
+          <span className="text-base-content/40 sm:ml-auto sm:pl-5">
+            Site v{__SITE_VERSION__}
+            {engineVersion && ` · Engine v${engineVersion}`}
+          </span>
         </div>
       </footer>
     </div>

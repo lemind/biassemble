@@ -109,9 +109,10 @@ function GrounnelAbout() {
         Gemini, DeepSeek, or Qwen key.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        <strong className="font-medium">Safe by design.</strong> Your key is sent over HTTPS and held
-        in memory only while the check runs. It is never written to our database — not even hashed —
-        and key-shaped text is stripped from any error we store. When you close the tab, it is gone.
+        <strong className="font-medium">Safe by design.</strong> Your key is sent over HTTPS. A long
+        check runs in several steps, so while it runs the key is held encrypted (AES-256) in temporary
+        storage for at most 45 minutes, and deleted as soon as the check ends. It is never written to
+        our database, and key-shaped text is stripped from any error we store.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
         <strong className="font-medium">You only pay for your part.</strong> The key pays the provider

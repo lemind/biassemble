@@ -38,6 +38,23 @@ function Steps({ steps, wide }: { steps: { title: string; line: string }[]; wide
   );
 }
 
+// Spec 021: the public MCP address and the two client setups the release checks covered.
+const MCP_URL = "https://mcp.grounnel.n30sk.cc/mcp";
+const CLAUDE_CODE_SNIPPET = `claude mcp add --transport http grounnel ${MCP_URL} \\
+  --header "X-Grounnel-Provider: qwen" \\
+  --header "X-Grounnel-Provider-Key: YOUR_KEY"`;
+const CURSOR_SNIPPET = `{
+  "mcpServers": {
+    "grounnel": {
+      "url": "${MCP_URL}",
+      "headers": {
+        "X-Grounnel-Provider": "qwen",
+        "X-Grounnel-Provider-Key": "YOUR_KEY"
+      }
+    }
+  }
+}`;
+
 function Eyebrow({ children }: { children: string }) {
   return <p className="text-xs uppercase tracking-widest text-base-content/50">{children}</p>;
 }
@@ -109,9 +126,10 @@ function GrounnelAbout() {
         Gemini, DeepSeek, or Qwen key.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
-        <strong className="font-medium">Safe by design.</strong> Your key is sent over HTTPS and held
-        in memory only while the check runs. It is never written to our database — not even hashed —
-        and key-shaped text is stripped from any error we store. When you close the tab, it is gone.
+        <strong className="font-medium">Safe by design.</strong> Your key is sent over HTTPS. A long
+        check runs in several steps, so while it runs the key is held encrypted (AES-256) in temporary
+        storage for at most 45 minutes, and deleted as soon as the check ends. It is never written to
+        our database, and key-shaped text is stripped from any error we store.
       </p>
       <p className="mt-4 leading-relaxed text-base-content/80">
         <strong className="font-medium">You only pay for your part.</strong> The key pays the provider
@@ -123,6 +141,39 @@ function GrounnelAbout() {
         <strong className="font-medium">You stay in control.</strong> Revoke the key anytime from your
         provider&apos;s console and this check can never touch it again — a key dedicated to Grounnel
         is the safest option. Note that the result&apos;s share link is public.
+      </p>
+
+      <Heading id="assistant">Use Grounnel from your assistant</Heading>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        Grounnel is also an MCP server, so an AI assistant can fact-check text for you and read back
+        every claim with its verdict and sources. It runs on your own key only. Add this address once,
+        with your provider (<code>gemini</code>, <code>deepseek</code> or <code>qwen</code>) and your
+        key as two request headers:
+      </p>
+      <pre className="mt-3 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs">{MCP_URL}</pre>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">Claude Code:</strong>
+      </p>
+      <pre className="mt-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs">{CLAUDE_CODE_SNIPPET}</pre>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">Cursor</strong>, in <code>~/.cursor/mcp.json</code>:
+      </p>
+      <pre className="mt-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs">{CURSOR_SNIPPET}</pre>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">Claude (desktop and web):</strong> add a custom connector with
+        this address, &quot;No sign-in&quot;, and the same two request headers. We haven&apos;t tested
+        this one yet.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">What happens to your text.</strong> It goes to your chosen
+        provider for reading and judging, and to Grounnel&apos;s own Google and Tavily accounts for
+        search. The result is published at a link anyone with it can open, so don&apos;t check anything
+        private. Your key is handled as above: held encrypted only while a check runs. To count the
+        hourly limit of 30 checks per key, Grounnel keeps a one-way fingerprint of the key for an hour.
+      </p>
+      <p className="mt-4 leading-relaxed text-base-content/80">
+        <strong className="font-medium">Keep the key private.</strong> Put it in your personal
+        settings, not in a config file you commit or share with a team.
       </p>
 
       <Heading>Related</Heading>

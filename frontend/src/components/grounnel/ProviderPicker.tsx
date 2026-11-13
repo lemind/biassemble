@@ -88,10 +88,11 @@ export default function ProviderPicker({
           </div>
           <div className="rounded-lg border border-base-300 bg-base-100 p-3 text-xs text-base-content/70">
             <p>
-              Your key is used for this one check, over HTTPS, then dropped —{" "}
-              <strong className="font-medium">never saved to our database, not even hashed</strong>. It
-              pays only for reading and judging; web search stays on Grounnel&apos;s account. Revoke it
-              anytime from your provider.
+              Your key is used for this one check, over HTTPS. While the check runs it is held
+              encrypted for at most 45 minutes, then deleted —{" "}
+              <strong className="font-medium">never saved to our database</strong>. It pays only for
+              reading and judging; web search stays on Grounnel&apos;s account. Revoke it anytime from
+              your provider.
             </p>
             <a href="/about#own-key" className="link link-hover mt-1 inline-block">
               How your key is used →

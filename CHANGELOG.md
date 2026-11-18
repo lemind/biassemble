@@ -5,7 +5,7 @@ number, a fix-only release bumps the last. Pull requests that only changed docs 
 Versions before 0.15.0 were assigned on 2026-11-13 from the merge history. The engine behind the site
 has its own changelog in biassemble-core.
 
-## 0.15.0 — 2026-11-13
+## 0.15.0 — 2026-11-18
 
 - A Contacts page with our email and X account, on both sites.
 - Grounnel links to Biassemble again, from the menu, the footer and the About page.

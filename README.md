@@ -10,7 +10,9 @@ Biassemble guides users through a reflective process: write a personal situation
 
 The AI pipeline uses structured reasoning (story analysis → interpretations → bias hypotheses) with auditable traces, evidence binding, and quality-gated evaluation. Every bias claim references verbatim excerpts from the user's story.
 
-**Grounnel**, a second product that fact-checks any text against the open web, ships from this same codebase. See **[GROUNNEL.md](GROUNNEL.md)**. A check with no key runs on Gemini. A visitor can use their own key and choose Gemini, DeepSeek, or Qwen for that check; the key is not saved, and web search stays on Grounnel's account. The result and the share page name the provider. Recorded as Phase 10 of `specs/004-grounnel-public-site/`.
+**Grounnel**, a second product that fact-checks any text against the open web, ships from this same codebase. See **[GROUNNEL.md](GROUNNEL.md)**. A check with no key runs on Gemini. A visitor can use their own key and choose Gemini, DeepSeek, or Qwen for that check; the key is never saved to the database (it is held encrypted for at most 45 minutes while a check runs), and web search stays on Grounnel's account. The result and the share page name the provider. Recorded as Phase 10 of `specs/004-grounnel-public-site/`. Grounnel is also an MCP server, so AI assistants can run checks; setup is on its About page.
+
+**Version**: in `frontend/package.json`, shown in the site footer next to the engine version; history in [CHANGELOG.md](CHANGELOG.md).
 
 ## Key Features
 
@@ -52,7 +54,7 @@ This app is the frontend/backend half of a 3-repo system. The AI logic lives in 
 - **[biassemble-core](../biassemble-core/README.md)** (private) — reasoning engine hosting **three product pipelines**: reflection (bias detection), B2B audit (groundedness check of AI output against source docs), and Grounnel (fact-check against the open web). Grounnel's judge defaults to Gemini; a visitor key can run it on DeepSeek or Qwen. Reflection and audit stay on Gemini. Structured reasoning traces, evidence binding, field-level parse recovery, CI-gated evaluation. Deployed. ([API.md](../biassemble-core/API.md))
 - **[biassemble-engine](../biassemble-engine/README.md)** — RAG sidecar called by biassemble-core, never by this repo directly. Retrieves candidate biases for a story from a curated knowledge base and hands them to core as extra context, rather than relying on the LLM's own recall alone.
   - **RAG**: vector search (pgvector + sentence-transformers) over a bias-catalog knowledge base, unioned with a second pass from a small local LLM that catches biases the vector index misses in unfamiliar domains.
-  - **Fine-tuning**: that local LLM (Gemma-3-4B) is being LoRA fine-tuned on weak-supervision pairs mined from real eval runs, to close blind spots the base model has on certain bias types — tracked as a candidate build, gated by the same CI eval suite before promotion.
+  - **Fine-tuning**: that local LLM (Gemma-3-4B) is QLoRA fine-tuned on a 907-row dataset (synthetic stories plus pairs mined from real runs) to close blind spots on unfamiliar domains. The fine-tuned build passed the CI eval gate on an 80-story held-out set and has been in production since 2026-07-19.
 
 Dependency direction: this repo → biassemble-core → biassemble-engine → pgvector. Never reversed.
 
@@ -72,7 +74,8 @@ pnpm build      # production build
 | Frontend (React + Vite) | Deployed — full reflection flow (story → questions → assessment → results) |
 | Backend (Next.js API + Inngest) | Deployed — story/answers/result/session routes, async assessment jobs |
 | Database (Supabase + Drizzle) | Migrated — sessions, assessments, questions, answers tables (RLS-enabled) |
-| Private AI Core | Deployed — hosts reflection, B2B audit, and Grounnel pipelines (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging) |
+| Private AI Core | Deployed — hosts reflection, B2B audit, and Grounnel pipelines (reasoning traces, evidence binding, field-level parse recovery, CI eval, latency logging), plus Grounnel's MCP server |
+| Pages | Grounnel: Check, About, Stats, Contacts. Biassemble: reflection flow, About, Contacts |
 
 ## License
 

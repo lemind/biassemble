@@ -8,6 +8,12 @@
     },
     { "source": "/about", "destination": "/about.html" },
     { "source": "/stats", "destination": "/stats.html" },
+    {
+      "source": "/contacts",
+      "has": [{ "type": "host", "value": "frontend-topaz-eight-10.vercel.app" }],
+      "destination": "/contacts-biassemble.html"
+    },
+    { "source": "/contacts", "destination": "/contacts.html" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/grounnel", "destination": "/index.html" },
     { "source": "/check/:token", "destination": "/index.html" }
@@ -20,7 +26,8 @@
       "permanent": true
     },
     { "source": "/about/", "destination": "/about", "permanent": true },
-    { "source": "/stats/", "destination": "/stats", "permanent": true }
+    { "source": "/stats/", "destination": "/stats", "permanent": true },
+    { "source": "/contacts/", "destination": "/contacts", "permanent": true }
   ],
   "headers": [
     {

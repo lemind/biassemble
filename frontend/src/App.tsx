@@ -15,6 +15,7 @@ const ResultsView = lazy(() => import('./components/ResultsView'));
 const GrounnelApp = lazy(() => import('./components/grounnel/GrounnelApp'));
 const AboutPage = lazy(() => import('./components/AboutPage'));
 const StatsPage = lazy(() => import('./components/StatsPage'));
+const ContactsPage = lazy(() => import('./components/ContactsPage'));
 const SharedAssessmentPage = lazy(() => import('./components/grounnel/SharedAssessmentPage'));
 
 function NotFound() {
@@ -84,6 +85,14 @@ export default function App() {
       return (
         <Suspense fallback={<LoadingFallback />}>
           <StatsPage />
+        </Suspense>
+      );
+    }
+
+    if (route.page === 'contacts') {
+      return (
+        <Suspense fallback={<LoadingFallback />}>
+          <ContactsPage />
         </Suspense>
       );
     }

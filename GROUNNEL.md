@@ -30,12 +30,14 @@ Steps 4 and 5 are explained in detail in the [article](https://dev.to/lemind/the
 - **Sources behind the verdicts** – `supported`, `partially_supported` and `contradicted` show the exact source sentences, with links
 - **Two scores** – a finished check shows **groundedness** and **assessment completeness** (0–100)
 - **Share links** – every run gets a permanent link that anyone can open
-- **Public measurements** – the [Stats](https://grounnel.n30sk.cc/stats) page shows the verdict mix and what the numbers do and do not show
+- **Public measurements** – the [Stats](https://grounnel.n30sk.cc/stats) page shows the verdict mix, test-set results and a three-model comparison
+- **Your own key** – run a check on your own Gemini, DeepSeek or Qwen key. It is never saved to the database; while a check runs it is held encrypted for at most 45 minutes, then deleted
+- **MCP server** – AI assistants such as Claude Code can start a check and read the result at `https://mcp.grounnel.n30sk.cc/mcp`, on your own key; setup is on the [About](https://grounnel.n30sk.cc/about#mcp) page
 
 ## Limits
 
 - One check covers up to 40 claims, about 3,000 characters. Longer texts are checked in part, and the result says so.
-- The 40-claim cap is measured, not chosen: it fits the hosting platform's 300-second function limit.
+- The 40-claim cap was first sized to the hosting platform's 300-second function limit. Checks now run as queued steps, so a long check no longer hits that limit; the cap stays at 40.
 - There is no published false-accusation rate yet; `contradicted` verdicts from real use have not been audited by hand.
 - Shared result pages are not indexed by search engines, because they show text that users pasted.
 
@@ -45,9 +47,9 @@ Steps 4 and 5 are explained in detail in the [article](https://dev.to/lemind/the
 |-------|-----------|
 | **Frontend** | Vite + React 19, TypeScript 6, DaisyUI + Tailwind CSS v4 — same app as Biassemble, brand chosen by hostname |
 | **Backend** | Next.js 15 API routes — a thin proxy to the private core |
-| **Pipeline** | Private **biassemble-core** service (Fastify + Gemini) — extraction, search, verification, gates |
+| **Pipeline** | Private **biassemble-core** service (Fastify; Gemini, DeepSeek or Qwen) — extraction, search, verification, gates, MCP server |
 | **Run state** | Upstash Redis (authoritative); Postgres via Supabase + Drizzle for analytics |
-| **Jobs** | Inngest crons |
+| **Jobs** | Inngest — queued checks run in steps, plus crons |
 | **Deploy** | Vercel |
 
 ## Where the Code Lives
@@ -72,7 +74,8 @@ The pipeline itself (prompts, gates, search) lives in the private biassemble-cor
 | Check | Live (alpha) — up to 40 claims per run |
 | Results | Inline verdicts, sources, two scores |
 | Sharing | Permanent share links; shared pages are `noindex` |
-| Pages | Check, About, Stats |
+| Pages | Check, About, Stats, Contacts |
+| Assistants | MCP server, own key only — tested with Claude Code |
 
 ## Related
 

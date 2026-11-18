@@ -12,6 +12,8 @@ const SHELLS: Array<{ file: string; page: PageId; brand: BrandId }> = [
   { file: 'about.html', page: 'about', brand: 'grounnel' },
   { file: 'about-biassemble.html', page: 'about', brand: 'biassemble' },
   { file: 'stats.html', page: 'stats', brand: 'grounnel' },
+  { file: 'contacts.html', page: 'contacts', brand: 'grounnel' },
+  { file: 'contacts-biassemble.html', page: 'contacts', brand: 'biassemble' },
   { file: '404.html', page: 'not-found', brand: 'grounnel' },
 ];
 

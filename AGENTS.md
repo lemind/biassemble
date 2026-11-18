@@ -34,6 +34,7 @@
 - Keep commit messages short and descriptive. Example: `feat: add retry logic` — not `feat: add retry logic to syncQueue with exponential backoff and timeout`. If you need details, put them in the body.
 - Task ref, when there is one: spec number + task, e.g. `feat(004-T012): …` (bare T0XX repeats in every spec).
 - Never force-push or rewrite history without explicit approval.
+- **Versioning (from 2026-11-13)**: every PR is a release. Bump `version` in frontend/package.json (the repo's only version; backend/package.json has none) and add a dated entry at the top of CHANGELOG.md in the same PR: a feature bumps the middle number, a fix-only PR the last; docs-only PRs are not releases. Plain language. Date the entry with the merge day (fix it at merge if it slipped). After the merge, tag the merge commit `vX.Y.Z` and push the tag.
 - **Git repo location**: The `.git` directory is at `biassemble/biassemble/` (nested). Run `git` commands from `/home/dl/_prog/biassemble/biassemble/`.
 - **NEVER push to `main` directly.** All work goes to feature branches (e.g. `phase-4-versioning`). Pushing to `main` is strictly forbidden without explicit human approval.
 
@@ -150,7 +151,7 @@ This applies even if the extra work seems obviously correct, helpful, or "the ri
 ### Ask before acting:
 - Changes affecting >3 files or >2 services
 - Modifying configs, CI/CD, or deployment scripts
-- Adding/removing dependencies or changing versions
+- Adding/removing dependencies or changing dependency versions (the release version bump is required, not asked)
 - Altering public APIs, DB schemas, or auth flows
 - Committing code — show summary of changes first, ask user to review before running `git commit`
 - **Any work beyond the explicitly stated task — even if it seems related or necessary**

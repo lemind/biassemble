@@ -1,6 +1,6 @@
 // Legacy filename: Grounnel is now the umbrella and Biassemble a separate project. Renaming is
 // churn; do it when this file is next touched substantially (plan.md, Project Structure).
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { Brand } from '../../lib/brand';
 import { normalizePath } from '../../lib/routes';
 
@@ -33,10 +33,25 @@ function NavLink({ href, active, children }: NavLinkProps) {
   );
 }
 
+// The engine deploys separately, so its version is read live; the footer simply omits it on failure.
+const ENGINE_HEALTH_URL = 'https://biassemble-core.vercel.app/health';
+
+function useEngineVersion(): string | null {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(ENGINE_HEALTH_URL)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { version?: string } | null) => setVersion(body?.version ?? null))
+      .catch(() => undefined);
+  }, []);
+  return version;
+}
+
 export default function BiassembleLayout({ brand, activePath, children }: BiassembleLayoutProps) {
   // overflow-x-clip, not hidden: a claim tooltip is `absolute w-max` and stays in layout at
   // opacity-0, widening the page. `clip` leaves the vertical axis visible so tooltips still hang.
   const active = normalizePath(activePath);
+  const engineVersion = useEngineVersion();
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip bg-base-200">
       {/* Height governs, width follows — a fixed w-x h-x box squashes both files, which have
@@ -84,6 +99,10 @@ export default function BiassembleLayout({ brand, activePath, children }: Biasse
                 </a>
               ))}
           </nav>
+          <span className="text-base-content/40 sm:ml-auto sm:pl-5">
+            Site v{__SITE_VERSION__}
+            {engineVersion && ` · Engine v${engineVersion}`}
+          </span>
         </div>
       </footer>
     </div>

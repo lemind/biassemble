@@ -81,6 +81,13 @@ export function pageMeta(brand: Brand, page: PageId): PageMeta {
         noindex: !isGrounnel,
         summary: evalSummary,
       };
+    case 'contacts':
+      return {
+        title: `Contacts — ${brand.name}`,
+        description: `How to reach the people behind ${brand.name}: email and X.`,
+        canonical: `${brand.origin}/contacts`,
+        noindex: false,
+      };
     case 'check':
       return CHECK;
     default:
